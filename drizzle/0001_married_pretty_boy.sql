@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `occupancies_active_bed_uq` ON `occupancies` (`organization_id`,`bed_id`) WHERE "occupancies"."state" in ('active', 'notice');

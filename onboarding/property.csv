@@ -1,0 +1,2 @@
+property_name,preferred_slug,address_line,city,state,pincode,support_phone,owner_phone,billing_day,notice_days,electricity_mode,electricity_rate,upi_id,upi_payee,primary_color,accent_color,default_language
+Aster House,aster-house,Example address,Bengaluru,Karnataka,560001,+919999999990,+919999999991,5,30,manual,0,asterhouse@okaxis,Aster House,#123D32,#D7FF86,en-IN

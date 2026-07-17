@@ -1,0 +1,3 @@
+floor,room,capacity,room_type,monthly_rent,bed_rent_override,initial_state
+Ground,G-101,3,Triple sharing,7500,,vacant
+Ground,G-102,2,Twin sharing,8500,,vacant
