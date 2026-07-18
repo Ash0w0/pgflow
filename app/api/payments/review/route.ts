@@ -1,22 +1,17 @@
-import { jsonError, requireActor } from "@/lib/http";
+import { isTrustedMutationRequest, jsonError, requireActor } from "@/lib/http";
+import { isUuid } from "@/lib/owner-invitations";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 const rejectionReasons = new Set(["amount_not_received", "incorrect_amount", "duplicate_utr", "invalid_screenshot", "wrong_account", "more_information_needed"]);
 
 export async function POST(request: Request) {
-  const actor = requireActor(request, ["owner", "accountant"]);
-  if (!actor) return jsonError("Owner or accountant approval is required.", 401);
-  const body = await request.json() as { paymentId?: string; decision?: "approve" | "reject"; reason?: string };
-  if (!body.paymentId || !body.decision) return jsonError("Payment and decision are required.");
-  if (body.decision === "reject" && (!body.reason || !rejectionReasons.has(body.reason))) return jsonError("A supported rejection reason is required.");
-  return Response.json({
-    review: {
-      paymentId: body.paymentId,
-      organizationId: actor.organizationId,
-      reviewedBy: actor.id,
-      requestedState: body.decision === "approve" ? "approved" : "rejected",
-      receiptIssued: false,
-      persisted: false,
-      note: "No financial state changed; connect the immutable ledger transaction before enabling this action.",
-    },
-  }, { status: 202, headers: { "cache-control": "no-store" } });
+  if (!isTrustedMutationRequest(request)) return jsonError("Cross-origin payment reviews are not allowed.", 403);
+  const actor = await requireActor(request, ["owner", "accountant"]);
+  if (!actor?.propertyId) return jsonError("Owner or accountant approval is required.", 401);
+  const body = await request.json().catch(() => null) as Record<string, unknown> | null;
+  if (!body || Object.keys(body).length !== 3 || typeof body.paymentId !== "string" || !isUuid(body.paymentId) || !["approve", "reject"].includes(String(body.decision)) || typeof body.reason !== "string") return jsonError("Payment, decision and reason are required.");
+  if (body.decision === "reject" && !rejectionReasons.has(body.reason)) return jsonError("Choose a supported rejection reason.");
+  const { data, error } = await getSupabaseAdmin().rpc("review_payment", { p_actor_user_id: actor.id, p_organization_id: actor.organizationId, p_property_id: actor.propertyId, p_payment_id: body.paymentId, p_decision: body.decision, p_reason: body.reason || null });
+  if (error) return jsonError(error.message ?? "Payment review did not complete.", error.code === "42501" ? 403 : 400);
+  return Response.json({ reviewed: true, review: data }, { headers: { "cache-control": "no-store" } });
 }

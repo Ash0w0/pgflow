@@ -2,7 +2,7 @@ import { requireOperator, jsonError } from "@/lib/http";
 import { createCanonicalDemoSeed } from "@/lib/template";
 
 export async function POST(request: Request) {
-  if (!requireOperator(request)) return jsonError("Platform operator authorization is required.", 403);
+  if (!await requireOperator(request)) return jsonError("Platform operator authorization is required.", 403);
   const seed = createCanonicalDemoSeed();
   return Response.json({
     reset: false,

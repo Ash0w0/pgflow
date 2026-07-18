@@ -15,6 +15,9 @@
 
 # next.js
 /.next/
+/.next-verify/
+/.next-verify-*/
+/.next-cache-backup-*/
 /.vinext/
 /out/
 
@@ -24,15 +27,20 @@
 
 # debug
 npm-debug.log*
+.dev-server*.log
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
+
+# Supabase CLI machine-specific link metadata
+/supabase/.temp/
 
 # typescript
 next-env.d.ts

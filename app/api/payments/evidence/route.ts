@@ -1,32 +1,20 @@
 import { isValidUtr, normalizeUtr } from "@/lib/domain";
-import { jsonError, requireActor } from "@/lib/http";
+import { isTrustedMutationRequest, jsonError, requireActor } from "@/lib/http";
+import { isUuid } from "@/lib/owner-invitations";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
-  const actor = requireActor(request, ["tenant", "owner", "manager", "accountant"]);
-  if (!actor) return jsonError("An authenticated PG session is required.", 401);
-  const payload = await request.json() as { invoiceId?: string; amount?: number; utr?: string; paidAt?: string; fileHash?: string };
-  if (!payload.invoiceId) return jsonError("Invoice is required.");
-  if (!Number.isFinite(payload.amount) || Number(payload.amount) <= 0) return jsonError("Amount must be greater than zero.");
-  if (!payload.utr || !isValidUtr(payload.utr)) return jsonError("A valid UTR or payment reference is required.");
-  if (!payload.paidAt || Number.isNaN(Date.parse(payload.paidAt))) return jsonError("A valid payment date is required.");
-  if (!payload.fileHash || !/^[a-f0-9]{64}$/i.test(payload.fileHash)) return jsonError("A SHA-256 screenshot evidence hash is required.");
-  const paidAt = new Date(payload.paidAt);
-  const dayDifference = Math.abs(Date.now() - paidAt.getTime()) / 86_400_000;
-  if (dayDifference > 90) return jsonError("Payment date must be within 90 days.");
-
-  return Response.json({
-    payment: {
-      id: `pay_${crypto.randomUUID()}`,
-      organizationId: actor.organizationId,
-      submittedBy: actor.id,
-      tenantId: actor.tenantId,
-      invoiceId: payload.invoiceId,
-      amount: Number(payload.amount),
-      utr: normalizeUtr(payload.utr),
-      state: "pending_review",
-      autoApproved: false,
-      persisted: false,
-      warnings: ["Contract preview only: connect the Supabase transaction service before accepting live evidence."],
-    },
-  }, { status: 202, headers: { "cache-control": "no-store" } });
+  if (!isTrustedMutationRequest(request)) return jsonError("Cross-origin payment submissions are not allowed.", 403);
+  const actor = await requireActor(request, ["tenant", "owner", "manager", "accountant"]);
+  if (!actor?.propertyId) return jsonError("An authenticated PG session is required.", 401);
+  const body = await request.json().catch(() => null) as Record<string, unknown> | null;
+  if (!body || Object.keys(body).length !== 8 || typeof body.invoiceId !== "string" || !isUuid(body.invoiceId) || !Number.isInteger(body.amount) || typeof body.utr !== "string" || typeof body.paidAt !== "string" || typeof body.objectKey !== "string" || typeof body.contentType !== "string" || typeof body.fileHash !== "string" || typeof body.note !== "string") return jsonError("Complete the payment evidence details.");
+  if (Number(body.amount) <= 0 || !isValidUtr(body.utr) || Number.isNaN(Date.parse(body.paidAt)) || !/^[a-f0-9]{64}$/.test(body.fileHash)) return jsonError("Payment evidence is invalid.");
+  const admin = getSupabaseAdmin();
+  const { data, error } = await admin.rpc("submit_upi_payment_evidence", { p_actor_user_id: actor.id, p_organization_id: actor.organizationId, p_property_id: actor.propertyId, p_invoice_id: body.invoiceId, p_amount: body.amount, p_reference: normalizeUtr(body.utr), p_paid_at: body.paidAt, p_object_key: body.objectKey, p_content_type: body.contentType, p_file_hash: body.fileHash, p_note: body.note.slice(0, 500) });
+  if (error) {
+    await admin.storage.from("payment-evidence").remove([body.objectKey]).catch(() => undefined);
+    return jsonError(error.code === "23505" ? "That UTR or screenshot was already submitted." : error.message ?? "Evidence could not be submitted.", error.code === "42501" ? 403 : error.code === "23505" ? 409 : 400);
+  }
+  return Response.json({ submitted: true, payment: data }, { status: 201, headers: { "cache-control": "no-store" } });
 }

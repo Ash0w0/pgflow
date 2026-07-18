@@ -1,18 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { demoBrand } from "@/lib/demo-data";
+import { useBrand } from "./brand-provider";
 
 export function BrandMark({ compact = false }: { compact?: boolean }) {
+  const brand = useBrand();
+  const initial = Array.from(brand.shortName.trim())[0]?.toUpperCase() ?? "P";
+  const descriptor = brand.mode === "demo"
+    ? "Demo House"
+    : brand.mode === "platform"
+      ? "Operations platform"
+      : "PG workspace";
+
   return (
-    <Link className="brand-mark" href="/" aria-label={`${demoBrand.name} dashboard`}>
+    <Link className="brand-mark" href="/" aria-label={brand.name + " dashboard"}>
       <span className="brand-symbol" aria-hidden="true">
-        <span>N</span>
+        <span>{initial}</span>
       </span>
       {!compact && (
         <span className="brand-copy">
-          <strong>{demoBrand.shortName}</strong>
-          <small>Demo House</small>
+          <strong>{brand.shortName}</strong>
+          <small>{descriptor}</small>
         </span>
       )}
     </Link>
@@ -20,9 +28,11 @@ export function BrandMark({ compact = false }: { compact?: boolean }) {
 }
 
 export function PoweredBy() {
+  const brand = useBrand();
+
   return (
     <span className="powered-by">
-      Powered by <strong>{demoBrand.platform}</strong>
+      Powered by <strong>{brand.platformName}</strong>
     </span>
   );
 }

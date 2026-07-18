@@ -1,6 +1,8 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ArrowRight, BarChart3, BedDouble, IndianRupee, Settings2, ShieldCheck, Sparkles, Users, Wrench } from "lucide-react";
+import { isDemoRuntime } from "@/lib/runtime";
 import { AppShell } from "./app-shell";
 import { StatusPill } from "./status-pill";
 
@@ -106,11 +108,11 @@ const workspaces: Record<string, Workspace> = {
   },
 };
 
-export function GenericSection({ title, description, label }: { title: string; description: string; label: string }) {
+export function GenericSection({ title, description, label, children }: { title: string; description: string; label: string; children?: ReactNode }) {
   const workspace = workspaces[title] ?? workspaces.Operations;
   const Icon = workspace.icon;
   return (
-    <AppShell>
+    <AppShell demoMode={isDemoRuntime()}>
       <div className="page-stack generic-page">
         <section className="page-heading">
           <div><div className="demo-kicker"><Sparkles size={14} /> Fictional demo environment</div><h1>{title}</h1><p>{description}</p></div>
@@ -129,6 +131,7 @@ export function GenericSection({ title, description, label }: { title: string; d
           </article>
           <aside className="panel workflow-panel"><span className="eyebrow">Control points</span><h2>How this workflow stays safe</h2><ol>{workspace.workflow.map((step, index) => <li key={step}><span>{index + 1}</span><p>{step}</p></li>)}</ol><Link className="text-button" href="/">Return to action centre <ArrowRight size={15} /></Link></aside>
         </section>
+        {children}
       </div>
     </AppShell>
   );
