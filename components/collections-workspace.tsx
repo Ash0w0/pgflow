@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Banknote, CalendarDays, CheckCircle2, CircleAlert, FileText, IndianRupee, QrCode, ShieldCheck, Sparkles, WalletCards, X } from "lucide-react";
+import { Banknote, CalendarDays, CheckCircle2, CircleAlert, Copy, FileText, IndianRupee, MessageCircle, QrCode, Share2, ShieldCheck, Sparkles, WalletCards, X } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import type { CollectionsData } from "@/lib/collections-types";
 import { AppShell } from "./app-shell";
@@ -33,6 +33,9 @@ export function CollectionsWorkspace({ data, canGenerate, canReview }: { data: C
   const [cashAmount, setCashAmount] = useState(String(selectedCashInvoice ? selectedCashInvoice.totalAmount - selectedCashInvoice.paidAmount : ""));
   const [cashNote, setCashNote] = useState("");
   const [rejectionReason, setRejectionReason] = useState("more_information_needed");
+  const [sharingInvoiceId, setSharingInvoiceId] = useState<string | null>(null);
+  const [shareData, setShareData] = useState<null | { url: string; expiresAt: string; invoiceNumber: string; residentName: string; residentPhone: string; amount: number }>(null);
+  const [shareCopied, setShareCopied] = useState(false);
 
   async function generateInvoices() {
     if (!confirmed || submitting || data.totals.readyToGenerateCount === 0) return;
@@ -84,6 +87,49 @@ export function CollectionsWorkspace({ data, canGenerate, canReview }: { data: C
       setSuccess(decision==="approve"?"Payment approved, allocated and receipted.":"Payment rejected with a recorded reason."); router.refresh();
     } catch(caught){setError(caught instanceof Error?caught.message:"Review did not complete.");} finally{setSubmitting(false);}
   }
+
+  async function createPaymentLink(invoice: CollectionsData["invoices"][number]) {
+    if (submitting || !data.upiConfigured) return;
+    setSubmitting(true);
+    setSharingInvoiceId(invoice.id);
+    setError(null);
+    setSuccess(null);
+    try {
+      const response = await fetch("/api/payment-requests", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ invoiceId: invoice.id }),
+      });
+      const result: unknown = await response.json().catch(() => null);
+      if (!response.ok || !isRecord(result) || typeof result.url !== "string" || typeof result.expiresAt !== "string") {
+        throw new Error(isRecord(result) && typeof result.error === "string"
+          ? result.error
+          : "The secure payment link could not be created.");
+      }
+      setShareData({
+        url: result.url,
+        expiresAt: result.expiresAt,
+        invoiceNumber: invoice.number,
+        residentName: invoice.residentName,
+        residentPhone: invoice.residentPhone,
+        amount: invoice.totalAmount - invoice.paidAmount,
+      });
+      setShareCopied(false);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "The secure payment link could not be created.");
+    } finally {
+      setSubmitting(false);
+      setSharingInvoiceId(null);
+    }
+  }
+
+  const whatsappPhone = shareData
+    ? (() => { const digits = shareData.residentPhone.replace(/\D/g, ""); return digits.length === 10 ? `91${digits}` : digits; })()
+    : "";
+  const whatsappMessage = shareData
+    ? `Hi ${shareData.residentName}, your ${shareData.invoiceNumber} rent balance is ${currency.format(shareData.amount)}. Pay the PG directly by UPI and submit the UTR/screenshot here: ${shareData.url}\n\nThis secure link expires ${new Date(shareData.expiresAt).toLocaleString("en-IN")}. Payment is confirmed only after the PG verifies its bank account.`
+    : "";
 
   return (
     <AppShell demoMode={false}>
@@ -160,7 +206,7 @@ export function CollectionsWorkspace({ data, canGenerate, canReview }: { data: C
                     <td className="amount-clear">{currency.format(invoice.paidAmount)}</td>
                     <td className={invoice.totalAmount > invoice.paidAmount ? "amount-due" : "amount-clear"}><strong>{currency.format(invoice.totalAmount - invoice.paidAmount)}</strong></td>
                     <td><span className={`invoice-state ${invoice.state}`}>{invoice.state.replace("_", " ")}</span></td>
-                    <td><div className="invoice-actions">{["issued","partially_paid","overdue"].includes(invoice.state)&&<><Link className={`resident-manage-button ${data.upiConfigured?"":"disabled"}`} aria-disabled={!data.upiConfigured} href={data.upiConfigured?`/pay/${invoice.id}`:"/settings"}><QrCode size={14}/>{data.upiConfigured?"UPI":"Set up UPI"}</Link><button className="resident-manage-button" type="button" onClick={()=>{setCashInvoiceId(invoice.id);setCashAmount(String(invoice.totalAmount-invoice.paidAmount));setCashOpen(true);}}><Banknote size={14}/>Cash</button></>}</div></td>
+                    <td><div className="invoice-actions">{["issued","partially_paid","overdue"].includes(invoice.state)&&<><Link className={`resident-manage-button ${data.upiConfigured?"":"disabled"}`} aria-disabled={!data.upiConfigured} href={data.upiConfigured?`/pay/${invoice.id}`:"/settings"}><QrCode size={14}/>{data.upiConfigured?"Preview UPI":"Set up UPI"}</Link>{data.upiConfigured&&<button className="resident-manage-button" type="button" disabled={submitting} onClick={()=>createPaymentLink(invoice)}><Share2 size={14}/>{sharingInvoiceId===invoice.id?"Creating…":"Share"}</button>}<button className="resident-manage-button" type="button" onClick={()=>{setCashInvoiceId(invoice.id);setCashAmount(String(invoice.totalAmount-invoice.paidAmount));setCashOpen(true);}}><Banknote size={14}/>Cash</button></>}</div></td>
                   </tr>
                 ))}</tbody>
               </table>
@@ -173,6 +219,7 @@ export function CollectionsWorkspace({ data, canGenerate, canReview }: { data: C
           {data.pendingPayments.length===0?<div className="collections-empty"><ShieldCheck size={25}/><div><strong>Nothing waiting for review</strong><p>Submitted UPI evidence and approval-required cash will appear here.</p></div></div>:<div className="table-wrap"><table className="data-table"><thead><tr><th>Resident</th><th>Method</th><th>Reference</th><th>Amount</th><th>Actions</th></tr></thead><tbody>{data.pendingPayments.map(payment=><tr key={payment.id}><td><strong>{payment.residentName}</strong></td><td>{payment.method.toUpperCase()}</td><td>{payment.reference}</td><td><strong>{currency.format(payment.amount)}</strong></td><td><div className="payment-review-actions"><select aria-label={`Rejection reason for ${payment.residentName}`} value={rejectionReason} onChange={e=>setRejectionReason(e.target.value)} disabled={!canReview||submitting}><option value="more_information_needed">More information needed</option><option value="amount_not_received">Amount not received</option><option value="incorrect_amount">Incorrect amount</option><option value="duplicate_utr">Duplicate UTR</option><option value="invalid_screenshot">Invalid screenshot</option><option value="wrong_account">Wrong account</option></select><div className="invoice-actions"><button type="button" className="resident-manage-button" disabled={!canReview||submitting} onClick={()=>reviewPayment(payment.id,"approve")}>Approve</button><button type="button" className="resident-manage-button danger" disabled={!canReview||submitting} onClick={()=>reviewPayment(payment.id,"reject")}>Reject</button></div></div></td></tr>)}</tbody></table></div>}
         </section>
       </div>
+      {shareData&&<div className="setup-dialog-backdrop" role="presentation" onMouseDown={event=>event.target===event.currentTarget&&setShareData(null)}><section className="setup-dialog cash-dialog" role="dialog" aria-modal="true" aria-labelledby="payment-share-title"><header><div><span className="eyebrow">Seven-day secure link</span><h2 id="payment-share-title">Share {shareData.invoiceNumber}</h2><p>The resident can pay and submit proof without an OTP or PGFlow account.</p></div><button autoFocus className="icon-button" type="button" onClick={()=>setShareData(null)} aria-label="Close payment-link sharing"><X size={19}/></button></header><div className="modal-form"><div className="password-security-note"><ShieldCheck size={17}/><span>This link shows only {shareData.residentName}’s selected invoice. Creating another link will replace it.</span></div><label>Secure payment link<input value={shareData.url} readOnly onFocus={event=>event.currentTarget.select()}/></label><button className="button button-secondary button-full" type="button" onClick={async()=>{try{await navigator.clipboard.writeText(shareData.url);setShareCopied(true);}catch{setError("The browser could not copy the link. Select it manually instead.");}}}><Copy size={17}/>{shareCopied?"Link copied":"Copy secure link"}</button><a className="button button-primary button-full" href={`https://wa.me/${whatsappPhone}?text=${encodeURIComponent(whatsappMessage)}`} target="_blank" rel="noreferrer"><MessageCircle size={17}/>Open WhatsApp draft</a><small>PGFlow opens a draft only. Review the phone number and message before pressing Send.</small></div></section></div>}
       {cashOpen&&<div className="setup-dialog-backdrop" role="presentation" onMouseDown={e=>e.target===e.currentTarget&&!submitting&&setCashOpen(false)}><section className="setup-dialog cash-dialog" role="dialog" aria-modal="true" aria-labelledby="cash-dialog-title"><header><div><span className="eyebrow">Staff-collected payment</span><h2 id="cash-dialog-title">Record cash</h2></div><button className="icon-button" type="button" onClick={()=>setCashOpen(false)} disabled={submitting} aria-label="Close cash form"><X size={19}/></button></header><form className="modal-form" onSubmit={recordCash}><label>Invoice<select value={cashInvoiceId} onChange={e=>{setCashInvoiceId(e.target.value);const invoice=payableInvoices.find(x=>x.id===e.target.value);setCashAmount(String(invoice?invoice.totalAmount-invoice.paidAmount:""));}}>{payableInvoices.map(invoice=><option value={invoice.id} key={invoice.id}>{invoice.number} · {invoice.residentName}</option>)}</select></label><label>Amount received<input type="number" min="1" max={selectedCashInvoice?selectedCashInvoice.totalAmount-selectedCashInvoice.paidAmount:10000000} value={cashAmount} onChange={e=>setCashAmount(e.target.value)} required/></label><label>Collection note<input value={cashNote} onChange={e=>setCashNote(e.target.value)} maxLength={500} placeholder="Received at front desk"/></label><div className="password-security-note"><ShieldCheck size={17}/><span>Your staff account will be permanently recorded as the receiving person.</span></div><button className="button button-primary button-full" type="submit" disabled={submitting}>{submitting?"Recording safely…":"Record cash payment"}</button></form></section></div>}
     </AppShell>
   );

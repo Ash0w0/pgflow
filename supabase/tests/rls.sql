@@ -2,7 +2,7 @@
 -- every fixture and exercises policies as real authenticated JWT subjects.
 
 begin;
-select plan(84);
+select plan(89);
 
 select has_function('public', 'current_organization_ids', array[]::text[], 'RLS organization helper exists');
 select ok(not has_table_privilege('anon', 'public.organizations', 'select'), 'anonymous users cannot read organizations');
@@ -10,6 +10,16 @@ select ok(not has_table_privilege('authenticated', 'public.platform_operators', 
 select ok(not has_table_privilege('authenticated', 'public.memberships', 'update'), 'clients cannot directly change roles');
 select ok(not has_table_privilege('authenticated', 'public.brand_themes', 'update'), 'clients cannot directly change branding');
 select ok(not has_table_privilege('authenticated', 'public.rooms', 'update'), 'clients cannot directly change room records');
+select has_table('public', 'invoice_payment_requests', 'secure invoice payment-request table exists');
+select has_function('public', 'enforce_payment_request_upi_configuration', array[]::text[], 'payment links require property UPI configuration');
+select ok(not has_table_privilege('anon', 'public.invoice_payment_requests', 'select'), 'anonymous users cannot enumerate payment links');
+select ok(not has_table_privilege('authenticated', 'public.invoice_payment_requests', 'insert'), 'staff cannot directly create payment-link rows');
+select ok(
+  not has_function_privilege('anon', 'public.submit_public_upi_payment_evidence(text,uuid,bigint,text,timestamptz,text,text,text,text)', 'execute')
+  and not has_function_privilege('authenticated', 'public.submit_public_upi_payment_evidence(text,uuid,bigint,text,timestamptz,text,text,text,text)', 'execute')
+  and has_function_privilege('service_role', 'public.submit_public_upi_payment_evidence(text,uuid,bigint,text,timestamptz,text,text,text,text)', 'execute'),
+  'only the trusted server can submit evidence through a public payment link'
+);
 select is(
   (
     select count(*)

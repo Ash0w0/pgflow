@@ -9,7 +9,7 @@ export async function getCollectionsData(organizationId: string, propertyId: str
   const period = currentIndiaBillingPeriod();
   const [propertyResult, tenantsResult, occupanciesResult, bedsResult, roomsResult, invoicesResult, paymentsResult] = await Promise.all([
     admin.from("properties").select("rent_due_day,upi_id,upi_payee_name").eq("organization_id", organizationId).eq("id", propertyId).single(),
-    admin.from("tenant_profiles").select("id,full_name,state").eq("organization_id", organizationId).eq("property_id", propertyId).limit(250),
+    admin.from("tenant_profiles").select("id,full_name,phone,state").eq("organization_id", organizationId).eq("property_id", propertyId).limit(250),
     admin.from("occupancies").select("tenant_id,bed_id,move_in_date,monthly_rent,state").eq("organization_id", organizationId).eq("property_id", propertyId).in("state", ["active", "notice"]).limit(250),
     admin.from("beds").select("id,room_id,label").eq("organization_id", organizationId).eq("property_id", propertyId).limit(500),
     admin.from("rooms").select("id,code").eq("organization_id", organizationId).eq("property_id", propertyId).limit(250),
@@ -54,6 +54,7 @@ export async function getCollectionsData(organizationId: string, propertyId: str
     return [{
       id: invoice.id,
       residentName: tenant.full_name,
+      residentPhone: tenant.phone,
       roomLabel: roomByTenant.get(tenant.id) ?? "Previous occupancy",
       period: invoice.period,
       number: invoice.number,

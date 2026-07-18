@@ -9,6 +9,7 @@ export type BillingPreviewRow = {
 export type CollectionInvoiceRow = {
   id: string;
   residentName: string;
+  residentPhone: string;
   roomLabel: string;
   period: string;
   number: string;

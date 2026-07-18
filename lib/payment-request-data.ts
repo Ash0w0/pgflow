@@ -1,5 +1,6 @@
 import "server-only";
 import { createUpiUri } from "./domain";
+import { resolvePaymentLink } from "./payment-links";
 import { getSupabaseAdmin } from "./supabase/admin";
 
 export type LivePaymentRequest = { invoiceId:string; invoiceNumber:string; pgName:string; residentName:string; period:string; amount:number; upiId:string; payeeName:string; reference:string; upiUri:string; uploadedQrUrl:string|null };
@@ -20,4 +21,10 @@ export async function getPaymentRequestData(organizationId:string, propertyId:st
   const upiUri=createUpiUri({upiId:property.data.upi_id,payeeName:property.data.upi_payee_name,amount,reference});
   let uploadedQrUrl:string|null=null;if(property.data.upi_qr_object_key){const signed=await admin.storage.from("upi-qr-assets").createSignedUrl(property.data.upi_qr_object_key,900);if(!signed.error)uploadedQrUrl=signed.data.signedUrl;}
   return{invoiceId:invoice.data.id,invoiceNumber:invoice.data.number,pgName:org.data.name,residentName:tenant.data.full_name,period:invoice.data.period,amount,upiId:property.data.upi_id,payeeName:property.data.upi_payee_name,reference,upiUri,uploadedQrUrl};
+}
+
+export async function getPublicPaymentRequestData(invoiceId: string, token: string): Promise<LivePaymentRequest | null> {
+  const context = await resolvePaymentLink(token, invoiceId, { recordOpen: true });
+  if (!context) return null;
+  return getPaymentRequestData(context.organizationId, context.propertyId, context.invoiceId);
 }

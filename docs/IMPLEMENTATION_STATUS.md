@@ -35,14 +35,17 @@
 - Creating or regenerating temporary owner credentials requires the signed-in platform operator to re-enter their current password.
 - Active owners can change their password by confirming the current password; successful changes revoke existing sessions and write a secret-free audit event.
 - Lost-password recovery is manual and OTP-free: an operator confirms the owner, re-enters the operator password, and shares a short-lived one-time credential. Recovery is bound to one request/password intent, clears the credential hash on completion, and revokes prior sessions.
+- Live room/floor/bed setup, resident onboarding and correction, monthly rent generation, invoice registers, and opening-balance handling are organization-qualified and database-backed.
+- Direct UPI configuration, optional owner-uploaded private QR, staff-recorded cash, payment-proof uploads, manual review, immutable allocations, numbered receipts, and audited reversals are database-backed. No payment evidence is auto-approved.
+- Staff can create a seven-day, invoice-scoped payment link and open a prefilled WhatsApp draft for the resident. Only the SHA-256 token hash is stored; older active links are revoked, used links close after proof submission, and the public page exposes only its bound invoice.
 
 ## Scaffolded but not live
 
 - Optional authenticator-app MFA and broader recent re-authentication for other future sensitive settings.
 - Existing-account linking is deferred: a phone already present in Supabase Auth cannot yet be attached to another PG or reused from the platform-operator identity.
 - Prefilled WhatsApp sharing is convenient but places the temporary credential in a `wa.me` URL; replace it with Web Share or controlled copy/paste before a public rollout if browser-history exposure is unacceptable.
-- Full operational persistence beyond authentication, hostname, and private-upload foundations.
-- Immutable ledger transactions, allocation, receipts, reversals, and deposit settlement.
+- Deposit collection/refund settlement and downloadable receipt documents.
+- Tenant account provisioning and the complete live tenant PWA beyond secure invoice payment links.
 - Import staging/validation, job advancement/retry, and complete resumable provisioning beyond the blank-shell and manual-owner-activation transactions.
 - Uploaded logo/PWA assets, receipts, and custom-domain operations beyond the working hostname-branding boundary.
 - WhatsApp number connection, durable webhook ingestion, templates, reminders, and owner digests.
@@ -55,7 +58,7 @@ API endpoints in unfinished areas either return a contract preview or fail close
 1. Run the pgTAP suite against local/staging Supabase and extend it for every new table and RPC.
 2. Run controlled end-to-end activation, password-change, and lost-password recovery exercises with an approved staging phone; no real owner credential should be used for the first rehearsal.
 3. Add the remaining organization-qualified schema and trusted transaction services.
-4. Connect the complete payment vertical slice and prove immutable state transitions.
+4. Complete receipt downloads, deposit settlement, payment-link expiry cleanup, and a controlled end-to-end payment rehearsal.
 5. Persist and deduplicate WhatsApp events before acknowledging a real Meta number.
 6. Run accessibility, legal/privacy, backup/restore, load, and timed-provisioning acceptance gates.
 

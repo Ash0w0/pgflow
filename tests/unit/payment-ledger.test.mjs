@@ -31,7 +31,7 @@ test("UPI destination requires owner password and payment proof never auto-appro
   const [settings,card,payment,upload]=await Promise.all([
     readFile(new URL("app/api/settings/upi/route.ts",root),"utf8"),readFile(new URL("components/upi-settings-card.tsx",root),"utf8"),readFile(new URL("components/payment-request.tsx",root),"utf8"),readFile(new URL("app/api/uploads/payment-evidence/route.ts",root),"utf8")]);
   assert.match(settings,/requireActor\(request, \["owner"\]\)/);assert.match(settings,/verifyOwnerPassword/);assert.match(settings,/consumeAuthenticationLimits/);assert.match(card,/autoComplete="current-password"/);assert.doesNotMatch(card,/localStorage|sessionStorage/);
-  assert.match(payment,/QRCode\.toDataURL\(data\.upiUri/);assert.match(payment,/Submit proof for review/);assert.match(payment,/invoice is still unpaid until approval/i);assert.match(upload,/invoice\.tenant_id !== actor\.tenantId/);
+  assert.match(payment,/QRCode\.toDataURL\(data\.upiUri/);assert.match(payment,/Submit proof for review/);assert.match(payment,/invoice is still unpaid until approval/i);assert.match(upload,/tenantMatches/);assert.match(upload,/resolvePaymentLink\(token, invoiceId\)/);
 });
 
 test("owner-uploaded UPI QR is optional, private, tenant-scoped, and secondary to the exact invoice QR",async()=>{
@@ -40,5 +40,5 @@ test("owner-uploaded UPI QR is optional, private, tenant-scoped, and secondary t
   assert.match(sql,/upi_qr_object_key/);assert.match(sql,/upi-qr-assets/);assert.match(sql,/public false|public,file_size_limit/i);assert.match(sql,/has_storage_org_membership\(name,array\['owner'\]/i);assert.match(sql,/organizations\/[^']*upi-qr/i);
   assert.match(upload,/requireActor\(request,\["owner"\]\)/);assert.match(upload,/MAX_BYTES=2\*1024\*1024/);assert.match(upload,/matchesMagic/);assert.match(upload,/storage\.from\("upi-qr-assets"\)\.upload/);
   assert.match(settings,/verifyOwnerPassword/);assert.match(settings,/p_qr_object_key/);assert.match(settings,/storage\.from\("upi-qr-assets"\)\.remove/);assert.match(card,/Existing UPI QR/);assert.match(card,/type="file"/);
-  assert.match(data,/createSignedUrl/);assert.match(payment,/Recommended · exact invoice QR/);assert.match(payment,/owner-uploaded UPI QR/);assert.match(payment,/may not prefill the invoice amount/i);
+  assert.match(data,/createSignedUrl/);assert.match(payment,/Recommended .* exact invoice QR/);assert.match(payment,/owner-uploaded UPI QR/);assert.match(payment,/may not prefill the invoice amount/i);
 });

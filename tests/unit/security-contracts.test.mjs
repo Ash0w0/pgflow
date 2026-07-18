@@ -20,7 +20,7 @@ test("payment demo emits no UPI scheme while live UPI comes from authorized serv
   ]);
   assert.doesNotMatch(source, /upi:\/\/pay/i);
   assert.doesNotMatch(source, /demo\.nivasa@upi/i);
-  assert.match(source, /if\(!data\)return/);
+  assert.match(source, /if\s*\(!data\)\s*\{[\s\S]*?return\s*\(/);
   assert.match(source, /fictional demo never emits a real UPI destination/i);
   assert.match(source, /QRCode\.toDataURL\(data\.upiUri/);
   assert.match(page, /requireStaffPage\(\["owner","manager","accountant"\]\)/);
