@@ -29,6 +29,10 @@ test("payment-link API derives tenancy from staff and returns only the one-time 
   assert.match(route, /p_property_id: actor\.propertyId/);
   assert.match(route, /7 \* 24 \* 60 \* 60 \* 1000/);
   assert.match(route, /paymentUrl\.searchParams\.set\("token", token\)/);
+  assert.match(route, /requestHostname\(request\)/);
+  assert.match(route, /request\.headers\.get\("origin"\)/);
+  assert.match(route, /verifiedPaymentOrigin\(request\)/);
+  assert.doesNotMatch(route, /new URL\(`\/pay\/\$\{body\.invoiceId\}`, request\.url\)/);
   assert.match(service, /randomBytes\(32\)\.toString\("base64url"\)/);
   assert.match(service, /createHash\("sha256"\)/);
   assert.doesNotMatch(service, /localStorage|sessionStorage/);
