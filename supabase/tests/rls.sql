@@ -1353,7 +1353,7 @@ select ok(
       select (first_result->>'organizationId')::uuid from provisioning_test_results
     )
       and audit_event.action = 'owner_activation.completed'
-      and audit_event.actor_id = reset_result->>'activationAuthUserId'
+      and audit_event.actor_id = (reset_result->>'activationAuthUserId')::uuid
       and audit_event.after_data->>'activationRequestId' = activation_request_id::text
       and audit_event.after_data->>'membershipState' = 'active'
       and audit_event.after_data->>'ownerAccountStep' = 'passed'
