@@ -1,5 +1,7 @@
 # PGFlow template
 
+> Continuing in Cursor? Start with [`docs/CURSOR_HANDOFF.md`](docs/CURSOR_HANDOFF.md) for the current branch, deployment state, locked decisions, active CI failure, and exact next task.
+
 PGFlow is a reusable, white-label, WhatsApp-first PG-management product template. It supports only direct UPI and staff-recorded cash—never Razorpay or another payment gateway.
 
 The repository has two deliberately separate runtimes:
