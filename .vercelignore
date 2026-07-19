@@ -9,7 +9,6 @@ node_modules/
 supabase/.temp/
 coverage/
 dist/
-build/
 .vinext/
 .wrangler/
 worker/
