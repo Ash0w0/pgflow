@@ -49,3 +49,6 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
+.vercel
+.env*
+!.env.example
