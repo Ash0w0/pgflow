@@ -8,7 +8,7 @@ export type PublicBrand = {
   demoMode: boolean;
 };
 
-const approvedHosts: Record<string, PublicBrand> = {
+const approvedDemoHosts: Record<string, PublicBrand> = {
   localhost: { organizationId: "org_demo_nivasa", name: "Nivasa Demo House", shortName: "Nivasa", primary: "#123d32", accent: "#d7ff86", startUrl: "/tenant", demoMode: true },
   "demo.pgflow.app": { organizationId: "org_demo_nivasa", name: "Nivasa Demo House", shortName: "Nivasa", primary: "#123d32", accent: "#d7ff86", startUrl: "/tenant", demoMode: true },
   "iris.pgflow.app": { organizationId: "org_synth_20", name: "Iris Residence Preview", shortName: "Iris", primary: "#5b43d6", accent: "#efeaff", startUrl: "/tenant", demoMode: true },
@@ -21,9 +21,9 @@ export function normalizeHostname(value: string | null) {
 
 export function resolveApprovedBrand(hostHeader: string | null) {
   const hostname = normalizeHostname(hostHeader);
-  return approvedHosts[hostname] ?? approvedHosts.localhost;
+  return approvedDemoHosts[hostname] ?? null;
 }
 
 export function isApprovedHostname(hostHeader: string | null) {
-  return normalizeHostname(hostHeader) in approvedHosts;
+  return normalizeHostname(hostHeader) in approvedDemoHosts;
 }

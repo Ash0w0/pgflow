@@ -6,25 +6,34 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "dev": "cross-env WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext dev",
-    "build": "cross-env WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext build",
-    "start": "cross-env WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
-    "test": "node --test tests/unit/*.test.mjs",
+    "dev": "next dev",
+    "build": "next build",
+    "build:verify": "cross-env PGFLOW_NEXT_DIST_DIR=.next-verify next build",
+    "start": "next start",
+    "demo:dev": "cross-env PGFLOW_RUNTIME=demo WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext dev",
+    "demo:build": "cross-env PGFLOW_RUNTIME=demo WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext build",
+    "demo:start": "cross-env PGFLOW_RUNTIME=demo WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
+    "test": "node --experimental-strip-types --test tests/unit/*.test.mjs",
     "test:rendered": "node --test tests/rendered-html.test.mjs",
-    "test:full": "npm run build && npm test && npm run test:rendered",
+    "test:full": "npm run build && npm test",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
+    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern .next-verify --ignore-pattern .next-verify-* --ignore-pattern .next-cache-backup-* --ignore-pattern .vercel",
     "db:generate": "drizzle-kit generate",
-    "check": "npm run typecheck && npm run lint && npm run test:full"
+    "operator:bootstrap": "node scripts/bootstrap-platform-operator.mjs",
+    "check": "npm run typecheck && npm run lint && npm run test:full",
+    "check:demo": "npm run demo:build && npm run test"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.3",
+    "@supabase/supabase-js": "^2.110.7",
     "drizzle-orm": "0.45.2",
     "lucide-react": "^1.25.0",
     "motion": "^12.42.2",
-    "next": "16.2.6",
+    "next": "^16.2.10",
     "qrcode": "^1.5.4",
     "react": "19.2.6",
-    "react-dom": "19.2.6"
+    "react-dom": "19.2.6",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.45.1",
@@ -39,7 +48,7 @@
     "cross-env": "^10.1.0",
     "drizzle-kit": "0.31.10",
     "eslint": "9.39.4",
-    "eslint-config-next": "16.2.6",
+    "eslint-config-next": "^16.2.10",
     "magic-string": "^0.30.19",
     "react-server-dom-webpack": "19.2.6",
     "tailwindcss": "4.2.1",
@@ -49,6 +58,11 @@
     "vite-plugin-commonjs": "^0.10.3",
     "vite-plugin-dynamic-import": "^1.5.0",
     "wrangler": "^4.112.0"
+  },
+  "overrides": {
+    "next": {
+      "postcss": "8.5.10"
+    }
   },
   "type": "module"
 }

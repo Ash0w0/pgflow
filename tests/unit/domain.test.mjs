@@ -11,6 +11,8 @@ import {
 } from "../../lib/domain.ts";
 import { BLANK_TEMPLATE, createCanonicalDemoSeed } from "../../lib/template.ts";
 import { isApprovedHostname, resolveApprovedBrand } from "../../lib/branding.ts";
+import { createTemporaryPassword } from "../../lib/owner-invitations.ts";
+import { isStrongOwnerPassword } from "../../lib/passwords.ts";
 
 test("normalizes and validates payment references", () => {
   assert.equal(normalizeUtr(" demo 4829-1073 "), "DEMO4829-1073");
@@ -61,7 +63,16 @@ test("keeps the blank template empty and demo seed canonical", () => {
 
 test("resolves branding only from an approved hostname map", () => {
   assert.equal(resolveApprovedBrand("iris.pgflow.app").shortName, "Iris");
-  assert.equal(resolveApprovedBrand("unknown.example").organizationId, "org_demo_nivasa");
+  assert.equal(resolveApprovedBrand("unknown.example"), null);
   assert.equal(isApprovedHostname("unknown.example"), false);
   assert.equal(isApprovedHostname("DEMO.PGFLOW.APP:443"), true);
+});
+
+test("generates strong one-time owner passwords", () => {
+  const passwords = Array.from({ length: 32 }, () => createTemporaryPassword());
+  assert.equal(new Set(passwords).size, passwords.length);
+  assert.ok(passwords.every((password) => password.length === 20));
+  assert.ok(passwords.every(isStrongOwnerPassword));
+  assert.equal(isStrongOwnerPassword("onlylowercase123!"), false);
+  assert.equal(isStrongOwnerPassword("Short1!"), false);
 });

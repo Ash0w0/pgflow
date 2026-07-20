@@ -1,0 +1,16 @@
+node_modules/
+.next/
+.next-*/
+.git/
+.vercel/
+.env
+.env.*
+!.env.example
+supabase/.temp/
+coverage/
+dist/
+.vinext/
+.wrangler/
+worker/
+*.log
+*.tsbuildinfo

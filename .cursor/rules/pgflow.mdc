@@ -1,0 +1,20 @@
+---
+description: PGFlow product, security, and collaboration guardrails
+alwaysApply: true
+---
+
+# PGFlow guardrails
+
+Read `docs/CURSOR_HANDOFF.md`, `docs/IMPLEMENTATION_STATUS.md`, and `docs/PRODUCTION_SETUP.md` before changing this repository.
+
+- Explain the exact action and impact before doing it; the user is new to development.
+- Keep one multi-tenant template; never create PG-specific code forks.
+- Payments are direct UPI and staff-recorded cash only. Never add Razorpay, gateways, cards, bank scraping, screenshot auto-verification, or automatic approval.
+- Authentication uses an operator-issued temporary password followed by the owner's private password. Do not add Twilio or paid SMS OTP unless the user explicitly changes this decision.
+- Never commit or print secrets, passwords, raw payment tokens, real tenant data, UTRs, screenshots, or `.env.local`.
+- Keep service-role access server-only and preserve fail-closed hostname, membership, RLS, Storage, and trusted-RPC boundaries.
+- Do not weaken security tests to obtain a green build; fix the underlying contract.
+- Financial corrections use audited reversals, never deletion.
+- Keep PR 1 draft and do not deploy until all application, database-security, and Vercel checks pass.
+- Immediate task: the forward-only owner-recovery phone-normalization migration in `docs/CURSOR_HANDOFF.md`.
+

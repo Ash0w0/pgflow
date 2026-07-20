@@ -1,7 +1,7 @@
 import { jsonError, requireActor } from "@/lib/http";
 
 export async function POST(request: Request) {
-  const actor = requireActor(request, ["owner", "accountant"]);
+  const actor = await requireActor(request, ["owner", "accountant"]);
   if (!actor) return jsonError("Owner or accountant access is required.", 401);
   const body = await request.json() as { paymentId?: string; reason?: string };
   if (!body.paymentId || !body.reason?.trim()) return jsonError("Payment and reversal reason are required.");

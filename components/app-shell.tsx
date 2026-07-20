@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import {
   Bell,
@@ -41,11 +41,14 @@ const demoNav = [
   { href: "/presentation", label: "Sales view", icon: MessageSquareText },
 ];
 
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({ children, demoMode }: { children: ReactNode; demoMode: boolean }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [compact, setCompact] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 900px)");
@@ -66,6 +69,23 @@ export function AppShell({ children }: { children: ReactNode }) {
       window.removeEventListener("keydown", closeOnEscape);
     };
   }, [mobileOpen]);
+
+  async function signOut() {
+    if (signingOut) return;
+
+    setSigningOut(true);
+    setSignOutError(null);
+
+    try {
+      const response = await fetch("/api/auth/sign-out", { method: "POST" });
+      if (!response.ok) throw new Error("Sign-out failed");
+      router.replace("/login");
+      router.refresh();
+    } catch {
+      setSignOutError("Unable to sign out. Please try again.");
+      setSigningOut(false);
+    }
+  }
 
   return (
     <div className={`app-shell ${compact ? "sidebar-compact" : ""}`}>
@@ -110,22 +130,26 @@ export function AppShell({ children }: { children: ReactNode }) {
             );
           })}
 
-          <span className="nav-kicker nav-kicker-spaced">Explore demo</span>
-          {demoNav.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                className={`nav-item ${pathname.startsWith(item.href) ? "active" : ""}`}
-                href={item.href}
-                onClick={() => setMobileOpen(false)}
-                aria-current={pathname.startsWith(item.href) ? "page" : undefined}
-              >
-                <Icon size={18} strokeWidth={1.9} />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
+          {demoMode && (
+            <>
+              <span className="nav-kicker nav-kicker-spaced">Explore demo</span>
+              {demoNav.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    className={`nav-item ${pathname.startsWith(item.href) ? "active" : ""}`}
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    aria-current={pathname.startsWith(item.href) ? "page" : undefined}
+                  >
+                    <Icon size={18} strokeWidth={1.9} />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </>
+          )}
         </nav>
 
         <div className="sidebar-foot">
@@ -133,10 +157,18 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Settings size={18} />
             <span>Settings</span>
           </Link>
-          <Link className="nav-item" href="/login">
-            <LogOut size={18} />
-            <span>Sign out</span>
-          </Link>
+          {demoMode ? (
+            <Link className="nav-item" href="/login">
+              <LogOut size={18} />
+              <span>Sign out</span>
+            </Link>
+          ) : (
+            <button className="nav-item nav-item-button" type="button" onClick={signOut} disabled={signingOut}>
+              <LogOut size={18} />
+              <span>{signingOut ? "Signing out…" : "Sign out"}</span>
+            </button>
+          )}
+          {signOutError && <p className="sidebar-auth-error" role="alert">{signOutError}</p>}
           {!compact && <PoweredBy />}
         </div>
       </aside>
