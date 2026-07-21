@@ -166,7 +166,7 @@ export function RoomSetupWorkspace({ data, demoMode }: { data: RoomSetupData; de
 
         <div className="setup-safety-strip">
           <ShieldCheck size={17} />
-          <span><strong>Organization isolated.</strong> Every floor, room and bed is saved only inside this PG and every creation is audited.</span>
+          <span><strong>Organization isolated.</strong> All records are scoped to this property and audited.</span>
         </div>
 
         {success && <div className="setup-feedback success" role="status"><CheckCircle2 size={17} />{success}</div>}

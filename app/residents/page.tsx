@@ -7,7 +7,7 @@ import { isDemoRuntime } from "@/lib/runtime";
 export default async function Page() {
   const authorization = await requireStaffPage(["owner"]);
   if (authorization.mode === "demo") {
-    return <GenericSection title="Residents" description="Tenant profiles, occupancy, documents and financial opening balances in one secure register." label="resident" />;
+    return <GenericSection title="Residents" description="Profiles, occupancy and opening balances." label="resident" />;
   }
   if (!authorization.actor.propertyId) throw new Error("The owner is not assigned to a property.");
   const data = await getResidentSetupData(authorization.actor.organizationId, authorization.actor.propertyId);

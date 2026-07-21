@@ -221,10 +221,9 @@ export function ResidentSetupWorkspace({ data, demoMode }: { data: ResidentSetup
     <AppShell demoMode={demoMode}>
       <div className="page-stack resident-setup-page">
         <section className="page-heading resident-setup-heading">
-          <div>
-            <div className="demo-kicker"><Sparkles size={14} /> Resident operations</div>
+            <div className="demo-kicker"><Sparkles size={14} /> Residents</div>
             <h1>Residents</h1>
-            <p>Onboard residents, assign verified vacant beds and preserve their opening financial position.</p>
+            <p>Onboard residents, assign beds, and set opening balances.</p>
           </div>
           <button
             className="button button-primary"
@@ -239,7 +238,7 @@ export function ResidentSetupWorkspace({ data, demoMode }: { data: ResidentSetup
 
         <div className="setup-safety-strip">
           <ShieldCheck size={17} />
-          <span><strong>One resident, one active bed.</strong> Assignment and financial opening records are committed together and fully audited.</span>
+          <span><strong>One resident, one active bed.</strong> Records are audited.</span>
         </div>
 
         {success && <div className="setup-feedback success" role="status"><CheckCircle2 size={17} />{success}</div>}
