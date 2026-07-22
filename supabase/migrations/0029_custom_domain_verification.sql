@@ -88,39 +88,84 @@ declare
   v_existing record;
 begin
   if p_operator_user_id is null then
-    raise exception using errcode = '42501', message = 'Operator authentication is required.';
+    raise exception using errcode = '22023', message = 'An operator user ID is required.';
   end if;
 
-  perform 1
-  from public.platform_operators as platform_operator
-  where platform_operator.auth_user_id = p_operator_user_id
-    and platform_operator.state = 'active';
-
-  if not found then
-    raise exception using errcode = '42501', message = 'Operator authentication is required.';
+  if v_template_version is null
+    or pg_catalog.char_length(v_template_version) not between 1 and 64
+    or v_template_version !~ '^[0-9A-Za-z][0-9A-Za-z._-]{0,63}$'
+  then
+    raise exception using errcode = '22023', message = 'A valid template version is required.';
   end if;
 
-  if v_template_version = '' or v_name = '' or v_slug = '' or v_hostname = '' or v_property_name = '' then
-    raise exception using errcode = '22023', message = 'Missing required provisioning parameters.';
+  if v_name is null
+    or pg_catalog.char_length(v_name) not between 2 and 120
+    or v_name ~ '[[:cntrl:]]'
+  then
+    raise exception using errcode = '22023', message = 'A valid organization name is required.';
   end if;
 
-  if v_primary_color !~ '^#[0-9a-f]{6}$' or v_accent_color !~ '^#[0-9a-f]{6}$' then
-    raise exception using errcode = '22023', message = 'Brand colors must be valid hex codes.';
+  if v_slug is null
+    or v_slug !~ '^[a-z0-9](?:[a-z0-9-]{1,46}[a-z0-9])?$'
+  then
+    raise exception using errcode = '22023', message = 'A valid organization slug is required.';
   end if;
 
-  if v_idempotency_key_hash !~ '^[0-9a-f]{64}$' then
-    raise exception using errcode = '22023', message = 'A valid SHA-256 idempotency key hash is required.';
+  if v_hostname is null
+    or pg_catalog.char_length(v_hostname) not between 1 and 253
+    or exists (
+      select 1
+      from pg_catalog.unnest(pg_catalog.string_to_array(v_hostname, '.'))
+        as hostname_label(label)
+      where pg_catalog.char_length(hostname_label.label) not between 1 and 63
+        or hostname_label.label !~ '^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$'
+    )
+  then
+    raise exception using errcode = '22023', message = 'A valid normalized hostname is required.';
+  end if;
+
+  if v_property_name is null
+    or pg_catalog.char_length(v_property_name) not between 2 and 120
+    or v_property_name ~ '[[:cntrl:]]'
+  then
+    raise exception using errcode = '22023', message = 'A valid property name is required.';
+  end if;
+
+  if v_primary_color is null or v_primary_color !~ '^#[0-9a-f]{6}$' then
+    raise exception using errcode = '22023', message = 'A valid primary color is required.';
+  end if;
+
+  if v_accent_color is null or v_accent_color !~ '^#[0-9a-f]{6}$' then
+    raise exception using errcode = '22023', message = 'A valid accent color is required.';
+  end if;
+
+  if v_idempotency_key_hash is null
+    or v_idempotency_key_hash !~ '^[0-9a-f]{64}$'
+  then
+    raise exception using errcode = '22023', message = 'A lowercase SHA-256 idempotency hash is required.';
   end if;
 
   v_request_fingerprint := pg_catalog.jsonb_build_object(
-    'operatorUserId', p_operator_user_id,
     'templateVersion', v_template_version,
-    'name', v_name,
-    'slug', v_slug,
+    'organizationName', v_name,
+    'organizationSlug', v_slug,
     'hostname', v_hostname,
     'propertyName', v_property_name,
     'primaryColor', v_primary_color,
     'accentColor', v_accent_color
+  );
+
+  if not exists (
+    select 1
+    from public.platform_operators as platform_operator
+    where platform_operator.auth_user_id = p_operator_user_id
+      and platform_operator.state = 'active'
+  ) then
+    raise exception using errcode = '42501', message = 'An active platform operator is required.';
+  end if;
+
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(v_idempotency_key_hash, 0)
   );
 
   select
@@ -279,51 +324,93 @@ begin
     p_operator_user_id,
     v_idempotency_key_hash,
     v_request_fingerprint,
-    'completed',
+    'awaiting_data',
     v_now
   )
   returning id into v_job_id;
 
-  insert into public.platform_audit_events (
-    operator_id,
+  insert into public.provisioning_steps (
+    organization_id,
+    job_id,
+    key,
+    sort_order,
+    state,
+    started_at,
+    finished_at
+  )
+  values
+    (v_organization_id, v_job_id, 'organization', 0, 'passed', v_now, v_now),
+    (v_organization_id, v_job_id, 'branding', 1, 'passed', v_now, v_now),
+    (v_organization_id, v_job_id, 'property_data', 2, 'passed', v_now, v_now),
+    (v_organization_id, v_job_id, 'owner_account', 3, 'pending', null, null),
+    (v_organization_id, v_job_id, 'upi_and_rules', 4, 'pending', null, null),
+    (v_organization_id, v_job_id, 'storage_namespace', 5, 'pending', null, null),
+    (v_organization_id, v_job_id, 'authorization_smoke_test', 6, 'pending', null, null),
+    (v_organization_id, v_job_id, 'billing_preview', 7, 'pending', null, null),
+    (v_organization_id, v_job_id, 'pwa_manifest', 8, 'pending', null, null);
+
+  insert into public.audit_events (
+    organization_id,
+    actor_id,
     action,
     entity_type,
     entity_id,
     after_data
   )
   values (
+    v_organization_id,
     p_operator_user_id,
-    'organization.provisioned',
+    'provisioning.core_created',
     'provisioning_job',
     v_job_id::text,
     pg_catalog.jsonb_build_object(
       'jobId', v_job_id,
-      'organizationId', v_organization_id,
-      'propertyId', v_property_id,
-      'brandThemeId', v_brand_theme_id,
-      'domainMappingId', v_domain_mapping_id,
       'templateVersionId', v_template_version_id,
-      'organizationName', v_name,
-      'organizationSlug', v_slug,
-      'propertyName', v_property_name,
-      'hostname', v_hostname,
-      'templateVersion', v_template_version
+      'state', 'awaiting_data'
     )
   );
 
+  select
+    provisioning_job.id as job_id,
+    provisioning_job.organization_id,
+    provisioning_job.property_id,
+    provisioning_job.brand_theme_id,
+    provisioning_job.domain_mapping_id,
+    provisioning_job.template_version_id,
+    provisioning_job.state,
+    provisioning_job.request_fingerprint,
+    organization.name as organization_name,
+    organization.slug as organization_slug,
+    property.name as property_name,
+    domain_mapping.hostname,
+    template_version.version as template_version
+  into strict v_existing
+  from public.provisioning_jobs as provisioning_job
+  join public.organizations as organization
+    on organization.id = provisioning_job.organization_id
+  join public.properties as property
+    on property.id = provisioning_job.property_id
+    and property.organization_id = provisioning_job.organization_id
+  join public.domain_mappings as domain_mapping
+    on domain_mapping.id = provisioning_job.domain_mapping_id
+    and domain_mapping.organization_id = provisioning_job.organization_id
+  join public.template_versions as template_version
+    on template_version.id = provisioning_job.template_version_id
+  where provisioning_job.id = v_job_id;
+
   return pg_catalog.jsonb_build_object(
-    'jobId', v_job_id,
-    'organizationId', v_organization_id,
-    'propertyId', v_property_id,
-    'brandThemeId', v_brand_theme_id,
-    'domainMappingId', v_domain_mapping_id,
-    'templateVersionId', v_template_version_id,
-    'organizationName', v_name,
-    'organizationSlug', v_slug,
-    'propertyName', v_property_name,
-    'hostname', v_hostname,
-    'templateVersion', v_template_version,
-    'state', 'completed',
+    'jobId', v_existing.job_id,
+    'organizationId', v_existing.organization_id,
+    'propertyId', v_existing.property_id,
+    'brandThemeId', v_existing.brand_theme_id,
+    'domainMappingId', v_existing.domain_mapping_id,
+    'templateVersionId', v_existing.template_version_id,
+    'organizationName', v_existing.organization_name,
+    'organizationSlug', v_existing.organization_slug,
+    'propertyName', v_existing.property_name,
+    'hostname', v_existing.hostname,
+    'templateVersion', v_existing.template_version,
+    'state', v_existing.state,
     'idempotentReplay', false
   );
 end;
