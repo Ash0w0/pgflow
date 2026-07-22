@@ -2,7 +2,7 @@
 create table if not exists public.maintenance_tickets (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null references public.organizations(id) on delete cascade,
-  resident_id uuid references public.residents(id) on delete set null,
+  resident_id uuid references public.tenant_profiles(id) on delete set null,
   room_number text not null,
   category text not null check (category in ('wifi', 'plumbing', 'electrical', 'cleaning', 'food', 'other')),
   title text not null,

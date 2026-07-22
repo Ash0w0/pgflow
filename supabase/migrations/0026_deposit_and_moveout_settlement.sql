@@ -2,7 +2,7 @@
 create table if not exists public.resident_moveouts (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null references public.organizations(id) on delete cascade,
-  resident_id uuid not null references public.residents(id) on delete cascade,
+  resident_id uuid not null references public.tenant_profiles(id) on delete cascade,
   bed_id uuid references public.beds(id) on delete set null,
   exit_date date not null,
   deposit_amount numeric(10, 2) not null check (deposit_amount >= 0),
@@ -85,7 +85,7 @@ begin
     resident.state,
     resident.full_name
   into strict v_resident
-  from public.residents as resident
+  from public.tenant_profiles as resident
   where resident.id = p_resident_id
     and resident.organization_id = p_organization_id
   for update;
@@ -132,7 +132,7 @@ begin
   ) returning id into v_moveout_id;
 
   -- Update resident status to departed and clear bed assignment
-  update public.residents
+  update public.tenant_profiles
   set state = 'departed',
       exit_date = p_exit_date,
       bed_id = null,

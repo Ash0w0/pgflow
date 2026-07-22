@@ -2,7 +2,7 @@
 create table if not exists public.whatsapp_message_logs (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null references public.organizations(id) on delete cascade,
-  resident_id uuid references public.residents(id) on delete set null,
+  resident_id uuid references public.tenant_profiles(id) on delete set null,
   recipient_phone text not null,
   direction text not null default 'outbound' check (direction in ('outbound', 'inbound')),
   template_name text,
