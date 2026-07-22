@@ -25,11 +25,12 @@ alter table public.domain_mappings
   add constraint domain_mappings_state_check
   check (state in ('pending', 'dns_checking', 'verified', 'failed'));
 
--- Platform subdomains are always verified; custom domains must pass DNS check
+-- Verified custom domains must have a DNS challenge token
 alter table public.domain_mappings
   add constraint domain_mappings_custom_requires_challenge
   check (
     kind = 'platform_subdomain'
+    or state != 'verified'
     or (kind = 'custom' and dns_txt_challenge is not null)
   );
 
