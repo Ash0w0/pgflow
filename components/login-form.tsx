@@ -308,7 +308,12 @@ export function LoginForm({ demoMode, manualOwnerLogin = false }: { demoMode: bo
         </div>
       </label>
       <label htmlFor="login-password">
-        {manualOwnerLogin ? "Temporary password" : "Password"}
+        <span className="label-header">
+          <span>{manualOwnerLogin ? "Temporary password" : "Password"}</span>
+          <Link href="/recover" className="forgot-password-link">
+            Forgot password?
+          </Link>
+        </span>
         <div className="input-with-icon">
           <LockKeyhole aria-hidden="true" size={17} />
           <input

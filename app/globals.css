@@ -28,6 +28,9 @@
 .sidebar-auth-error { margin: 6px 12px 0; color: #ffc5bd; font-size: 10px; line-height: 1.4; }
 .login-error { margin: -2px 0 0; color: var(--danger); font-size: 10px; line-height: 1.45; }
 .login-form-wrap .button:disabled { cursor: wait; opacity: .7; transform: none; }
+.label-header { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+.forgot-password-link { font-size: 11px; color: var(--brand); font-weight: 600; text-decoration: none; opacity: 0.85; transition: opacity 180ms ease; }
+.forgot-password-link:hover { opacity: 1; text-decoration: underline; }
 
 @theme inline {
   --color-background: var(--background);
