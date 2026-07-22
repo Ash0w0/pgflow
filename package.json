@@ -69,5 +69,15 @@
     "@cloudflare/workerd-linux-64": "1.20260714.1",
     "@cloudflare/workerd-windows-64": "1.20260714.1"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@cloudflare/workerd-linux-64",
+      "@cloudflare/workerd-windows-64",
+      "esbuild",
+      "sharp",
+      "unrs-resolver",
+      "workerd"
+    ]
+  },
   "type": "module"
 }
