@@ -62,7 +62,7 @@ test("Collections shares only a user-reviewed WhatsApp draft", async () => {
   assert.match(workspace, /fetch\("\/api\/payment-requests"/);
   assert.match(workspace, /https:\/\/wa\.me\/\$\{whatsappPhone\}/);
   assert.match(workspace, /Open WhatsApp draft/);
-  assert.match(workspace, /Review the phone number and message before pressing Send/);
+  assert.match(workspace, /Review the message in WhatsApp before sending/);
   assert.doesNotMatch(workspace, /graph\.facebook\.com|WHATSAPP_ACCESS_TOKEN/);
 });
 
