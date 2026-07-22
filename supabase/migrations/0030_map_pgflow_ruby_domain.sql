@@ -19,7 +19,10 @@ BEGIN
   VALUES (v_org_id, 'Nivasa PG', 'Nivasa', '#123d32', '#d7ff86')
   ON CONFLICT (organization_id) DO NOTHING;
 
-  -- 3. Upsert domain mapping for pgflow-ruby.vercel.app using baseline columns
+  -- 3. Clear existing mapping for this organization or hostname
+  DELETE FROM public.domain_mappings WHERE hostname = 'pgflow-ruby.vercel.app' OR organization_id = v_org_id;
+
+  -- 4. Insert domain mapping for pgflow-ruby.vercel.app
   INSERT INTO public.domain_mappings (
     id,
     organization_id,
@@ -32,8 +35,5 @@ BEGIN
     'pgflow-ruby.vercel.app',
     'platform_subdomain',
     'verified'
-  )
-  ON CONFLICT (hostname) DO UPDATE SET
-    organization_id = EXCLUDED.organization_id,
-    state = 'verified';
+  );
 END $$;
