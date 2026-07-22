@@ -221,6 +221,7 @@ export function ResidentSetupWorkspace({ data, demoMode }: { data: ResidentSetup
     <AppShell demoMode={demoMode}>
       <div className="page-stack resident-setup-page">
         <section className="page-heading resident-setup-heading">
+          <div>
             <div className="demo-kicker"><Sparkles size={14} /> Residents</div>
             <h1>Residents</h1>
             <p>Onboard residents, assign beds, and set opening balances.</p>

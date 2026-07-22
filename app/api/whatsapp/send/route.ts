@@ -13,7 +13,10 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
   try {
-    const actor = await requireActor(request, ["owner", "manager", "staff"]);
+    const actor = await requireActor(request, ["owner", "manager", "accountant"]);
+    if (!actor) {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
     const body = (await request.json()) as Record<string, any>;
 
     const { type, recipientPhone, language = "en", payload } = body;
@@ -71,7 +74,7 @@ export async function POST(request: Request) {
     } else if (type === "daily_digest") {
       templateOptions = buildDailyOwnerDigestPayload({
         ownerPhone: recipientPhone,
-        ownerName: payload.ownerName || actor.displayName || "Owner",
+        ownerName: payload.ownerName || "Owner",
         dateStr: payload.dateStr || new Date().toISOString().split("T")[0],
         todayCollections: Number(payload.todayCollections || 0),
         collectionsCount: Number(payload.collectionsCount || 0),
@@ -83,7 +86,7 @@ export async function POST(request: Request) {
       });
       messagePreview = getDailyOwnerDigestPreview({
         ownerPhone: recipientPhone,
-        ownerName: payload.ownerName || actor.displayName || "Owner",
+        ownerName: payload.ownerName || "Owner",
         dateStr: payload.dateStr || new Date().toISOString().split("T")[0],
         todayCollections: Number(payload.todayCollections || 0),
         collectionsCount: Number(payload.collectionsCount || 0),

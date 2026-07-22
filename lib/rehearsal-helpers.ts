@@ -4,7 +4,7 @@
  * for stress-testing billing and allocation pipelines.
  */
 
-import { calculateElectricity, allocateByOccupantDays } from "./domain.ts";
+import { calculateElectricity, allocateByOccupantDays } from "./domain";
 
 export interface RehearsalFloor {
   id: string;

@@ -9,6 +9,9 @@ export async function GET(
 ) {
   try {
     const actor = await requireActor(request, ["owner", "manager"]);
+    if (!actor) {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
     const { paymentId } = await params;
 
     const isDemo = process.env.PGFLOW_RUNTIME === "demo";
@@ -28,7 +31,7 @@ export async function GET(
         paymentMethod: "UPI",
         referenceNumber: "DEMO48291073",
         amountPaid: 8500,
-        issuedBy: actor.displayName || "Front Desk Manager",
+        issuedBy: "Front Desk Manager",
       });
 
       return new NextResponse(receiptHtml, {
@@ -66,7 +69,7 @@ export async function GET(
       paymentMethod: payment.method === "cash" ? "Cash" : "UPI",
       referenceNumber: payment.reference_number || "N/A",
       amountPaid: Number(payment.amount || 0),
-      issuedBy: actor.displayName || "Authorized Staff",
+      issuedBy: "Authorized Staff",
     });
 
     return new NextResponse(receiptHtml, {

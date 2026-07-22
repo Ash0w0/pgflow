@@ -4,7 +4,10 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
   try {
-    const actor = await requireActor(request, ["owner", "manager", "staff"]);
+    const actor = await requireActor(request, ["owner", "manager", "accountant"]);
+    if (!actor) {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
     const body = (await request.json()) as Record<string, any>;
 
     const {
@@ -72,7 +75,10 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    const actor = await requireActor(request, ["owner", "manager", "staff"]);
+    const actor = await requireActor(request, ["owner", "manager", "accountant"]);
+    if (!actor) {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
     const isDemo = process.env.PGFLOW_RUNTIME === "demo";
 
     if (isDemo) {

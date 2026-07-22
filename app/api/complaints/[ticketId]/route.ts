@@ -7,7 +7,10 @@ export async function PATCH(
   { params }: { params: Promise<{ ticketId: string }> }
 ) {
   try {
-    const actor = await requireActor(request, ["owner", "manager", "staff"]);
+    const actor = await requireActor(request, ["owner", "manager", "accountant"]);
+    if (!actor) {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
     const { ticketId } = await params;
 
     const body = (await request.json()) as Record<string, any>;

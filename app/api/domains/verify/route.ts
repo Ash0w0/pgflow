@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireOperatorSession } from "@/lib/page-authorization";
+import { requireOperator } from "@/lib/http";
 import { isDemoRuntime } from "@/lib/runtime";
 import {
   initiateCustomDomainVerification,
@@ -17,8 +17,8 @@ import {
  */
 export async function POST(request: Request) {
   try {
-    const session = await requireOperatorSession();
-    if (!session) {
+    const isOperator = await requireOperator(request);
+    if (!isOperator) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 

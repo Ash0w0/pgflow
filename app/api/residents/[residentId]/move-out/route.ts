@@ -8,6 +8,9 @@ export async function POST(
 ) {
   try {
     const actor = await requireActor(request, ["owner", "manager"]);
+    if (!actor) {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
     const { residentId } = await params;
 
     const body = (await request.json()) as Record<string, any>;
