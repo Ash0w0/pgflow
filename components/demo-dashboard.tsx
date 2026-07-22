@@ -123,7 +123,7 @@ export function DemoDashboard() {
   function updateReview(id: string, state: "approved" | "rejected") {
     const review = reviews.find((item) => item.id === id);
     setReviews((current) => current.map((item) => (item.id === id ? { ...item, state } : item)));
-    notify(`Preview only: ${review?.tenant ?? "payment"} marked ${state}. No ledger or receipt was changed.`);
+    notify(`${review?.tenant ?? "Payment"} marked ${state}.`);
   }
 
   return (
@@ -131,7 +131,7 @@ export function DemoDashboard() {
       <motion.div className="page-stack" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
         <section className="page-heading">
           <div>
-            <div className="demo-kicker"><Sparkles size={14} /> Fictional demo environment</div>
+            <div className="demo-kicker"><Sparkles size={14} /> Demo mode</div>
             <h1>Good morning, Aarav.</h1>
             <p>Here is what needs attention at Nivasa today.</p>
           </div>
@@ -145,7 +145,7 @@ export function DemoDashboard() {
           </div>
         </section>
 
-        <div className="demo-safety-strip"><ShieldCheck size={16} /><span><strong>Fictional UI simulation.</strong> Names, money, UTRs and actions below are synthetic; changes remain only in this browser view.</span></div>
+        <div className="demo-safety-strip"><ShieldCheck size={16} /><span><strong>Demo data.</strong> All records are simulated. No live data is affected.</span></div>
 
         <section className="metric-grid" aria-label="Property metrics">
           {overviewMetrics.map((metric, index) => {
@@ -307,7 +307,7 @@ export function DemoDashboard() {
           </article>
 
           <article className="panel activity-panel">
-            <div className="panel-head"><div><span className="eyebrow">Sample feed</span><h2>Recent activity preview</h2></div><button aria-label="Open sample activity options" className="icon-button" type="button"><MoreHorizontal size={18} /></button></div>
+            <div className="panel-head"><div><span className="eyebrow">Activity</span><h2>Recent activity</h2></div><button aria-label="Activity options" className="icon-button" type="button"><MoreHorizontal size={18} /></button></div>
             <div className="activity-list">
               {recentActivity.map((item) => (
                 <div className="activity-item" key={item.id}>
@@ -337,24 +337,24 @@ export function DemoDashboard() {
 
       <AnimatePresence>
         {modal === "cash" && (
-          <DashboardModal title="Preview a cash payment" description="This simulation demonstrates the fields and approval state; it writes no ledger or audit record." onClose={() => setModal(null)}>
-            <form className="modal-form" onSubmit={(event) => { event.preventDefault(); setModal(null); notify("Preview only: cash entry staged locally; nothing was recorded."); }}>
+          <DashboardModal title="Record cash payment" description="Enter the cash collection details for approval." onClose={() => setModal(null)}>
+            <form className="modal-form" onSubmit={(event) => { event.preventDefault(); setModal(null); notify("Cash payment recorded."); }}>
               <label>Resident<select defaultValue="Mira Kapoor"><option>Mira Kapoor · A-204</option><option>Kavya Mehta · B-105</option><option>Sana Iyer · C-301</option></select></label>
               <div className="form-row"><label>Amount<input defaultValue="8500" inputMode="numeric" /></label><label>Collected on<input defaultValue="2026-07-17" type="date" /></label></div>
-              <label>Collection note<textarea defaultValue="Collected at the front desk. Pending accountant confirmation." rows={3} /></label>
-              <div className="modal-note"><ShieldCheck size={17} /><span>Corrections are recorded as reversals. Approved ledger entries are never deleted.</span></div>
-              <button className="button button-primary button-full" type="submit"><Banknote size={17} /> Preview cash review</button>
+              <label>Note<textarea defaultValue="Collected at the front desk." rows={2} /></label>
+              <div className="modal-note"><ShieldCheck size={17} /><span>Corrections are recorded as reversals.</span></div>
+              <button className="button button-primary button-full" type="submit"><Banknote size={17} /> Record payment</button>
             </form>
           </DashboardModal>
         )}
         {modal === "notice" && (
-          <DashboardModal title="Preview a property notice" description="Explore the bilingual notice workflow. No WhatsApp message is queued from this demo." onClose={() => setModal(null)}>
-            <form className="modal-form" onSubmit={(event) => { event.preventDefault(); setModal(null); notify("Preview only: notice timing checked locally; no message was scheduled."); }}>
+          <DashboardModal title="Send property notice" description="Draft a bilingual notice for residents." onClose={() => setModal(null)}>
+            <form className="modal-form" onSubmit={(event) => { event.preventDefault(); setModal(null); notify("Notice scheduled."); }}>
               <label>Audience<select><option>All 48 residents</option><option>First floor</option><option>Second floor</option><option>Selected rooms</option></select></label>
               <label>Title<input defaultValue="Water supply maintenance" /></label>
               <label>English message<textarea defaultValue="Water supply will pause from 11 AM to 1 PM tomorrow for scheduled maintenance." rows={3} /></label>
               <label>Hindi message<textarea defaultValue="निर्धारित रखरखाव के कारण कल सुबह 11 बजे से दोपहर 1 बजे तक पानी की आपूर्ति बंद रहेगी।" rows={3} /></label>
-              <button className="button button-primary button-full" type="submit"><Send size={17} /> Preview schedule</button>
+              <button className="button button-primary button-full" type="submit"><Send size={17} /> Schedule notice</button>
             </form>
           </DashboardModal>
         )}

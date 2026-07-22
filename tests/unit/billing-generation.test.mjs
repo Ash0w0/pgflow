@@ -50,7 +50,7 @@ test("Collections UI previews charges and never generates without explicit confi
   assert.match(page, /canGenerate=\{authorization\.actor\.role === "owner"\}/);
   assert.match(component, /confirmGeneration: true/);
   assert.match(component, /!confirmed/);
-  assert.match(component, /It does not record any payment\./);
+  assert.match(component, /does not record payments\./);
   assert.match(component, /Duplicate-safe/);
   assert.match(component, /router\.refresh\(\)/);
   for (const table of ["properties", "tenant_profiles", "occupancies", "beds", "rooms", "invoices"]) {

@@ -7,6 +7,7 @@ import {
   Database,
   Eye,
   EyeOff,
+  Globe,
   Layers3,
   Plus,
   RefreshCcw,
@@ -202,6 +203,16 @@ export function LiveOperatorConsole() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const idempotencyKey = useRef<string | null>(null);
 
+  // Custom domain verification state
+  const [domainOrgId, setDomainOrgId] = useState("");
+  const [domainHostname, setDomainHostname] = useState("");
+  const [domainChallenge, setDomainChallenge] = useState<string | null>(null);
+  const [domainTxtRecord, setDomainTxtRecord] = useState<string | null>(null);
+  const [domainMappingId, setDomainMappingId] = useState<string | null>(null);
+  const [domainVerified, setDomainVerified] = useState<boolean | null>(null);
+  const [domainSubmitting, setDomainSubmitting] = useState(false);
+  const [domainError, setDomainError] = useState<string | null>(null);
+
   const loadRegistry = useCallback(async (signal?: AbortSignal) => {
     setRegistryLoading(true);
     setRegistryError(null);
@@ -353,6 +364,53 @@ export function LiveOperatorConsole() {
 
   const organizations = registry?.organizations ?? [];
   const templateVersion = registry?.template.version;
+
+  async function initiateCustomDomain(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (domainSubmitting || !domainOrgId || !domainHostname) return;
+    setDomainSubmitting(true);
+    setDomainError(null);
+    setDomainChallenge(null);
+    setDomainVerified(null);
+    try {
+      const res = await fetch("/api/domains/verify", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "initiate", organizationId: domainOrgId, hostname: domainHostname.toLowerCase().trim() }),
+      });
+      const result: unknown = await res.json().catch(() => null);
+      if (!res.ok || !isRecord(result)) throw new Error(isRecord(result) && typeof result.error === "string" ? result.error : "Failed to initiate domain verification.");
+      setDomainChallenge(typeof result.challenge === "string" ? result.challenge : null);
+      setDomainTxtRecord(typeof result.txtRecord === "string" ? result.txtRecord : null);
+      setDomainMappingId(typeof result.domainMappingId === "string" ? result.domainMappingId : null);
+    } catch (err) {
+      setDomainError(err instanceof Error ? err.message : "Failed to initiate domain verification.");
+    } finally {
+      setDomainSubmitting(false);
+    }
+  }
+
+  async function checkCustomDomain() {
+    if (domainSubmitting || !domainMappingId) return;
+    setDomainSubmitting(true);
+    setDomainError(null);
+    try {
+      const res = await fetch("/api/domains/verify", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "check", domainMappingId }),
+      });
+      const result: unknown = await res.json().catch(() => null);
+      if (!res.ok || !isRecord(result)) throw new Error(isRecord(result) && typeof result.error === "string" ? result.error : "Verification check failed.");
+      setDomainVerified(result.verified === true);
+    } catch (err) {
+      setDomainError(err instanceof Error ? err.message : "Verification check failed.");
+    } finally {
+      setDomainSubmitting(false);
+    }
+  }
 
   return (
     <div className="operator-page page-stack live-operator-page">
@@ -517,6 +575,41 @@ export function LiveOperatorConsole() {
       <OwnerInvitationPanel organizations={organizations} onPrepared={() => loadRegistry()} />
       <OperatorPasswordCard />
       <OwnerRecoveryPanel organizations={organizations} />
+
+      <section className="panel live-domain-panel">
+        <div className="panel-head"><div><span className="eyebrow">Custom domains</span><h2>Domain verification</h2></div></div>
+        <form className="modal-form" onSubmit={initiateCustomDomain} aria-busy={domainSubmitting}>
+          <div className="form-row">
+            <label htmlFor="domain-org-id">
+              Organization
+              <select id="domain-org-id" value={domainOrgId} onChange={(e) => { setDomainOrgId(e.target.value); setDomainChallenge(null); setDomainVerified(null); setDomainError(null); }} disabled={domainSubmitting} required>
+                <option value="">Select organization</option>
+                {organizations.map((org) => <option key={org.id} value={org.id}>{org.name} ({org.slug})</option>)}
+              </select>
+            </label>
+            <label htmlFor="domain-hostname">
+              Custom domain
+              <input id="domain-hostname" value={domainHostname} onChange={(e) => { setDomainHostname(e.target.value); setDomainChallenge(null); setDomainVerified(null); setDomainError(null); }} placeholder="nivasastay.com" autoCapitalize="none" spellCheck={false} required disabled={domainSubmitting} />
+            </label>
+          </div>
+          <button className="button button-secondary button-full" type="submit" disabled={domainSubmitting || !domainOrgId || !domainHostname}>
+            <Globe size={17} />{domainSubmitting ? "Generating challenge…" : "Generate DNS challenge"}
+          </button>
+        </form>
+
+        {domainChallenge && domainTxtRecord && (
+          <div className="domain-challenge-result">
+            <div className="password-security-note"><ShieldCheck size={17} /><span>Add this TXT record to your domain's DNS settings.</span></div>
+            <label>TXT Record Value<input value={domainTxtRecord} readOnly onFocus={(e) => e.currentTarget.select()} /></label>
+            <button className="button button-primary button-full" type="button" onClick={checkCustomDomain} disabled={domainSubmitting || !domainMappingId}>
+              <RefreshCcw className={domainSubmitting ? "spin" : ""} size={17} />{domainSubmitting ? "Checking DNS…" : "Verify now"}
+            </button>
+            {domainVerified === true && <div className="live-operator-feedback feedback-success" role="status"><Check size={17} /><span>Domain verified. Traffic will now resolve to this PG.</span></div>}
+            {domainVerified === false && <div className="live-operator-feedback feedback-error" role="status"><AlertCircle size={17} /><span>TXT record not found. Add the record and try again.</span></div>}
+          </div>
+        )}
+        {domainError && <div className="live-operator-feedback feedback-error" role="alert"><AlertCircle size={17} /><span>{domainError}</span></div>}
+      </section>
 
       <section className="panel organizations-panel live-organizations-panel">
         <div className="panel-head panel-head-wrap">

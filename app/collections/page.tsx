@@ -6,7 +6,7 @@ import { requireStaffPage } from "@/lib/page-authorization";
 export default async function Page() {
   const authorization = await requireStaffPage(["owner", "manager", "accountant"]);
   if (authorization.mode === "demo") {
-    return <GenericSection title="Collections" description="Invoices, UPI evidence, cash, receipts and reversals in one auditable ledger." label="payment" />;
+    return <GenericSection title="Collections" description="Invoices, payments, receipts and reversals." label="payment" />;
   }
   if (!authorization.actor.propertyId) throw new Error("The staff member is not assigned to a property.");
   const data = await getCollectionsData(authorization.actor.organizationId, authorization.actor.propertyId);

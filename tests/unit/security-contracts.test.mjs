@@ -296,13 +296,17 @@ test("owner credential issuance requires a fresh operator password check", async
 });
 
 test("manual owner recovery is one-time, intent-bound, and server-only", async () => {
-  const [migration, issueRoute, recoverRoute, recoveryLibrary, recoveryForm] = await Promise.all([
+  const [migration, normalizationMigration, issueRoute, recoverRoute, recoveryLibrary, recoveryForm] = await Promise.all([
     readFile(new URL("supabase/migrations/0010_manual_owner_password_recovery.sql", root), "utf8"),
+    readFile(new URL("supabase/migrations/0025_normalize_owner_recovery_phone.sql", root), "utf8"),
     readFile(new URL("app/api/owner-password-recovery/route.ts", root), "utf8"),
     readFile(new URL("app/api/auth/recover-password/route.ts", root), "utf8"),
     readFile(new URL("lib/owner-password-recovery.ts", root), "utf8"),
     readFile(new URL("components/recovery-form.tsx", root), "utf8"),
   ]);
+
+  assert.match(normalizationMigration, /regexp_replace.*coalesce\(auth_user\.phone/i);
+  assert.match(normalizationMigration, /regexp_replace.*coalesce\(membership\.phone/i);
 
   assert.match(migration, /create table public\.owner_password_recoveries/i);
   assert.match(migration, /credential_hash text/i);
@@ -495,10 +499,11 @@ test("empty draft deletion is reauthenticated, transactional, guarded, and user-
 });
 
 test("owner invitations store only short-lived hashes and remain server-only", async () => {
-  const invitation = await readFile(
+  const rawInvitation = await readFile(
     new URL("supabase/migrations/0006_owner_invitations.sql", root),
     "utf8",
   );
+  const invitation = rawInvitation.replace(/\r\n/g, "\n");
 
   assert.match(invitation, /create table public\.staff_invitations/i);
   assert.match(invitation, /token_hash text not null unique/i);

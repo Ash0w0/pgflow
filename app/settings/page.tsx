@@ -14,10 +14,10 @@ export default async function Page() {
     if (error) throw new Error("UPI configuration could not be loaded.");
     upi = { upiId: data.upi_id, payeeName: data.upi_payee_name, notePrefix: data.upi_note_prefix, hasUploadedQr: Boolean(data.upi_qr_object_key) };
   }
-  if (authorization.mode === "demo") return <GenericSection title="Property settings" description="Branding, UPI, electricity, rules, reminders, domains and integrations." label="setting"><PasswordChangeCard demoMode /></GenericSection>;
+  if (authorization.mode === "demo") return <GenericSection title="Property settings" description="Branding, UPI, rules and integrations." label="setting"><PasswordChangeCard demoMode /></GenericSection>;
   return <AppShell demoMode={false}><div className="page-stack live-settings-page">
     <section className="page-heading"><div><div className="demo-kicker"><Settings2 size={14}/> Owner controls</div><h1>Property settings</h1><p>Manage payment destination and account security for this PG.</p></div></section>
-    <div className="setup-safety-strip"><ShieldCheck size={17}/><span><strong>Sensitive changes require your current password.</strong> UPI destinations and password changes are audited and never shared across PGs.</span></div>
+    <div className="setup-safety-strip"><ShieldCheck size={17}/><span><strong>Sensitive changes require your password.</strong> UPI and password changes are audited.</span></div>
     <UpiSettingsCard initial={upi}/><PasswordChangeCard demoMode={false}/>
   </div></AppShell>;
 }
