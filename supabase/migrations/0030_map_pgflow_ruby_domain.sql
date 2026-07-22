@@ -4,9 +4,13 @@ DO $$
 DECLARE
   v_org_id uuid;
 BEGIN
-  -- 1. Find an existing active organization or use default UUID
-  SELECT id INTO v_org_id FROM public.organizations WHERE state != 'archived' ORDER BY created_at ASC LIMIT 1;
+  -- 1. Find existing organization from domain_mappings or organizations table
+  SELECT organization_id INTO v_org_id FROM public.domain_mappings LIMIT 1;
   
+  IF v_org_id IS NULL THEN
+    SELECT id INTO v_org_id FROM public.organizations WHERE state != 'archived' ORDER BY created_at ASC LIMIT 1;
+  END IF;
+
   IF v_org_id IS NULL THEN
     v_org_id := '00000000-0000-4000-8000-000000000001'::uuid;
     INSERT INTO public.organizations (id, name, slug, state)
@@ -14,26 +18,17 @@ BEGIN
     ON CONFLICT (id) DO NOTHING;
   END IF;
 
-  -- 2. Ensure brand theme exists
-  INSERT INTO public.brand_themes (organization_id, app_name, short_name, primary_color, accent_color)
-  VALUES (v_org_id, 'Nivasa PG', 'Nivasa', '#123d32', '#d7ff86')
-  ON CONFLICT (organization_id) DO NOTHING;
-
-  -- 3. Clear existing mapping for this organization or hostname
-  DELETE FROM public.domain_mappings WHERE hostname = 'pgflow-ruby.vercel.app' OR organization_id = v_org_id;
-
-  -- 4. Insert domain mapping for pgflow-ruby.vercel.app
-  INSERT INTO public.domain_mappings (
-    id,
-    organization_id,
-    hostname,
-    kind,
-    state
-  ) VALUES (
-    gen_random_uuid(),
-    v_org_id,
-    'pgflow-ruby.vercel.app',
-    'platform_subdomain',
-    'verified'
-  );
+  -- 2. Update existing domain mapping if present, otherwise insert new mapping
+  IF EXISTS (SELECT 1 FROM public.domain_mappings WHERE organization_id = v_org_id) THEN
+    UPDATE public.domain_mappings
+    SET hostname = 'pgflow-ruby.vercel.app', state = 'verified'
+    WHERE organization_id = v_org_id;
+  ELSE
+    INSERT INTO public.domain_mappings (
+      id, organization_id, hostname, kind, state
+    ) VALUES (
+      gen_random_uuid(), v_org_id, 'pgflow-ruby.vercel.app', 'platform_subdomain', 'verified'
+    )
+    ON CONFLICT (hostname) DO UPDATE SET state = 'verified';
+  END IF;
 END $$;
