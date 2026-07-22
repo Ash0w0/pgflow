@@ -42,9 +42,8 @@ const { error: mappingError } = await supabase.from("domain_mappings").upsert(
   {
     organization_id: org.id,
     hostname: targetDomain,
-    domain_type: "platform_subdomain",
+    kind: "platform_subdomain",
     state: "verified",
-    is_primary: true,
     verified_at: new Date().toISOString(),
   },
   { onConflict: "hostname" }
