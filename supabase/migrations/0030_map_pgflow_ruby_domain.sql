@@ -19,24 +19,21 @@ BEGIN
   VALUES (v_org_id, 'Nivasa PG', 'Nivasa', '#123d32', '#d7ff86')
   ON CONFLICT (organization_id) DO NOTHING;
 
-  -- 3. Upsert domain mapping for pgflow-ruby.vercel.app using column "kind"
+  -- 3. Upsert domain mapping for pgflow-ruby.vercel.app using baseline columns
   INSERT INTO public.domain_mappings (
     id,
     organization_id,
     hostname,
     kind,
-    state,
-    verified_at
+    state
   ) VALUES (
     gen_random_uuid(),
     v_org_id,
     'pgflow-ruby.vercel.app',
     'platform_subdomain',
-    'verified',
-    now()
+    'verified'
   )
   ON CONFLICT (hostname) DO UPDATE SET
     organization_id = EXCLUDED.organization_id,
-    state = 'verified',
-    verified_at = now();
+    state = 'verified';
 END $$;
