@@ -13,8 +13,9 @@ export async function PATCH(
     }
     const { ticketId } = await params;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const body = (await request.json()) as Record<string, any>;
-    const { status } = body;
+    const status = typeof body.status === "string" ? body.status : "";
 
     const validStatuses = ["open", "in_progress", "resolved", "closed"];
     if (!status || !validStatuses.includes(status)) {

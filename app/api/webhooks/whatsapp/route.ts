@@ -26,11 +26,15 @@ export async function GET(request: Request) {
  */
 export async function POST(request: Request) {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const body = (await request.json()) as Record<string, any>;
     const isDemo = process.env.PGFLOW_RUNTIME === "demo";
 
-    const entry = body.entry?.[0];
-    const change = entry?.changes?.[0]?.value;
+    const entryList = Array.isArray(body.entry) ? body.entry : [];
+    const entry = (entryList[0] && typeof entryList[0] === "object" ? entryList[0] : null) as Record<string, unknown> | null;
+    const changesList = entry && Array.isArray(entry.changes) ? entry.changes : [];
+    const changeObj = (changesList[0] && typeof changesList[0] === "object" ? changesList[0] : null) as Record<string, unknown> | null;
+    const change = (changeObj?.value && typeof changeObj.value === "object" ? changeObj.value : null) as Record<string, unknown> | null;
 
     if (!change) {
       return Response.json({ ok: true, note: "Empty or unrecognized payload structure." });

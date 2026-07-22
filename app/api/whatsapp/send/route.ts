@@ -17,9 +17,14 @@ export async function POST(request: Request) {
     if (!actor) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const body = (await request.json()) as Record<string, any>;
 
-    const { type, recipientPhone, language = "en", payload } = body;
+    const type = typeof body.type === "string" ? body.type : "";
+    const recipientPhone = typeof body.recipientPhone === "string" ? body.recipientPhone : "";
+    const language = (typeof body.language === "string" ? body.language : "en") as "en" | "hi";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const payload = (body.payload && typeof body.payload === "object" ? body.payload : {}) as Record<string, any>;
 
     if (!type || !recipientPhone || !payload) {
       return NextResponse.json(

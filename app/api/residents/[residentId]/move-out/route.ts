@@ -13,14 +13,13 @@ export async function POST(
     }
     const { residentId } = await params;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const body = (await request.json()) as Record<string, any>;
-    const {
-      exitDate,
-      utilityDeductions = 0,
-      damageDeductions = 0,
-      unpaidRentDeductions = 0,
-      remarks = "",
-    } = body;
+    const exitDate = typeof body.exitDate === "string" ? body.exitDate : "";
+    const utilityDeductions = typeof body.utilityDeductions === "number" ? body.utilityDeductions : 0;
+    const damageDeductions = typeof body.damageDeductions === "number" ? body.damageDeductions : 0;
+    const unpaidRentDeductions = typeof body.unpaidRentDeductions === "number" ? body.unpaidRentDeductions : 0;
+    const remarks = typeof body.remarks === "string" ? body.remarks : "";
 
     if (!exitDate || typeof exitDate !== "string") {
       return NextResponse.json(

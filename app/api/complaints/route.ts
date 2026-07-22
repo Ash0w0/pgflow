@@ -8,16 +8,15 @@ export async function POST(request: Request) {
     if (!actor) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const body = (await request.json()) as Record<string, any>;
 
-    const {
-      roomNumber,
-      category,
-      title,
-      description = "",
-      priority = "medium",
-      residentId = null,
-    } = body;
+    const roomNumber = typeof body.roomNumber === "string" ? body.roomNumber : "";
+    const category = typeof body.category === "string" ? body.category : "";
+    const title = typeof body.title === "string" ? body.title : "";
+    const description = typeof body.description === "string" ? body.description : "";
+    const priority = typeof body.priority === "string" ? body.priority : "medium";
+    const residentId = typeof body.residentId === "string" ? body.residentId : null;
 
     if (!roomNumber || !category || !title) {
       return NextResponse.json(

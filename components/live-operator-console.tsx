@@ -599,7 +599,7 @@ export function LiveOperatorConsole() {
 
         {domainChallenge && domainTxtRecord && (
           <div className="domain-challenge-result">
-            <div className="password-security-note"><ShieldCheck size={17} /><span>Add this TXT record to your domain's DNS settings.</span></div>
+            <div className="password-security-note"><ShieldCheck size={17} /><span>Add this TXT record to your domain&apos;s DNS settings.</span></div>
             <label>TXT Record Value<input value={domainTxtRecord} readOnly onFocus={(e) => e.currentTarget.select()} /></label>
             <button className="button button-primary button-full" type="button" onClick={checkCustomDomain} disabled={domainSubmitting || !domainMappingId}>
               <RefreshCcw className={domainSubmitting ? "spin" : ""} size={17} />{domainSubmitting ? "Checking DNS…" : "Verify now"}

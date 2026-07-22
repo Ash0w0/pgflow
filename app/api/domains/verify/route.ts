@@ -22,20 +22,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const body = (await request.json()) as Record<string, any>;
+    const action = typeof body.action === "string" ? body.action : "";
+    const hostname = typeof body.hostname === "string" ? body.hostname : "";
 
     if (isDemoRuntime()) {
       // Demo mode: simulate verification flow
-      if (body.action === "initiate") {
+      if (action === "initiate") {
         const challenge = generateDnsChallenge();
         return NextResponse.json({
           challenge,
           txtRecord: formatTxtRecordValue(challenge),
           domainMappingId: `demo_domain_${Date.now()}`,
-          instructions: `Add a TXT record to ${body.hostname} with value: ${formatTxtRecordValue(challenge)}`,
+          instructions: `Add a TXT record to ${hostname} with value: ${formatTxtRecordValue(challenge)}`,
         });
       }
-      if (body.action === "check") {
+      if (action === "check") {
         return NextResponse.json({
           verified: false,
           hostname: "demo.example.com",
