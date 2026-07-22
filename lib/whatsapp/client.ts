@@ -100,7 +100,10 @@ export async function sendWhatsAppTemplate(
       body: JSON.stringify(payload),
     });
 
-    const data = await res.json();
+    const data = (await res.json()) as {
+      error?: { message?: string };
+      messages?: Array<{ id?: string }>;
+    };
     if (!res.ok) {
       const msg = data.error?.message || "Failed to dispatch WhatsApp message via Meta Cloud API.";
       return { ok: false, error: msg };

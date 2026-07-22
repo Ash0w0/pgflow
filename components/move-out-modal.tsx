@@ -65,7 +65,7 @@ export function MoveOutModal({
         }),
       });
 
-      const data = await res.json();
+      const data = (await res.json()) as { error?: string };
       if (!res.ok) {
         throw new Error(data.error || "Failed to process move-out settlement.");
       }

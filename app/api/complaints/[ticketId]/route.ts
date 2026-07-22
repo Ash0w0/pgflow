@@ -10,7 +10,7 @@ export async function PATCH(
     const actor = await requireActor(request, ["owner", "manager", "staff"]);
     const { ticketId } = await params;
 
-    const body = await request.json();
+    const body = (await request.json()) as Record<string, any>;
     const { status } = body;
 
     const validStatuses = ["open", "in_progress", "resolved", "closed"];

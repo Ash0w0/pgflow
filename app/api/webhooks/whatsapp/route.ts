@@ -26,7 +26,7 @@ export async function GET(request: Request) {
  */
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = (await request.json()) as Record<string, any>;
     const isDemo = process.env.PGFLOW_RUNTIME === "demo";
 
     const entry = body.entry?.[0];

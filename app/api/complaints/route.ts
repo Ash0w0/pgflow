@@ -5,7 +5,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 export async function POST(request: Request) {
   try {
     const actor = await requireActor(request, ["owner", "manager", "staff"]);
-    const body = await request.json();
+    const body = (await request.json()) as Record<string, any>;
 
     const {
       roomNumber,
