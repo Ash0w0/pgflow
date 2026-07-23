@@ -79,7 +79,7 @@ NEXT_PUBLIC_PLATFORM_DOMAIN=pgflow.co
 OPERATOR_HOSTNAME=admin.pgflow.co
 ```
 
-Attach both `*.pgflow.co` and `admin.pgflow.co` to the production Vercel project. The apex can redirect to `www.pgflow.co`; it is not a tenant selector. Each provisioned organization gets one hostname such as `nivasa-pg.pgflow.co`, derived from its unique organization slug. Customers do not need to buy a domain unless they want to bring an optional custom domain of their own.
+Attach both `*.pgflow.co` and `admin.pgflow.co` to the production Vercel project. The apex can redirect to `www.pgflow.co`. Its `/login` page is only a workspace locator: it navigates the browser to `<organization-slug>.pgflow.co/login`, where normal hostname-based tenant resolution and authorization still apply. Each provisioned organization gets one hostname such as `nivasa-pg.pgflow.co`, derived from its unique organization slug. Customers do not need to buy a domain unless they want to bring an optional custom domain of their own.
 
 Migration `0031_cut_over_platform_domain.sql` replaces the temporary `pgflow-ruby.vercel.app` tenant mapping with `<organization-slug>.pgflow.co`. Apply it to the production Supabase project before retiring the old hostname.
 
