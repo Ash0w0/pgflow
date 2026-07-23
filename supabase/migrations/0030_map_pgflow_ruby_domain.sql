@@ -39,6 +39,6 @@ BEGIN
     ) VALUES (
       gen_random_uuid(), v_org_id, 'pgflow-ruby.vercel.app', 'platform_subdomain', 'verified', now()
     )
-    ON CONFLICT (hostname) DO UPDATE SET state = 'verified', verified_at = coalesce(verified_at, now());
+    ON CONFLICT (hostname) DO UPDATE SET state = 'verified', verified_at = coalesce(domain_mappings.verified_at, now());
   END IF;
 END $$;
