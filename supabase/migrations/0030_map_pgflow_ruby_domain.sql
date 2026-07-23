@@ -31,14 +31,14 @@ BEGIN
   -- 3. Update existing domain mapping if present, otherwise insert new mapping
   IF EXISTS (SELECT 1 FROM public.domain_mappings WHERE organization_id = v_org_id) THEN
     UPDATE public.domain_mappings
-    SET hostname = 'pgflow-ruby.vercel.app', state = 'verified'
+    SET hostname = 'pgflow-ruby.vercel.app', state = 'verified', verified_at = coalesce(verified_at, now())
     WHERE organization_id = v_org_id;
   ELSE
     INSERT INTO public.domain_mappings (
-      id, organization_id, hostname, kind, state
+      id, organization_id, hostname, kind, state, verified_at
     ) VALUES (
-      gen_random_uuid(), v_org_id, 'pgflow-ruby.vercel.app', 'platform_subdomain', 'verified'
+      gen_random_uuid(), v_org_id, 'pgflow-ruby.vercel.app', 'platform_subdomain', 'verified', now()
     )
-    ON CONFLICT (hostname) DO UPDATE SET state = 'verified';
+    ON CONFLICT (hostname) DO UPDATE SET state = 'verified', verified_at = coalesce(verified_at, now());
   END IF;
 END $$;
