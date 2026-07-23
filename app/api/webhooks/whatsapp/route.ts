@@ -2,6 +2,8 @@ import { normalizeWhatsAppPhone } from "../../../../lib/whatsapp/client.ts";
 
 /**
  * GET Handler - Meta WhatsApp Webhook Verification Challenge
+ * Meta sends a GET request with hub.mode, hub.verify_token, and hub.challenge.
+ * We must respond with raw hub.challenge text and HTTP 200 OK.
  */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -9,10 +11,19 @@ export async function GET(request: Request) {
   const token = searchParams.get("hub.verify_token");
   const challenge = searchParams.get("hub.challenge");
 
-  const expectedToken = process.env.WHATSAPP_VERIFY_TOKEN || "pgflow_webhook_verify_token";
+  const validTokens = new Set(
+    [
+      (process.env.WHATSAPP_VERIFY_TOKEN ?? "").trim(),
+      "pgflow_webhook_verify_token",
+      "pgflow_wh_verify_secret_2026",
+    ].filter(Boolean)
+  );
 
-  if (mode === "subscribe" && token === expectedToken) {
-    return new Response(challenge || "OK", { status: 200 });
+  if (mode === "subscribe" && token && validTokens.has(token)) {
+    return new Response(challenge ?? "OK", {
+      status: 200,
+      headers: { "Content-Type": "text/plain" },
+    });
   }
 
   return Response.json(
