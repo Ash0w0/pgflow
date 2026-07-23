@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { BrandMark, PoweredBy } from "@/components/brand-mark";
 import { LoginForm } from "@/components/login-form";
+import { WorkspaceFinder } from "@/components/workspace-finder";
 import { normalizeHostname } from "@/lib/branding";
 import {
   hasActivatedManualOwner,
@@ -14,19 +15,25 @@ import {
   isOperationalTenant,
   resolvePublicBrandContextForHostname,
 } from "@/lib/tenancy";
+import { isPlatformLoginHostname } from "@/lib/workspace-login";
 
 export default async function LoginPage() {
   const demoMode = isDemoRuntime();
   let workspaceSetupPending = false;
   let manualOwnerLogin = false;
+  let platformDomain = "";
+  let platformLogin = false;
 
   if (!demoMode) {
     const hostname = hostnameFromHeaders(await headers());
     const operatorHostname = normalizeHostname(process.env.OPERATOR_HOSTNAME ?? null);
+    platformDomain = normalizeHostname(process.env.NEXT_PUBLIC_PLATFORM_DOMAIN ?? null);
 
     if (!hostname) notFound();
 
-    if (!operatorHostname || hostname !== operatorHostname) {
+    platformLogin = isPlatformLoginHostname(hostname, platformDomain);
+
+    if ((!operatorHostname || hostname !== operatorHostname) && !platformLogin) {
       const tenant = await resolvePublicBrandContextForHostname(hostname).catch(() => null);
 
       if (!tenant) notFound();
@@ -63,7 +70,14 @@ export default async function LoginPage() {
       </section>
       <section className="login-form-panel">
         <div className="login-form-wrap">
-          {workspaceSetupPending ? (
+          {platformLogin ? (
+            <>
+              <span className="eyebrow">Find your workspace</span>
+              <h2>Open your PG workspace</h2>
+              <p>Enter the workspace name from the login address shared by your PG.</p>
+              <WorkspaceFinder platformDomain={platformDomain} />
+            </>
+          ) : workspaceSetupPending ? (
             <div className="workspace-setup-state" role="status">
               <span className="workspace-setup-icon" aria-hidden="true"><Clock3 size={24} /></span>
               <span className="eyebrow">Workspace preparation</span>
