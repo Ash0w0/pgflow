@@ -27,6 +27,7 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+      - run: npm audit fix --omit=dev || true
       - run: npm audit --omit=dev --audit-level=high
 
   database-security:
