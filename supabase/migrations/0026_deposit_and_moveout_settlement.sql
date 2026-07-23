@@ -46,6 +46,7 @@ as $function$
 declare
   v_now timestamptz := pg_catalog.clock_timestamp();
   v_resident record;
+  v_occupancy record;
   v_bed_id uuid;
   v_deposit numeric(10, 2);
   v_utility numeric(10, 2) := pg_catalog.coalesce(p_utility_deductions, 0);
@@ -80,8 +81,6 @@ begin
   select
     resident.id,
     resident.organization_id,
-    resident.bed_id,
-    resident.security_deposit,
     resident.state,
     resident.full_name
   into strict v_resident
@@ -90,12 +89,36 @@ begin
     and resident.organization_id = p_organization_id
   for update;
 
-  if v_resident.state = 'departed' then
-    raise exception using errcode = '22023', message = 'Resident has already departed.';
+  if v_resident.state not in ('active', 'notice') then
+    raise exception using errcode = '22023', message = 'Resident is not eligible for move-out.';
   end if;
 
-  v_bed_id := v_resident.bed_id;
-  v_deposit := pg_catalog.coalesce(v_resident.security_deposit, 0);
+  -- Bed assignment and deposit live on the active occupancy, not tenant_profiles.
+  begin
+    select
+      occupancy.id,
+      occupancy.bed_id,
+      occupancy.move_in_date,
+      occupancy.deposit_promised
+    into strict v_occupancy
+    from public.occupancies as occupancy
+    where occupancy.organization_id = p_organization_id
+      and occupancy.tenant_id = p_resident_id
+      and occupancy.state in ('active', 'notice')
+    for update;
+  exception
+    when no_data_found then
+      raise exception using errcode = '22023', message = 'Resident has no active occupancy.';
+    when too_many_rows then
+      raise exception using errcode = '23000', message = 'Resident has multiple active occupancies.';
+  end;
+
+  if p_exit_date < v_occupancy.move_in_date then
+    raise exception using errcode = '22023', message = 'Exit date cannot be before move-in date.';
+  end if;
+
+  v_bed_id := v_occupancy.bed_id;
+  v_deposit := pg_catalog.coalesce(v_occupancy.deposit_promised, 0);
   v_net_refund := v_deposit - (v_utility + v_damage + v_unpaid_rent);
 
   -- Record moveout settlement
@@ -131,20 +154,27 @@ begin
     v_now
   ) returning id into v_moveout_id;
 
-  -- Update resident status to departed and clear bed assignment
-  update public.tenant_profiles
-  set state = 'departed',
-      exit_date = p_exit_date,
-      bed_id = null,
+  -- Close the occupancy that owns the bed assignment and deposit.
+  update public.occupancies as occupancy
+  set state = 'completed',
+      move_out_date = p_exit_date,
       updated_at = v_now
-  where id = p_resident_id;
+  where occupancy.id = v_occupancy.id
+    and occupancy.organization_id = p_organization_id;
+
+  update public.tenant_profiles as resident
+  set state = 'moved_out',
+      updated_at = v_now
+  where resident.id = p_resident_id
+    and resident.organization_id = p_organization_id;
 
   -- Free bed back to vacant
   if v_bed_id is not null then
-    update public.beds
+    update public.beds as bed
     set state = 'vacant',
         updated_at = v_now
-    where id = v_bed_id;
+    where bed.id = v_bed_id
+      and bed.organization_id = p_organization_id;
   end if;
 
   -- Audit event
@@ -164,6 +194,7 @@ begin
     pg_catalog.jsonb_build_object(
       'residentId', p_resident_id,
       'residentName', v_resident.full_name,
+      'occupancyId', v_occupancy.id,
       'exitDate', p_exit_date,
       'depositAmount', v_deposit,
       'utilityDeductions', v_utility,
@@ -178,6 +209,7 @@ begin
     'moveoutId', v_moveout_id,
     'organizationId', p_organization_id,
     'residentId', p_resident_id,
+    'occupancyId', v_occupancy.id,
     'exitDate', p_exit_date,
     'depositAmount', v_deposit,
     'netRefundAmount', v_net_refund,
@@ -194,3 +226,4 @@ grant execute on function public.process_resident_moveout(uuid, uuid, uuid, date
 
 comment on table public.resident_moveouts is
   'Audited resident departure settlements and security deposit deductions.';
+
