@@ -72,6 +72,17 @@ Every production request resolves its organization from `domain_mappings.hostnam
 
 Unknown, pending, failed, suspended, and archived hostnames do not receive an operational tenant context. The wildcard platform subdomain remains independent of optional custom-domain verification.
 
+For the hosted PGFlow environment, use:
+
+```dotenv
+NEXT_PUBLIC_PLATFORM_DOMAIN=pgflow.co
+OPERATOR_HOSTNAME=admin.pgflow.co
+```
+
+Attach both `*.pgflow.co` and `admin.pgflow.co` to the production Vercel project. The apex can redirect to `www.pgflow.co`; it is not a tenant selector. Each provisioned organization gets one hostname such as `nivasa-pg.pgflow.co`, derived from its unique organization slug. Customers do not need to buy a domain unless they want to bring an optional custom domain of their own.
+
+Migration `0031_cut_over_platform_domain.sql` replaces the temporary `pgflow-ruby.vercel.app` tenant mapping with `<organization-slug>.pgflow.co`. Apply it to the production Supabase project before retiring the old hostname.
+
 ## Release checks for this slice
 
 ```bash

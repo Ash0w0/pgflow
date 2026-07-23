@@ -2,7 +2,7 @@
 -- every fixture and exercises policies as real authenticated JWT subjects.
 
 begin;
-select plan(89);
+select plan(91);
 
 select has_function('public', 'current_organization_ids', array[]::text[], 'RLS organization helper exists');
 select ok(not has_table_privilege('anon', 'public.organizations', 'select'), 'anonymous users cannot read organizations');
@@ -174,6 +174,27 @@ select ok(
       and pg_constraint.convalidated
   ),
   'domain mappings have a validated canonical hostname constraint'
+);
+select ok(
+  not exists (
+    select 1
+    from public.domain_mappings as domain_mapping
+    where domain_mapping.hostname = 'pgflow-ruby.vercel.app'
+  ),
+  'the temporary Vercel hostname is no longer a tenant mapping'
+);
+select ok(
+  exists (
+    select 1
+    from public.domain_mappings as domain_mapping
+    join public.organizations as organization
+      on organization.id = domain_mapping.organization_id
+    where domain_mapping.hostname = organization.slug || '.pgflow.co'
+      and domain_mapping.kind = 'platform_subdomain'
+      and domain_mapping.state = 'verified'
+      and domain_mapping.verified_at is not null
+  ),
+  'the bootstrap tenant uses its verified pgflow.co platform subdomain'
 );
 select ok(
   not has_table_privilege('anon', 'public.provisioning_jobs', 'select')
