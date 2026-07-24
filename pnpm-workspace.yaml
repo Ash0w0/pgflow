@@ -3,3 +3,6 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
   workerd: true
+minimumReleaseAgeExclude:
+  - '@remotion/player@4.0.498'
+  - remotion@4.0.498
