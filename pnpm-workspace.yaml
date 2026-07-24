@@ -3,6 +3,9 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
   workerd: true
+overrides:
+  next>postcss: 8.5.12
+  next>sharp: 0.35.3
 minimumReleaseAgeExclude:
   - '@remotion/player@4.0.498'
   - remotion@4.0.498
