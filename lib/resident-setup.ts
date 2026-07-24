@@ -5,7 +5,8 @@ import type { AvailableResidentBed, ResidentRegisterRow, ResidentSetupData } fro
 
 export async function getResidentSetupData(organizationId: string, propertyId: string): Promise<ResidentSetupData> {
   const admin = getSupabaseAdmin();
-  const [floorsResult, roomsResult, bedsResult, tenantsResult, occupanciesResult, invoicesResult] = await Promise.all([
+  const [organizationResult, floorsResult, roomsResult, bedsResult, tenantsResult, occupanciesResult, invoicesResult] = await Promise.all([
+    admin.from("organizations").select("resident_limit").eq("id", organizationId).single(),
     admin.from("floors").select("id,name,state").eq("organization_id", organizationId).eq("property_id", propertyId).limit(250),
     admin.from("rooms").select("id,floor_id,code,default_rent,state").eq("organization_id", organizationId).eq("property_id", propertyId).limit(250),
     admin.from("beds").select("id,room_id,label,state").eq("organization_id", organizationId).eq("property_id", propertyId).limit(500),
@@ -15,6 +16,7 @@ export async function getResidentSetupData(organizationId: string, propertyId: s
   ]);
 
   for (const [label, result] of [
+    ["organization", organizationResult],
     ["floors", floorsResult], ["rooms", roomsResult], ["beds", bedsResult],
     ["residents", tenantsResult], ["occupancies", occupanciesResult], ["invoices", invoicesResult],
   ] as const) {
@@ -78,6 +80,7 @@ export async function getResidentSetupData(organizationId: string, propertyId: s
   residents.sort((left, right) => left.fullName.localeCompare(right.fullName));
 
   return {
+    residentLimit: Number(organizationResult.data?.resident_limit ?? 2),
     availableBeds,
     residents,
     totals: {
