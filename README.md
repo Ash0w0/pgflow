@@ -11,7 +11,7 @@ The repository has two deliberately separate runtimes:
 
 ## Run the fictional demo
 
-Requires Node.js 22.13 or newer.
+Requires Node.js 22.13 or newer
 
 ```bash
 npm install
