@@ -39,7 +39,7 @@ test("resident onboarding is atomic, owner-scoped, locked, and audited", async (
 
 test("starter organizations cannot exceed their configured resident entitlement", async () => {
   const migration = await readFile(
-    new URL("supabase/migrations/0031_starter_resident_limit.sql", root),
+    new URL("supabase/migrations/0032_starter_resident_limit.sql", root),
     "utf8",
   );
 
