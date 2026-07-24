@@ -24,7 +24,7 @@ BEGIN
   IF v_org_id IS NULL THEN
     v_org_id := '00000000-0000-4000-8000-000000000001'::uuid;
     INSERT INTO public.organizations (id, template_version_id, name, slug, state)
-    VALUES (v_org_id, v_template_version_id, 'Nivasa PG', 'nivasa-pg', 'core_ready')
+    VALUES (v_org_id, v_template_version_id, 'PGFlow Starter', 'pgflow-starter', 'core_ready')
     ON CONFLICT (id) DO NOTHING;
   END IF;
 
