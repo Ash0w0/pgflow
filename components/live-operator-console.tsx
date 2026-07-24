@@ -458,46 +458,7 @@ export function LiveOperatorConsole() {
       <section className="operator-grid live-operator-grid">
         <article className="panel live-provision-panel">
           <div className="panel-head">
-            <div><span className="eyebrow">New organization</span><h2>Create a branded PG shell</h2><p>The hostname and empty property record are created through the protected provisioning API.</p></div>
-          </div>
-
-          <form className="modal-form live-provision-form" onSubmit={provisionShell} aria-busy={submitting}>
-            <label htmlFor="provision-name">
-              Organization name
-              <input
-                id="provision-name"
-                name="name"
-                value={form.name}
-                onChange={(event) => updateField("name", event.target.value)}
-                minLength={2}
-                maxLength={120}
-                required
-                disabled={submitting}
-              />
-            </label>
-            <div className="form-row">
-              <label htmlFor="provision-slug">
-                Workspace slug
-                <input
-                  id="provision-slug"
-                  name="slug"
-                  value={form.slug}
-                  onChange={(event) => updateField("slug", event.target.value.toLowerCase())}
-                  pattern="[a-z0-9](?:[a-z0-9-]{1,46}[a-z0-9])?"
-                  title="Use lowercase letters, numbers, and internal hyphens."
-                  autoCapitalize="none"
-                  spellCheck={false}
-                  required
-                  disabled={submitting}
-                />
-              </label>
-              <label htmlFor="provision-property-name">
-                Property name
-                <input
-                  id="provision-property-name"
-                  name="propertyName"
-                  value={form.propertyName}
-                  onChange={(event) => updateField("propertyName", event.target.value)}
+          …523 tokens truncated….target.value)}
                   minLength={2}
                   maxLength={120}
                   required
@@ -589,7 +550,7 @@ export function LiveOperatorConsole() {
             </label>
             <label htmlFor="domain-hostname">
               Custom domain
-              <input id="domain-hostname" value={domainHostname} onChange={(e) => { setDomainHostname(e.target.value); setDomainChallenge(null); setDomainVerified(null); setDomainError(null); }} placeholder="nivasastay.com" autoCapitalize="none" spellCheck={false} required disabled={domainSubmitting} />
+              <input id="domain-hostname" value={domainHostname} onChange={(e) => { setDomainHostname(e.target.value); setDomainChallenge(null); setDomainVerified(null); setDomainError(null); }} placeholder="yourpghostel.com" autoCapitalize="none" spellCheck={false} required disabled={domainSubmitting} />
             </label>
           </div>
           <button className="button button-secondary button-full" type="submit" disabled={domainSubmitting || !domainOrgId || !domainHostname}>
