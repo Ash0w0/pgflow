@@ -257,7 +257,7 @@ export function DemoDashboard() {
             </div>
             <button className="button button-quiet" type="button"><Download size={16} /> Export queue</button>
           </div>
-          <div className="table-wrap">
+          <div className="table-wrap" role="region" aria-label="Payment review table" tabIndex={0}>
             <table className="data-table">
               <thead><tr><th>Resident</th><th>Submission</th><th>Amount</th><th>Reference</th><th>Status</th><th><span className="sr-only">Actions</span></th></tr></thead>
               <tbody>
