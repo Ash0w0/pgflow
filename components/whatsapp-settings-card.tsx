@@ -1,24 +1,38 @@
 "use client";
 
 import { useState } from "react";
-import { MessageSquare, Send, CheckCircle2, AlertCircle, PhoneCall } from "lucide-react";
-import { WhatsAppSendModal, WhatsAppSendTarget } from "./whatsapp-send-modal";
+import { AlertCircle, CheckCircle2, MessageSquare, Send } from "lucide-react";
+import { WhatsAppSendModal, type WhatsAppSendTarget } from "./whatsapp-send-modal";
 
-export function WhatsAppSettingsCard() {
+export function WhatsAppSettingsCard({
+  configured,
+  ownerPhone,
+  demoMode,
+}: {
+  configured: boolean;
+  ownerPhone: string | null;
+  demoMode: boolean;
+}) {
   const [testModalOpen, setTestModalOpen] = useState(false);
   const [testTarget, setTestTarget] = useState<WhatsAppSendTarget | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // The test dispatch goes to the signed-in owner's own number — never a placeholder,
+  // which would deliver a rent reminder to an unrelated person.
+  const testPhone = ownerPhone?.replace(/^\+/, "") ?? "";
+  const canSendTest = configured && (demoMode || testPhone.length > 0);
+
   function openTestModal() {
+    setSuccessMessage(null);
     setTestTarget({
       type: "rent_due",
-      recipientName: "Aarav Shah (Owner Test)",
-      recipientPhone: "919876543210",
+      recipientName: "Owner test message",
+      recipientPhone: testPhone || "919999999999",
       amount: 8500,
-      billingPeriod: "July 2026",
-      pgName: "PGFlow Sample PG",
-      dueDate: "05 July 2026",
-      paymentUrl: "http://localhost:3000/pay/demo",
+      billingPeriod: "Test period",
+      pgName: "Your PG",
+      dueDate: "05 of this month",
+      paymentUrl: typeof window === "undefined" ? "/pay/demo" : `${window.location.origin}/pay/demo`,
     });
     setTestModalOpen(true);
   }
@@ -27,9 +41,9 @@ export function WhatsAppSettingsCard() {
     <section className="panel whatsapp-settings-card" aria-labelledby="whatsapp-settings-title">
       <div className="panel-head">
         <div>
-          <span className="eyebrow">WhatsApp Communications</span>
+          <span className="eyebrow">WhatsApp communications</span>
           <h2 id="whatsapp-settings-title">WhatsApp Cloud API</h2>
-          <p>Send instant rent reminders, official payment receipts, and daily digests directly to residents on WhatsApp.</p>
+          <p>Send rent reminders, payment receipts, and daily digests to residents on WhatsApp.</p>
         </div>
         <span className="owner-invite-icon">
           <MessageSquare size={20} />
@@ -37,48 +51,62 @@ export function WhatsAppSettingsCard() {
       </div>
 
       <div className="space-y-4 text-sm">
-        {/* Status Indicator */}
-        <div className="flex items-center justify-between p-4 rounded-xl border border-emerald-200 bg-emerald-50/50 dark:border-emerald-900/50 dark:bg-emerald-950/20">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 className="text-emerald-600" size={20} />
-            <div>
-              <strong className="block font-bold text-slate-900 dark:text-white">
-                WhatsApp Messaging Active
-              </strong>
-              <span className="text-xs text-slate-600 dark:text-slate-400">
-                Outbound reminders & receipts enabled via Meta Graph API v18.0.
-              </span>
+        {configured ? (
+          <div className="flex items-center justify-between p-4 rounded-xl border border-emerald-200 bg-emerald-50/50 dark:border-emerald-900/50 dark:bg-emerald-950/20">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="text-emerald-600" size={20} />
+              <div>
+                <strong className="block font-bold text-slate-900 dark:text-white">
+                  {demoMode ? "WhatsApp messaging simulated" : "WhatsApp messaging active"}
+                </strong>
+                <span className="text-xs text-slate-600 dark:text-slate-400">
+                  {demoMode
+                    ? "Demo mode previews message templates without contacting Meta."
+                    : "Outbound reminders and receipts are enabled."}
+                </span>
+              </div>
             </div>
+            <span className="px-3 py-1 text-xs font-bold rounded-lg bg-emerald-600 text-white">
+              {demoMode ? "Demo" : "Ready"}
+            </span>
           </div>
-          <span className="px-3 py-1 text-xs font-bold rounded-lg bg-emerald-600 text-white">
-            Ready
-          </span>
-        </div>
+        ) : (
+          <div className="flex items-center justify-between p-4 rounded-xl border border-amber-200 bg-amber-50/50 dark:border-amber-900/50 dark:bg-amber-950/20">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="text-amber-600" size={20} />
+              <div>
+                <strong className="block font-bold text-slate-900 dark:text-white">
+                  WhatsApp messaging not configured
+                </strong>
+                <span className="text-xs text-slate-600 dark:text-slate-400">
+                  Outbound reminders and receipts are disabled until credentials are set.
+                </span>
+              </div>
+            </div>
+            <span className="px-3 py-1 text-xs font-bold rounded-lg bg-amber-600 text-white">Inactive</span>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="p-3.5 rounded-xl border border-slate-200 bg-white dark:bg-slate-900 dark:border-slate-800">
-            <span className="block text-xs font-semibold text-slate-400 uppercase">
-              Supported Templates
-            </span>
+            <span className="block text-xs font-semibold text-slate-400 uppercase">Supported templates</span>
             <strong className="block text-sm font-bold text-slate-800 dark:text-slate-200 mt-0.5">
-              Rent Due, Payment Receipts, Daily Digest
+              Rent due, payment receipts, daily digest
             </strong>
           </div>
           <div className="p-3.5 rounded-xl border border-slate-200 bg-white dark:bg-slate-900 dark:border-slate-800">
-            <span className="block text-xs font-semibold text-slate-400 uppercase">
-              Languages
-            </span>
+            <span className="block text-xs font-semibold text-slate-400 uppercase">Languages</span>
             <strong className="block text-sm font-bold text-slate-800 dark:text-slate-200 mt-0.5">
-              Bilingual (English & हिंदी)
+              English and हिंदी
             </strong>
           </div>
         </div>
 
-        {/* Info Box */}
         <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-500/10 text-amber-900 dark:text-amber-300 border border-amber-500/20 text-xs">
           <AlertCircle size={17} className="shrink-0 mt-0.5" />
           <span>
-            WhatsApp messages are sent using Meta-approved templates. To customize outbound templates or Meta WABA credentials, configure <code>WHATSAPP_TOKEN</code> in your environment.
+            Messages are sent using Meta-approved templates. Set <code>WHATSAPP_TOKEN</code> and{" "}
+            <code>WHATSAPP_PHONE_NUMBER_ID</code> in your environment to enable live dispatch.
           </span>
         </div>
 
@@ -93,22 +121,31 @@ export function WhatsAppSettingsCard() {
           <button
             type="button"
             onClick={openTestModal}
+            disabled={!canSendTest}
+            title={
+              !configured
+                ? "Configure WhatsApp credentials to send a test message"
+                : !canSendTest
+                  ? "Your account needs a verified phone number to receive the test"
+                  : undefined
+            }
             className="button button-primary flex items-center gap-2"
           >
             <Send size={15} />
-            <span>Test WhatsApp Message Dispatch</span>
+            <span>Send test message to myself</span>
           </button>
         </div>
       </div>
 
-      {testModalOpen && (
-        <WhatsAppSendModal
-          isOpen={testModalOpen}
-          target={testTarget}
-          onClose={() => setTestModalOpen(false)}
-          onSuccess={() => setSuccessMessage("Test WhatsApp reminder dispatched successfully!")}
-        />
-      )}
+      <WhatsAppSendModal
+        isOpen={testModalOpen}
+        target={testTarget}
+        onClose={() => setTestModalOpen(false)}
+        onSuccess={() => {
+          setTestModalOpen(false);
+          setSuccessMessage("Test WhatsApp message dispatched.");
+        }}
+      />
     </section>
   );
 }

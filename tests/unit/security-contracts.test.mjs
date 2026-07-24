@@ -749,3 +749,55 @@ test("manual owner Auth trigger validates NEW and canonical phone without a self
     /revoke all on function public\.complete_manual_owner_activation_on_auth_user\(\)[\s\S]*?from public, anon, authenticated, service_role/i,
   );
 });
+
+test("the owner dashboard never downgrades a failed authorization into demo mode", async () => {
+  const page = await readFile(new URL("app/page.tsx", root), "utf8");
+
+  // requireStaffPage denies via redirect("/login"), which Next.js implements by throwing
+  // NEXT_REDIRECT. Catching around it serves the workspace to unauthenticated visitors.
+  assert.doesNotMatch(page, /requireStaffPage\([\s\S]{0,120}?\)\s*\.catch/);
+  assert.doesNotMatch(page, /catch[\s\S]{0,80}?mode:\s*["']demo["']/);
+  assert.match(page, /await requireStaffPage\(\["owner", "manager", "accountant"\]\);/);
+
+  // The marketing homepage stays hostname-derived so metadata and body cannot disagree.
+  assert.match(page, /if \(await isPublicPlatformHomepage\(\)\) return <BusinessHomepage \/>;/);
+  assert.doesNotMatch(page, /searchParams/);
+});
+
+test("demo runtime is explicit and never inferred from absent production credentials", async () => {
+  const [runtime, admin] = await Promise.all([
+    readFile(new URL("lib/runtime.ts", root), "utf8"),
+    readFile(new URL("lib/supabase/admin.ts", root), "utf8"),
+  ]);
+
+  assert.match(runtime, /process\.env\.PGFLOW_RUNTIME === "demo"/);
+  assert.doesNotMatch(runtime, /SUPABASE_SECRET_KEY|SUPABASE_SERVICE_ROLE_KEY|NEXT_PUBLIC_SUPABASE_URL/);
+
+  // Missing production credentials must fail loudly rather than degrade to demo mode.
+  assert.match(admin, /throw new Error\("SUPABASE_SECRET_KEY is required on the server\."\)/);
+});
+
+test("approved demo hosts never shadow a production apex domain", async () => {
+  const branding = await readFile(new URL("lib/branding.ts", root), "utf8");
+  const block = branding.match(/approvedDemoHosts:[\s\S]*?\n\};/)?.[0] ?? "";
+
+  assert.ok(block, "approvedDemoHosts table could not be located");
+  for (const productionApex of ["pgflow.co", "pgflow.app", "www.pgflow.co"]) {
+    assert.doesNotMatch(block, new RegExp(`["']${productionApex.replace(/\./g, "\\.")}["']\\s*:`));
+  }
+  assert.match(block, /"demo\.pgflow\.co"\s*:/);
+});
+
+test("brand colors reaching CSS custom properties are hex-validated in one shared place", async () => {
+  const [branding, layout] = await Promise.all([
+    readFile(new URL("lib/branding.ts", root), "utf8"),
+    readFile(new URL("app/layout.tsx", root), "utf8"),
+  ]);
+
+  assert.match(branding, /const HEX_COLOR = \/\^#\[0-9a-f\]\{6\}\$\/i;/);
+  assert.match(branding, /export function safeColor/);
+  assert.match(branding, /export function isBrandColor/);
+  // The layout must consume the shared validator instead of re-declaring its own.
+  assert.match(layout, /import \{[^}]*safeColor[^}]*\} from "@\/lib\/branding"/);
+  assert.doesNotMatch(layout, /function safeColor/);
+});

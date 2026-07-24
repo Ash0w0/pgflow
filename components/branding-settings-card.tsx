@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Palette, CheckCircle2, Sparkles, RefreshCw } from "lucide-react";
+import { DEFAULT_BRAND_ACCENT, DEFAULT_BRAND_PRIMARY, isBrandColor } from "@/lib/branding";
 
 export interface ColorPreset {
   id: string;
@@ -11,7 +13,7 @@ export interface ColorPreset {
 }
 
 export const PRESET_THEMES: ColorPreset[] = [
-  { id: "forest", name: "Forest & Lime (Default)", primary: "#123d32", accent: "#d7ff86" },
+  { id: "forest", name: "Forest & Lime (Default)", primary: DEFAULT_BRAND_PRIMARY, accent: DEFAULT_BRAND_ACCENT },
   { id: "indigo", name: "Royal Indigo", primary: "#3730a3", accent: "#c7d2fe" },
   { id: "emerald", name: "Emerald Mint", primary: "#065f46", accent: "#a7f3d0" },
   { id: "ocean", name: "Ocean Blue", primary: "#0f4c81", accent: "#bae6fd" },
@@ -19,82 +21,87 @@ export const PRESET_THEMES: ColorPreset[] = [
   { id: "teal", name: "Teal & Amber", primary: "#115e59", accent: "#fef08a" },
 ];
 
-export function BrandingSettingsCard() {
-  const [primaryColor, setPrimaryColor] = useState("#123d32");
-  const [accentColor, setAccentColor] = useState("#d7ff86");
+export type BrandThemeSettings = { primaryColor: string; accentColor: string };
+
+/**
+ * The saved theme is applied by the server: `resolveLayoutBrand()` in app/layout.tsx reads
+ * brand_themes and writes --brand/--accent onto <html>. This card therefore owns the draft
+ * only — component state drives the in-card preview, and a successful save is followed by
+ * router.refresh() so the real theme comes back from the server.
+ */
+export function BrandingSettingsCard({
+  initial,
+  demoMode,
+}: {
+  initial: BrandThemeSettings;
+  demoMode: boolean;
+}) {
+  const router = useRouter();
+  const [primaryColor, setPrimaryColor] = useState(initial.primaryColor);
+  const [accentColor, setAccentColor] = useState(initial.accentColor);
   const [submitting, setSubmitting] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    try {
-      const storedPrimary = localStorage.getItem("pgflow_primary_color");
-      const storedAccent = localStorage.getItem("pgflow_accent_color");
-      if (storedPrimary) setPrimaryColor(storedPrimary);
-      if (storedAccent) setAccentColor(storedAccent);
-    } catch {}
-  }, []);
+  const isDirty = primaryColor !== initial.primaryColor || accentColor !== initial.accentColor;
+  const colorsValid = isBrandColor(primaryColor) && isBrandColor(accentColor);
 
   function applyPreset(preset: ColorPreset) {
     setPrimaryColor(preset.primary);
     setAccentColor(preset.accent);
+    setSaved(false);
+    setError(null);
   }
 
-  function applyThemeVariables(pColor: string, aColor: string) {
-    document.documentElement.style.setProperty("--brand", pColor);
-    document.documentElement.style.setProperty("--accent", aColor);
-  }
+  async function handleSave(event: React.FormEvent) {
+    event.preventDefault();
+    if (submitting) return;
 
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault();
+    if (!colorsValid) {
+      setError("Enter both colors as six-digit hex values, for example #123d32.");
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
     setSaved(false);
 
     try {
-      applyThemeVariables(primaryColor, accentColor);
-
-      try {
-        localStorage.setItem("pgflow_primary_color", primaryColor);
-        localStorage.setItem("pgflow_accent_color", accentColor);
-      } catch {}
-
-      const res = await fetch("/api/settings/branding", {
+      const response = await fetch("/api/settings/branding", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ primaryColor, accentColor }),
       });
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        throw new Error(data?.error || "Failed to update branding settings.");
+      const payload = (await response.json().catch(() => null)) as
+        | { error?: string; theme?: BrandThemeSettings }
+        | null;
+
+      if (!response.ok) {
+        throw new Error(payload?.error || "The color scheme could not be saved.");
       }
 
+      if (payload?.theme) {
+        setPrimaryColor(payload.theme.primaryColor);
+        setAccentColor(payload.theme.accentColor);
+      }
       setSaved(true);
+      // Pull the persisted theme back through the layout so the whole workspace repaints.
+      router.refresh();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Error saving theme.");
+      setError(err instanceof Error ? err.message : "The color scheme could not be saved.");
     } finally {
       setSubmitting(false);
     }
-  }
-
-  function handleReset() {
-    applyPreset(PRESET_THEMES[0]);
-    applyThemeVariables(PRESET_THEMES[0].primary, PRESET_THEMES[0].accent);
-    try {
-      localStorage.removeItem("pgflow_primary_color");
-      localStorage.removeItem("pgflow_accent_color");
-    } catch {}
-    setSaved(true);
   }
 
   return (
     <section className="panel branding-settings-card" aria-labelledby="branding-settings-title">
       <div className="panel-head">
         <div>
-          <span className="eyebrow">Workspace Appearance</span>
-          <h2 id="branding-settings-title">Color Scheme & Branding</h2>
-          <p>Customize the primary color palette and accent highlights for your PG control room.</p>
+          <span className="eyebrow">Workspace appearance</span>
+          <h2 id="branding-settings-title">Color scheme &amp; branding</h2>
+          <p>Set the primary color and accent highlight used across your PG workspace.</p>
         </div>
         <span className="owner-invite-icon">
           <Palette size={20} />
@@ -102,11 +109,10 @@ export function BrandingSettingsCard() {
       </div>
 
       <form className="modal-form" onSubmit={handleSave}>
-        {/* Preset Selection */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
-            Curated Color Palettes
-          </label>
+          <span className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+            Curated color palettes
+          </span>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {PRESET_THEMES.map((preset) => {
               const isSelected = primaryColor === preset.primary && accentColor === preset.accent;
@@ -115,6 +121,7 @@ export function BrandingSettingsCard() {
                   key={preset.id}
                   type="button"
                   onClick={() => applyPreset(preset)}
+                  aria-pressed={isSelected}
                   className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
                     isSelected
                       ? "border-emerald-500 bg-emerald-50/50 shadow-sm"
@@ -132,9 +139,7 @@ export function BrandingSettingsCard() {
                     />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="block text-xs font-bold text-slate-900 truncate">
-                      {preset.name}
-                    </span>
+                    <span className="block text-xs font-bold text-slate-900 truncate">{preset.name}</span>
                   </div>
                 </button>
               );
@@ -142,64 +147,69 @@ export function BrandingSettingsCard() {
           </div>
         </div>
 
-        {/* Custom Pickers */}
         <div className="form-row mt-4">
           <label>
-            Primary Brand Color
+            Primary brand color
             <div className="flex items-center gap-2 mt-1">
               <input
                 type="color"
-                value={primaryColor}
-                onChange={(e) => setPrimaryColor(e.target.value)}
+                aria-label="Pick primary brand color"
+                value={isBrandColor(primaryColor) ? primaryColor : DEFAULT_BRAND_PRIMARY}
+                onChange={(event) => setPrimaryColor(event.target.value)}
                 className="w-10 h-10 p-0.5 rounded-lg border border-slate-200 cursor-pointer"
               />
               <input
                 type="text"
                 value={primaryColor}
-                onChange={(e) => setPrimaryColor(e.target.value)}
+                onChange={(event) => setPrimaryColor(event.target.value)}
                 className="font-mono text-xs uppercase"
                 maxLength={7}
+                pattern="#[0-9a-fA-F]{6}"
+                aria-label="Primary brand color hex value"
               />
             </div>
           </label>
           <label>
-            Accent Highlight Color
+            Accent highlight color
             <div className="flex items-center gap-2 mt-1">
               <input
                 type="color"
-                value={accentColor}
-                onChange={(e) => setAccentColor(e.target.value)}
+                aria-label="Pick accent highlight color"
+                value={isBrandColor(accentColor) ? accentColor : DEFAULT_BRAND_ACCENT}
+                onChange={(event) => setAccentColor(event.target.value)}
                 className="w-10 h-10 p-0.5 rounded-lg border border-slate-200 cursor-pointer"
               />
               <input
                 type="text"
                 value={accentColor}
-                onChange={(e) => setAccentColor(e.target.value)}
+                onChange={(event) => setAccentColor(event.target.value)}
                 className="font-mono text-xs uppercase"
                 maxLength={7}
+                pattern="#[0-9a-fA-F]{6}"
+                aria-label="Accent highlight color hex value"
               />
             </div>
           </label>
         </div>
 
-        {/* Live Preview Box */}
         <div className="mt-4 p-4 rounded-xl border border-slate-200 bg-slate-50">
-          <span className="block text-xs font-semibold uppercase text-slate-500 mb-2">
-            Live Interface Preview
-          </span>
+          <span className="block text-xs font-semibold uppercase text-slate-500 mb-2">Preview</span>
           <div
             className="p-4 rounded-xl text-white flex items-center justify-between shadow-md"
-            style={{ backgroundColor: primaryColor }}
+            style={{ backgroundColor: isBrandColor(primaryColor) ? primaryColor : DEFAULT_BRAND_PRIMARY }}
           >
             <div>
-              <strong className="block text-sm font-bold">Your PG Workspace</strong>
+              <strong className="block text-sm font-bold">Your PG workspace</strong>
               <small className="text-xs opacity-80">Primary theme container</small>
             </div>
             <span
               className="px-3 py-1 text-xs font-bold rounded-lg"
-              style={{ backgroundColor: accentColor, color: primaryColor }}
+              style={{
+                backgroundColor: isBrandColor(accentColor) ? accentColor : DEFAULT_BRAND_ACCENT,
+                color: isBrandColor(primaryColor) ? primaryColor : DEFAULT_BRAND_PRIMARY,
+              }}
             >
-              Live Action Badge
+              Action badge
             </span>
           </div>
         </div>
@@ -207,27 +217,34 @@ export function BrandingSettingsCard() {
         {saved && (
           <div className="live-operator-feedback feedback-success" role="status">
             <CheckCircle2 size={17} />
-            Color scheme saved and applied instantly!
+            {demoMode
+              ? "Color scheme previewed. The shared demo workspace is not saved."
+              : "Color scheme saved for this workspace."}
           </div>
         )}
-        {error && <p className="form-error" role="alert">{error}</p>}
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
 
         <div className="flex items-center gap-3 pt-2">
           <button
             type="button"
-            onClick={handleReset}
+            onClick={() => applyPreset(PRESET_THEMES[0])}
             className="button button-secondary flex items-center gap-2"
+            disabled={submitting}
           >
             <RefreshCw size={15} />
-            <span>Reset Default</span>
+            <span>Reset to default</span>
           </button>
           <button
             type="submit"
             className="button button-primary button-full flex items-center justify-center gap-2"
-            disabled={submitting}
+            disabled={submitting || !colorsValid || !isDirty}
           >
             <Sparkles size={16} />
-            <span>{submitting ? "Applying Theme…" : "Save Color Scheme"}</span>
+            <span>{submitting ? "Saving…" : "Save color scheme"}</span>
           </button>
         </div>
       </form>

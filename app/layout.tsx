@@ -3,7 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import { BrandProvider, type BrandValue } from "@/components/brand-provider";
-import { normalizeHostname } from "@/lib/branding";
+import { normalizeHostname, safeColor } from "@/lib/branding";
 import { isDemoRuntime } from "@/lib/runtime";
 import { hostnameFromHeaders, resolvePublicBrandContextForHostname } from "@/lib/tenancy";
 import "./globals.css";
@@ -39,10 +39,6 @@ function safeHostname(value: string | null) {
   }
 
   return hostname;
-}
-
-function safeColor(value: string, fallback: string) {
-  return /^#[0-9a-f]{6}$/i.test(value) ? value.toLowerCase() : fallback;
 }
 
 function safeBrandText(value: string, fallback: string, maximumLength: number) {

@@ -2,11 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Banknote, CalendarDays, CheckCircle2, CircleAlert, Copy, FileText, IndianRupee, MessageCircle, QrCode, Share2, ShieldCheck, Sparkles, WalletCards, X, Send } from "lucide-react";
+import { Banknote, CalendarDays, CheckCircle2, CircleAlert, Copy, FileText, IndianRupee, MessageCircle, QrCode, Share2, ShieldCheck, Sparkles, WalletCards, X } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import type { CollectionsData } from "@/lib/collections-types";
 import { AppShell } from "./app-shell";
-import { WhatsAppSendModal, WhatsAppSendTarget } from "./whatsapp-send-modal";
+import { useBrand } from "./brand-provider";
+import { WhatsAppSendModal, type WhatsAppSendTarget } from "./whatsapp-send-modal";
 
 const currency = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
 
@@ -23,6 +24,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 export function CollectionsWorkspace({ data, canGenerate, canReview }: { data: CollectionsData; canGenerate: boolean; canReview: boolean }) {
   const router = useRouter();
+  const brand = useBrand();
   const [confirmed, setConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,15 +43,17 @@ export function CollectionsWorkspace({ data, canGenerate, canReview }: { data: C
   const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
 
   function triggerWhatsAppModal(invoice: CollectionsData["invoices"][number]) {
+    // Never fall back to a placeholder number: the reminder would reach an unrelated person.
+    if (!invoice.residentPhone) return;
     setWhatsappTarget({
       type: "rent_due",
       recipientName: invoice.residentName,
-      recipientPhone: invoice.residentPhone || "919876543210",
+      recipientPhone: invoice.residentPhone,
       amount: invoice.totalAmount - invoice.paidAmount,
-      billingPeriod: data.periodLabel || "July 2026",
-      pgName: "PGFlow PG",
+      billingPeriod: data.periodLabel,
+      pgName: brand.name,
       dueDate: displayDate(invoice.dueDate),
-      paymentUrl: `http://localhost:3000/pay/${invoice.id}`,
+      paymentUrl: `${window.location.origin}/pay/${invoice.id}`,
     });
     setWhatsappModalOpen(true);
   }
@@ -229,10 +233,11 @@ export function CollectionsWorkspace({ data, canGenerate, canReview }: { data: C
                           <>
                             <button
                               type="button"
-                              className="resident-manage-button"
-                              style={{ color: "#059669", borderColor: "#a7f3d0" }}
+                              className={`resident-manage-button ${invoice.residentPhone ? "" : "disabled"}`}
+                              style={invoice.residentPhone ? { color: "#059669", borderColor: "#a7f3d0" } : undefined}
+                              disabled={!invoice.residentPhone}
                               onClick={() => triggerWhatsAppModal(invoice)}
-                              title="Send WhatsApp Rent Reminder"
+                              title={invoice.residentPhone ? "Send WhatsApp rent reminder" : "No phone number on file for this resident"}
                             >
                               <MessageCircle size={14} /> WhatsApp
                             </button>
@@ -281,4 +286,3 @@ export function CollectionsWorkspace({ data, canGenerate, canReview }: { data: C
     </AppShell>
   );
 }
-

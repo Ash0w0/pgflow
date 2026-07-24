@@ -1,11 +1,13 @@
+/**
+ * Demo mode is opt-in and explicit. Never infer it from missing configuration:
+ * `getSupabaseAdmin()` and `requirePublicSupabaseConfig()` already fail loudly when
+ * production credentials are absent, and degrading to demo instead would serve
+ * sample data from a production host with the page authorization gate disabled.
+ */
 export function isDemoRuntime() {
-  const runtime = process.env.PGFLOW_RUNTIME;
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const isPlaceholderSupabase = !supabaseUrl || supabaseUrl.includes("your-project.supabase.co") || supabaseUrl.includes("replace_me");
-  return runtime === "demo" || isPlaceholderSupabase || !process.env.SUPABASE_SECRET_KEY;
+  return process.env.PGFLOW_RUNTIME === "demo";
 }
 
 export function isProductionRuntime() {
   return !isDemoRuntime();
 }
-
