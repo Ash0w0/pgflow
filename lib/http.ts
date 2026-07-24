@@ -23,10 +23,10 @@ export type AppActor = {
 };
 
 const developmentActors: Record<string, AppActor> = {
-  "demo-tenant": { id: "user_demo_tenant", membershipId: "member_demo_tenant", organizationId: "org_demo_nivasa", role: "tenant", tenantId: "tenant_demo_mira" },
-  "demo-owner": { id: "user_demo_owner", membershipId: "member_demo_owner", organizationId: "org_demo_nivasa", role: "owner" },
-  "demo-accountant": { id: "user_demo_accountant", membershipId: "member_demo_accountant", organizationId: "org_demo_nivasa", role: "accountant" },
-  "demo-manager": { id: "user_demo_manager", membershipId: "member_demo_manager", organizationId: "org_demo_nivasa", role: "manager" },
+  "demo-tenant": { id: "user_demo_tenant", membershipId: "member_demo_tenant", organizationId: "org_sample_pgflow", role: "tenant", tenantId: "tenant_demo_mira" },
+  "demo-owner": { id: "user_demo_owner", membershipId: "member_demo_owner", organizationId: "org_sample_pgflow", role: "owner" },
+  "demo-accountant": { id: "user_demo_accountant", membershipId: "member_demo_accountant", organizationId: "org_sample_pgflow", role: "accountant" },
+  "demo-manager": { id: "user_demo_manager", membershipId: "member_demo_manager", organizationId: "org_sample_pgflow", role: "manager" },
 };
 
 function bearerToken(request: Request) {
