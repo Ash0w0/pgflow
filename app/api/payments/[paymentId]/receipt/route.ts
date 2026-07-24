@@ -20,7 +20,7 @@ export async function GET(
       const today = new Date().toISOString().split("T")[0];
       const receiptHtml = generateReceiptHtml({
         receiptNumber: formatReceiptNumber(paymentId, today),
-        pgName: "Nivasa Demo House",
+        pgName: "PGFlow Sample",
         pgAddress: "14/2 Indiranagar, 10th Main, Bengaluru 560038",
         pgContact: "+91 98765 43210",
         residentName: "Mira Kapoor",
