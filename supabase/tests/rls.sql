@@ -511,10 +511,10 @@ values
 insert into public.platform_operators (auth_user_id, display_name, state)
 values ('a0000000-0000-0000-0000-000000000001', 'Provisioning Operator', 'active');
 
-insert into public.organizations (id, name, slug, template_version_id, state)
+insert into public.organizations (id, name, slug, template_version_id, state, resident_limit)
 values
-  ('aa000000-0000-0000-0000-000000000001', 'Organization A', 'organization-a', (select id from public.template_versions where version = '1.0.0'), 'live'),
-  ('bb000000-0000-0000-0000-000000000001', 'Organization B', 'organization-b', (select id from public.template_versions where version = '1.0.0'), 'live');
+  ('aa000000-0000-0000-0000-000000000001', 'Organization A', 'organization-a', (select id from public.template_versions where version = '1.0.0'), 'live', 10),
+  ('bb000000-0000-0000-0000-000000000001', 'Organization B', 'organization-b', (select id from public.template_versions where version = '1.0.0'), 'live', 10);
 
 select lives_ok(
   $valid_hostnames$
