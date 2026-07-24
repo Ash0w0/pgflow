@@ -38,10 +38,13 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function Home() {
-  if (await isPublicPlatformHomepage()) return <BusinessHomepage />;
+export default async function Home(props: { searchParams?: Promise<{ marketing?: string }> }) {
+  const searchParams = await props.searchParams;
+  if (searchParams?.marketing === "true") {
+    return <BusinessHomepage />;
+  }
 
-  const authorization = await requireStaffPage(["owner", "manager", "accountant"]);
+  const authorization = await requireStaffPage(["owner", "manager", "accountant"]).catch(() => ({ mode: "demo" as const }));
   if (authorization.mode === "demo") {
     return <AppShell demoMode><DemoDashboard /></AppShell>;
   }
@@ -84,3 +87,4 @@ export default async function Home() {
     </AppShell>
   );
 }
+

@@ -1,7 +1,9 @@
-import { GenericSection } from "@/components/generic-section";
+import { ReportsWorkspace } from "@/components/reports-workspace";
 import { requireStaffPage } from "@/lib/page-authorization";
 
 export default async function Page() {
-  await requireStaffPage(["owner", "accountant"]);
-  return <GenericSection title="Reports" description="Collection, occupancy and deposit exports." label="report" />;
+  const authorization = await requireStaffPage(["owner", "accountant"]);
+  return <ReportsWorkspace demoMode={authorization.mode === "demo"} />;
 }
+
+
