@@ -71,7 +71,7 @@ export function TenantApp() {
   const copy = language === "en"
     ? {
         greeting: "Hi, Mira",
-        subtitle: "Everything at Nivasa, in one place.",
+        subtitle: "Everything at your PG, in one place.",
         due: "Current amount due",
         pay: "Pay with UPI",
         proof: "Submit payment proof",

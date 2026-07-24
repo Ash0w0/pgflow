@@ -16,6 +16,7 @@ Use separate Supabase projects for local development, staging, and production. N
 | `OPERATOR_HOSTNAME` | Server | Dedicated operator-console hostname; operator APIs reject every other host |
 | `WHATSAPP_VERIFY_TOKEN` | Server secret | Meta webhook challenge |
 | `WHATSAPP_APP_SECRET` | Server secret | Meta webhook signature verification |
+| `NEXT_PUBLIC_PGFLOW_WHATSAPP_NUMBER` | Public | PGFlow onboarding number used by `/signup`, in international digits only |
 
 The service-role key bypasses RLS. It must stay in server-only modules and encrypted environment variables. Never log it, return it, or prefix it with `NEXT_PUBLIC_`.
 
@@ -79,7 +80,7 @@ NEXT_PUBLIC_PLATFORM_DOMAIN=pgflow.co
 OPERATOR_HOSTNAME=admin.pgflow.co
 ```
 
-Attach both `*.pgflow.co` and `admin.pgflow.co` to the production Vercel project. The apex can redirect to `www.pgflow.co`. Its `/login` page is only a workspace locator: it navigates the browser to `<organization-slug>.pgflow.co/login`, where normal hostname-based tenant resolution and authorization still apply. Each provisioned organization gets one hostname such as `nivasa-pg.pgflow.co`, derived from its unique organization slug. Customers do not need to buy a domain unless they want to bring an optional custom domain of their own.
+Attach both `*.pgflow.co` and `admin.pgflow.co` to the production Vercel project. The apex can redirect to `www.pgflow.co`. Its `/login` page is only a workspace locator: it navigates the browser to `<organization-slug>.pgflow.co/login`, where normal hostname-based tenant resolution and authorization still apply. Each provisioned organization gets one hostname such as `your-pg.pgflow.co`, derived from its unique organization slug. Customers do not need to buy a domain unless they want to bring an optional custom domain of their own.
 
 Migration `0031_cut_over_platform_domain.sql` replaces the temporary `pgflow-ruby.vercel.app` tenant mapping with `<organization-slug>.pgflow.co`. Apply it to the production Supabase project before retiring the old hostname.
 

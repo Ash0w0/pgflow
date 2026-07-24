@@ -8,7 +8,7 @@ test("renders every principal product surface", async () => {
     ["/", /Good morning, Aarav/],
     ["/tenant", /Hi, Mira/],
     ["/operator", /Fictional operator UI preview/],
-    ["/presentation", /Rent on time/],
+    ["/presentation", /Run your PG from WhatsApp/],
     ["/collections", /Sample register/],
     ["/pay/INV-DEMO-0726", /Demo safety is active/],
   ]);

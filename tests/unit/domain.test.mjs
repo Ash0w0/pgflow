@@ -38,9 +38,9 @@ test("settles deposits without returning a negative refund", () => {
 });
 
 test("builds only validated UPI URIs", () => {
-  assert.match(createUpiUri({ upiId: "nivasa@okaxis", payeeName: "Nivasa", amount: 8500, reference: "INV-0726" }), /^upi:\/\/pay\?/);
-  assert.throws(() => createUpiUri({ upiId: "not-a-vpa", payeeName: "Nivasa", amount: 1, reference: "INV" }), /valid UPI/);
-  assert.throws(() => createUpiUri({ upiId: "nivasa@okaxis", payeeName: "", amount: 1, reference: "INV" }), /Payee/);
+  assert.match(createUpiUri({ upiId: "samplepg@okaxis", payeeName: "Sample PG", amount: 8500, reference: "INV-0726" }), /^upi:\/\/pay\?/);
+  assert.throws(() => createUpiUri({ upiId: "not-a-vpa", payeeName: "Sample PG", amount: 1, reference: "INV" }), /valid UPI/);
+  assert.throws(() => createUpiUri({ upiId: "samplepg@okaxis", payeeName: "", amount: 1, reference: "INV" }), /Payee/);
 });
 
 test("validates safe property slugs", () => {

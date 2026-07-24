@@ -1,6 +1,6 @@
 -- Custom domain verification infrastructure.
 -- Adds DNS TXT challenge tokens and verification timestamps
--- to support PG owners bringing their own domains (e.g., nivasastay.com).
+-- to support PG owners bringing their own domains (e.g., yourpghostel.com).
 
 -- Add verification columns to domain_mappings
 alter table public.domain_mappings
@@ -415,4 +415,3 @@ begin
   );
 end;
 $$;
-

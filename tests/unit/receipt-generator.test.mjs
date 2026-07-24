@@ -13,7 +13,7 @@ test("formats sequential receipt numbers correctly", () => {
 test("generates printable HTML rent receipt with all required fields", () => {
   const html = generateReceiptHtml({
     receiptNumber: "REC-2026-07-0018",
-    pgName: "Nivasa Demo House",
+    pgName: "PGFlow Sample",
     pgAddress: "14/2 Indiranagar, Bengaluru",
     pgContact: "+91 98765 43210",
     residentName: "Mira Kapoor",
@@ -28,7 +28,7 @@ test("generates printable HTML rent receipt with all required fields", () => {
   });
 
   assert.match(html, /<!DOCTYPE html>/i);
-  assert.match(html, /Nivasa Demo House/);
+  assert.match(html, /PGFlow Sample/);
   assert.match(html, /REC-2026-07-0018/);
   assert.match(html, /Mira Kapoor/);
   assert.match(html, /Room A-204/);

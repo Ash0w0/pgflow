@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   return Response.json({
     reset: false,
     preview: true,
-    organization: "Nivasa Demo House",
+    organization: "PGFlow Sample",
     seedVersion: seed.seedVersion,
     canonicalCounts: { floors: seed.floors.length, rooms: seed.rooms.length, beds: seed.beds.length, tenants: seed.tenants.length },
     liveMessagingDisabled: true,

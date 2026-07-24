@@ -9,14 +9,14 @@ import type {
 } from "./types";
 
 export const demoBrand = {
-  name: "Nivasa Demo House",
-  shortName: "Nivasa",
+  name: "PGFlow Sample",
+  shortName: "PGFlow",
   platform: "PGFlow",
   initials: "ND",
   primary: "#123d32",
   accent: "#d7ff86",
   supportPhone: "+91 00000 00000",
-  upiId: "demo.nivasa@upi",
+  upiId: "sample.pgflow@upi",
   locale: "en-IN",
   timezone: "Asia/Kolkata",
   templateVersion: "1.0.0",
@@ -126,9 +126,9 @@ export const recentActivity: ActivityItem[] = [
 
 export const provisionedProperties: ProvisionedProperty[] = [
   {
-    id: "org_demo_nivasa",
-    name: "Nivasa Demo House",
-    slug: "nivasa-demo",
+    id: "org_sample_pgflow",
+    name: "PGFlow Sample",
+    slug: "pgflow-sample",
     beds: 60,
     occupied: 48,
     templateVersion: "1.0.0",

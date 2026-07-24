@@ -72,7 +72,7 @@ The Codex Sites preview remains a separate Vinext demonstration, invoked only th
 ## Template and demo separation
 
 - `lib/template.ts` contains `BLANK_TEMPLATE`, with no rooms, residents, payments, branding, or credentials.
-- The same file deterministically generates the canonical fictional Nivasa seed: 3 floors, 24 rooms, 60 beds, and 48 fictional residents.
+- The same file deterministically generates the canonical synthetic seed: 3 floors, 24 rooms, 60 beds, and 48 fictional residents.
 - `/api/demo/reset` exposes only a protected reset preview.
 - Demo payment QR codes contain a non-payment marker, never `upi://pay` or a valid VPA.
 

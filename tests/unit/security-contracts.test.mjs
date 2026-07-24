@@ -19,7 +19,7 @@ test("payment demo emits no UPI scheme while live UPI comes from authorized serv
     readFile(new URL("lib/payment-request-data.ts", root), "utf8"),
   ]);
   assert.doesNotMatch(source, /upi:\/\/pay/i);
-  assert.doesNotMatch(source, /demo\.nivasa@upi/i);
+  assert.doesNotMatch(source, /sample\.pgflow@upi/i);
   assert.match(source, /if\s*\(!data\)\s*\{[\s\S]*?return\s*\(/);
   assert.match(source, /fictional demo never emits a real UPI destination/i);
   assert.match(source, /QRCode\.toDataURL\(data\.upiUri/);

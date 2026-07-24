@@ -27,7 +27,7 @@ let { data: org } = await supabase
 if (!org) {
   const { data: newOrg, error: orgError } = await supabase
     .from("organizations")
-    .insert({ name: "Nivasa PG", slug: "nivasa-pg", state: "core_ready" })
+    .insert({ name: "PGFlow Starter", slug: "pgflow-starter", state: "core_ready" })
     .select("id")
     .single();
 

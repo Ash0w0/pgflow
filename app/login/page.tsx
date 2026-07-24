@@ -31,7 +31,11 @@ export default async function LoginPage() {
 
     if (!hostname) notFound();
 
-    platformLogin = isPlatformLoginHostname(hostname, platformDomain);
+    platformLogin = (
+      isPlatformLoginHostname(hostname, platformDomain)
+      || hostname === "localhost"
+      || hostname.endsWith(".vercel.app")
+    );
 
     if ((!operatorHostname || hostname !== operatorHostname) && !platformLogin) {
       const tenant = await resolvePublicBrandContextForHostname(hostname).catch(() => null);
@@ -90,7 +94,7 @@ export default async function LoginPage() {
           ) : (
             <>
               <span className="eyebrow">{demoMode ? "Explore the product" : "Welcome back"}</span>
-              <h2>{demoMode ? "Explore Nivasa" : manualOwnerLogin ? "Set up your owner account" : "Sign in to your workspace"}</h2>
+              <h2>{demoMode ? "Open PGFlow" : manualOwnerLogin ? "Set up your owner account" : "Sign in to your workspace"}</h2>
               <p>{demoMode
                 ? "Choose a fictional role to explore the template."
                 : manualOwnerLogin

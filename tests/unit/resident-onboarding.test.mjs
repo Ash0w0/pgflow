@@ -37,6 +37,20 @@ test("resident onboarding is atomic, owner-scoped, locked, and audited", async (
   assert.match(dateCorrection, /'pg_catalog\.current_date',[\s\S]*?'CURRENT_DATE'/i);
 });
 
+test("starter organizations cannot exceed their configured resident entitlement", async () => {
+  const migration = await readFile(
+    new URL("supabase/migrations/0032_starter_resident_limit.sql", root),
+    "utf8",
+  );
+
+  assert.match(migration, /add column if not exists resident_limit integer not null default 2/i);
+  assert.match(migration, /resident\.state in \('active', 'notice'\)/i);
+  assert.match(migration, /from public\.organizations[\s\S]*?for update/i);
+  assert.match(migration, /v_active_count >= v_limit/i);
+  assert.match(migration, /Contact PGFlow on WhatsApp to upgrade/i);
+  assert.match(migration, /before insert or update of organization_id, state/i);
+});
+
 test("resident onboarding API trusts the authenticated owner context, not client tenancy", async () => {
   const [route, validation] = await Promise.all([
     readFile(new URL("app/api/residents/onboard/route.ts", root), "utf8"),
@@ -98,6 +112,8 @@ test("resident UI distinguishes promises, balances, and actual payments", async 
   assert.match(component, /aria-invalid/);
   assert.match(component, /aria-describedby/);
   assert.match(component, /resident-field-error/);
+  assert.match(component, /data\.residents\.length >= data\.residentLimit/);
+  assert.match(component, /Request upgrade/);
   assert.match(component, /noValidate/);
   assert.match(component, /clearFieldError/);
   assert.doesNotMatch(component, /api\/payments|insert.*payments/i);

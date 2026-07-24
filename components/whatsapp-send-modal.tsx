@@ -47,7 +47,7 @@ export function WhatsAppSendModal({
       residentName: target.recipientName,
       amount: target.amount || 8500,
       billingPeriod: target.billingPeriod || "July 2026",
-      pgName: target.pgName || "Nivasa PG",
+      pgName: target.pgName || "Your PG",
       dueDate: target.dueDate || "05 July 2026",
       paymentUrl: target.paymentUrl || `http://localhost:3001/pay/demo`,
       language,
@@ -185,7 +185,7 @@ export function WhatsAppSendModal({
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
               WhatsApp Message Preview
             </label>
-            <div className="rounded-2xl bg-emerald-950/10 dark:bg-emerald-950/30 p-4 border border-emerald-500/20 text-slate-800 dark:text-slate-100 font-sans text-sm leading-relaxed whitespace-pre-wrap">
+            <div className="rounded-2xl bg-emerald-950/10 dark:bg-emerald-950/30 p-4 border border-emerald-500/20 text-emerald-950 dark:text-emerald-50 font-sans text-sm leading-relaxed whitespace-pre-wrap">
               {previewText}
             </div>
           </div>
@@ -193,7 +193,7 @@ export function WhatsAppSendModal({
           <div className="rounded-xl bg-amber-500/10 p-3 border border-amber-500/20 text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
             <Sparkles size={16} />
             <span>
-              Delivered via WhatsApp with real-time read receipts.
+              Review the message in WhatsApp before sending.
             </span>
           </div>
 

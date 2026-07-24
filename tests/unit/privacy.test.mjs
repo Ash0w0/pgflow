@@ -52,7 +52,7 @@ test("maskPii redacts all PII fields in a record", () => {
     phone: "+919876543210",
     address: "42 MG Road, Bangalore",
     monthly_rent: 8500,
-    app_name: "Nivasa Stay", // should NOT be masked
+    app_name: "Sample PG", // should NOT be masked
   };
 
   const masked = maskPii(record);
@@ -65,7 +65,7 @@ test("maskPii redacts all PII fields in a record", () => {
   // Non-PII fields pass through
   assert.equal(masked.id, "test_123");
   assert.equal(masked.monthly_rent, 8500);
-  assert.equal(masked.app_name, "Nivasa Stay"); // app_name is excluded from masking
+  assert.equal(masked.app_name, "Sample PG"); // app_name is excluded from masking
 });
 
 test("retention periods comply with Indian tax law minimums", () => {

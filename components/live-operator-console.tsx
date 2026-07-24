@@ -589,7 +589,7 @@ export function LiveOperatorConsole() {
             </label>
             <label htmlFor="domain-hostname">
               Custom domain
-              <input id="domain-hostname" value={domainHostname} onChange={(e) => { setDomainHostname(e.target.value); setDomainChallenge(null); setDomainVerified(null); setDomainError(null); }} placeholder="nivasastay.com" autoCapitalize="none" spellCheck={false} required disabled={domainSubmitting} />
+              <input id="domain-hostname" value={domainHostname} onChange={(e) => { setDomainHostname(e.target.value); setDomainChallenge(null); setDomainVerified(null); setDomainError(null); }} placeholder="yourpghostel.com" autoCapitalize="none" spellCheck={false} required disabled={domainSubmitting} />
             </label>
           </div>
           <button className="button button-secondary button-full" type="submit" disabled={domainSubmitting || !domainOrgId || !domainHostname}>

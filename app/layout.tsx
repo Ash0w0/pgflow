@@ -22,15 +22,6 @@ const PLATFORM_BRAND: BrandValue = {
   platformName: "PGFlow",
 };
 
-const NIVASA_DEMO_BRAND: BrandValue = {
-  name: "Nivasa Demo House",
-  shortName: "Nivasa",
-  primary: "#123d32",
-  accent: "#d7ff86",
-  mode: "demo",
-  platformName: "PGFlow",
-};
-
 function safeHostname(value: string | null) {
   const rawValue = value?.trim() ?? "";
   if (!rawValue || rawValue.includes(",")) return "";
@@ -65,7 +56,7 @@ function safeBrandInitial(value: string) {
 }
 
 const resolveLayoutBrand = cache(async (): Promise<BrandValue> => {
-  if (isDemoRuntime()) return NIVASA_DEMO_BRAND;
+  if (isDemoRuntime()) return PLATFORM_BRAND;
 
   try {
     const requestHeaders = await headers();
@@ -96,7 +87,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const iconUrl = brand.mode === "platform" ? "/favicon.svg" : "/api/branding/icon";
 
   return {
-    metadataBase: new URL("https://pgflow.app"),
+    metadataBase: new URL("https://pgflow.co"),
     title: { default: brand.name, template: "%s · " + brand.shortName },
     description,
     applicationName: brand.name,

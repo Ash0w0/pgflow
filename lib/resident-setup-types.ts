@@ -26,6 +26,7 @@ export type ResidentRegisterRow = {
 };
 
 export type ResidentSetupData = {
+  residentLimit: number;
   availableBeds: AvailableResidentBed[];
   residents: ResidentRegisterRow[];
   totals: {

@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   CircleAlert,
   ContactRound,
+  MessageCircle,
   Phone,
   Plus,
   ShieldCheck,
@@ -67,6 +68,11 @@ export function ResidentSetupWorkspace({ data, demoMode }: { data: ResidentSetup
   const [openingDue, setOpeningDue] = useState("0");
   const [confirmed, setConfirmed] = useState(false);
   const [managedResident, setManagedResident] = useState<ResidentRegisterRow | null>(null);
+  const residentLimitReached = data.residents.length >= data.residentLimit;
+  const upgradeNumber = (process.env.NEXT_PUBLIC_PGFLOW_WHATSAPP_NUMBER ?? "").replace(/\D/g, "");
+  const upgradeHref = /^\d{10,15}$/.test(upgradeNumber)
+    ? `https://wa.me/${upgradeNumber}?text=${encodeURIComponent("Hi PGFlow, I have reached my resident limit and want to upgrade my PG workspace.")}`
+    : null;
 
   const selectedBedId = data.availableBeds.some((bed) => bed.id === bedId)
     ? bedId
@@ -105,6 +111,7 @@ export function ResidentSetupWorkspace({ data, demoMode }: { data: ResidentSetup
   }
 
   function openDialog() {
+    if (residentLimitReached) return;
     resetForm();
     setSuccess(null);
     setDialogOpen(true);
@@ -230,8 +237,8 @@ export function ResidentSetupWorkspace({ data, demoMode }: { data: ResidentSetup
             className="button button-primary"
             type="button"
             onClick={openDialog}
-            disabled={data.availableBeds.length === 0}
-            title={data.availableBeds.length === 0 ? "Create or free a vacant bed first" : undefined}
+            disabled={data.availableBeds.length === 0 || residentLimitReached}
+            title={residentLimitReached ? "Contact PGFlow to upgrade your resident limit" : data.availableBeds.length === 0 ? "Create or free a vacant bed first" : undefined}
           >
             <UserPlus size={17} /> Add resident
           </button>
@@ -239,8 +246,18 @@ export function ResidentSetupWorkspace({ data, demoMode }: { data: ResidentSetup
 
         <div className="setup-safety-strip">
           <ShieldCheck size={17} />
-          <span><strong>One resident, one active bed.</strong> Records are audited.</span>
+          <span><strong>One resident, one active bed.</strong> {data.residents.length} of {data.residentLimit} resident slots in use. Records are audited.</span>
         </div>
+
+        {residentLimitReached && (
+          <div className="resident-limit-strip" role="status">
+            <MessageCircle size={18} />
+            <span><strong>Your current resident limit is {data.residentLimit}.</strong> Contact PGFlow on WhatsApp before adding another resident.</span>
+            {upgradeHref
+              ? <a href={upgradeHref} target="_blank" rel="noreferrer">Request upgrade</a>
+              : <span>Ask PGFlow support to upgrade</span>}
+          </div>
+        )}
 
         {success && <div className="setup-feedback success" role="status"><CheckCircle2 size={17} />{success}</div>}
 
@@ -261,7 +278,7 @@ export function ResidentSetupWorkspace({ data, demoMode }: { data: ResidentSetup
             <div className="resident-empty-state">
               <span><ContactRound size={27} /></span>
               <div><strong>No residents yet</strong><p>Your first resident can be assigned to {data.availableBeds.length} available {data.availableBeds.length === 1 ? "bed" : "beds"}.</p></div>
-              <button className="button button-primary" type="button" onClick={openDialog} disabled={data.availableBeds.length === 0}><Plus size={16} /> Add first resident</button>
+              <button className="button button-primary" type="button" onClick={openDialog} disabled={data.availableBeds.length === 0 || residentLimitReached}><Plus size={16} /> Add first resident</button>
             </div>
           ) : (
             <div className="table-wrap">
