@@ -25,7 +25,7 @@ test("generates English and Hindi rent due reminder previews", () => {
     residentName: "Mira Kapoor",
     amount: 8500,
     billingPeriod: "July 2026",
-    pgName: "Nivasa PG",
+    pgName: "Sample PG",
     dueDate: "05 July 2026",
     paymentUrl: "http://localhost:3001/pay/link-123",
   };
@@ -33,7 +33,7 @@ test("generates English and Hindi rent due reminder previews", () => {
   const enPreview = getRentDueReminderPreview({ ...params, language: "en" });
   assert.match(enPreview, /Namaste Mira Kapoor!/);
   assert.match(enPreview, /₹8,500/);
-  assert.match(enPreview, /Nivasa PG/);
+  assert.match(enPreview, /Sample PG/);
 
   const hiPreview = getRentDueReminderPreview({ ...params, language: "hi" });
   assert.match(hiPreview, /नमस्ते Mira Kapoor!/);
