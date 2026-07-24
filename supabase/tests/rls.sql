@@ -2,13 +2,20 @@
 -- every fixture and exercises policies as real authenticated JWT subjects.
 
 begin;
-select plan(91);
+select plan(93);
 
 select has_function('public', 'current_organization_ids', array[]::text[], 'RLS organization helper exists');
 select ok(not has_table_privilege('anon', 'public.organizations', 'select'), 'anonymous users cannot read organizations');
 select ok(not has_table_privilege('authenticated', 'public.platform_operators', 'select'), 'platform operator registry is server-only');
 select ok(not has_table_privilege('authenticated', 'public.memberships', 'update'), 'clients cannot directly change roles');
 select ok(not has_table_privilege('authenticated', 'public.brand_themes', 'update'), 'clients cannot directly change branding');
+select has_function('public', 'update_brand_theme', array['uuid','uuid','text','text'], 'audited brand theme update function exists');
+select ok(
+  not has_function_privilege('anon', 'public.update_brand_theme(uuid,uuid,text,text)', 'execute')
+  and not has_function_privilege('authenticated', 'public.update_brand_theme(uuid,uuid,text,text)', 'execute')
+  and has_function_privilege('service_role', 'public.update_brand_theme(uuid,uuid,text,text)', 'execute'),
+  'brand theme updates are reachable only through the server role'
+);
 select ok(not has_table_privilege('authenticated', 'public.rooms', 'update'), 'clients cannot directly change room records');
 select has_table('public', 'invoice_payment_requests', 'secure invoice payment-request table exists');
 select has_function('public', 'enforce_payment_request_upi_configuration', array[]::text[], 'payment links require property UPI configuration');

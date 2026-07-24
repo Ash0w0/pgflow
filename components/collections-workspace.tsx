@@ -6,6 +6,8 @@ import { Banknote, CalendarDays, CheckCircle2, CircleAlert, Copy, FileText, Indi
 import { useState, type FormEvent } from "react";
 import type { CollectionsData } from "@/lib/collections-types";
 import { AppShell } from "./app-shell";
+import { useBrand } from "./brand-provider";
+import { WhatsAppSendModal, type WhatsAppSendTarget } from "./whatsapp-send-modal";
 
 const currency = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
 
@@ -22,6 +24,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 export function CollectionsWorkspace({ data, canGenerate, canReview }: { data: CollectionsData; canGenerate: boolean; canReview: boolean }) {
   const router = useRouter();
+  const brand = useBrand();
   const [confirmed, setConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +39,24 @@ export function CollectionsWorkspace({ data, canGenerate, canReview }: { data: C
   const [sharingInvoiceId, setSharingInvoiceId] = useState<string | null>(null);
   const [shareData, setShareData] = useState<null | { url: string; expiresAt: string; invoiceNumber: string; residentName: string; residentPhone: string; amount: number }>(null);
   const [shareCopied, setShareCopied] = useState(false);
+  const [whatsappTarget, setWhatsappTarget] = useState<WhatsAppSendTarget | null>(null);
+  const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
+
+  function triggerWhatsAppModal(invoice: CollectionsData["invoices"][number]) {
+    // Never fall back to a placeholder number: the reminder would reach an unrelated person.
+    if (!invoice.residentPhone) return;
+    setWhatsappTarget({
+      type: "rent_due",
+      recipientName: invoice.residentName,
+      recipientPhone: invoice.residentPhone,
+      amount: invoice.totalAmount - invoice.paidAmount,
+      billingPeriod: data.periodLabel,
+      pgName: brand.name,
+      dueDate: displayDate(invoice.dueDate),
+      paymentUrl: `${window.location.origin}/pay/${invoice.id}`,
+    });
+    setWhatsappModalOpen(true);
+  }
 
   async function generateInvoices() {
     if (!confirmed || submitting || data.totals.readyToGenerateCount === 0) return;
@@ -206,7 +227,35 @@ export function CollectionsWorkspace({ data, canGenerate, canReview }: { data: C
                     <td className="amount-clear">{currency.format(invoice.paidAmount)}</td>
                     <td className={invoice.totalAmount > invoice.paidAmount ? "amount-due" : "amount-clear"}><strong>{currency.format(invoice.totalAmount - invoice.paidAmount)}</strong></td>
                     <td><span className={`invoice-state ${invoice.state}`}>{invoice.state.replace("_", " ")}</span></td>
-                    <td><div className="invoice-actions">{["issued","partially_paid","overdue"].includes(invoice.state)&&<><Link className={`resident-manage-button ${data.upiConfigured?"":"disabled"}`} aria-disabled={!data.upiConfigured} href={data.upiConfigured?`/pay/${invoice.id}`:"/settings"}><QrCode size={14}/>{data.upiConfigured?"Preview UPI":"Set up UPI"}</Link>{data.upiConfigured&&<button className="resident-manage-button" type="button" disabled={submitting} onClick={()=>createPaymentLink(invoice)}><Share2 size={14}/>{sharingInvoiceId===invoice.id?"Creating…":"Share"}</button>}<button className="resident-manage-button" type="button" onClick={()=>{setCashInvoiceId(invoice.id);setCashAmount(String(invoice.totalAmount-invoice.paidAmount));setCashOpen(true);}}><Banknote size={14}/>Cash</button></>}</div></td>
+                    <td>
+                      <div className="invoice-actions">
+                        {["issued","partially_paid","overdue"].includes(invoice.state)&&(
+                          <>
+                            <button
+                              type="button"
+                              className={`resident-manage-button ${invoice.residentPhone ? "" : "disabled"}`}
+                              style={invoice.residentPhone ? { color: "#059669", borderColor: "#a7f3d0" } : undefined}
+                              disabled={!invoice.residentPhone}
+                              onClick={() => triggerWhatsAppModal(invoice)}
+                              title={invoice.residentPhone ? "Send WhatsApp rent reminder" : "No phone number on file for this resident"}
+                            >
+                              <MessageCircle size={14} /> WhatsApp
+                            </button>
+                            <Link className={`resident-manage-button ${data.upiConfigured?"":"disabled"}`} aria-disabled={!data.upiConfigured} href={data.upiConfigured?`/pay/${invoice.id}`:"/settings"}>
+                              <QrCode size={14}/>{data.upiConfigured?"Preview UPI":"Set up UPI"}
+                            </Link>
+                            {data.upiConfigured&&(
+                              <button className="resident-manage-button" type="button" disabled={submitting} onClick={()=>createPaymentLink(invoice)}>
+                                <Share2 size={14}/>{sharingInvoiceId===invoice.id?"Creating…":"Share"}
+                              </button>
+                            )}
+                            <button className="resident-manage-button" type="button" onClick={()=>{setCashInvoiceId(invoice.id);setCashAmount(String(invoice.totalAmount-invoice.paidAmount));setCashOpen(true);}}>
+                              <Banknote size={14}/>Cash
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}</tbody>
               </table>
@@ -219,6 +268,19 @@ export function CollectionsWorkspace({ data, canGenerate, canReview }: { data: C
           {data.pendingPayments.length===0?<div className="collections-empty"><ShieldCheck size={25}/><div><strong>Nothing waiting for review</strong><p>Submitted UPI evidence and approval-required cash will appear here.</p></div></div>:<div className="table-wrap"><table className="data-table"><thead><tr><th>Resident</th><th>Method</th><th>Reference</th><th>Amount</th><th>Actions</th></tr></thead><tbody>{data.pendingPayments.map(payment=><tr key={payment.id}><td><strong>{payment.residentName}</strong></td><td>{payment.method.toUpperCase()}</td><td>{payment.reference}</td><td><strong>{currency.format(payment.amount)}</strong></td><td><div className="payment-review-actions"><select aria-label={`Rejection reason for ${payment.residentName}`} value={rejectionReason} onChange={e=>setRejectionReason(e.target.value)} disabled={!canReview||submitting}><option value="more_information_needed">More information needed</option><option value="amount_not_received">Amount not received</option><option value="incorrect_amount">Incorrect amount</option><option value="duplicate_utr">Duplicate UTR</option><option value="invalid_screenshot">Invalid screenshot</option><option value="wrong_account">Wrong account</option></select><div className="invoice-actions"><button type="button" className="resident-manage-button" disabled={!canReview||submitting} onClick={()=>reviewPayment(payment.id,"approve")}>Approve</button><button type="button" className="resident-manage-button danger" disabled={!canReview||submitting} onClick={()=>reviewPayment(payment.id,"reject")}>Reject</button></div></div></td></tr>)}</tbody></table></div>}
         </section>
       </div>
+
+      {whatsappModalOpen && (
+        <WhatsAppSendModal
+          isOpen={whatsappModalOpen}
+          target={whatsappTarget}
+          onClose={() => setWhatsappModalOpen(false)}
+          onSuccess={() => {
+            setSuccess("WhatsApp message sent successfully!");
+            router.refresh();
+          }}
+        />
+      )}
+
       {shareData&&<div className="setup-dialog-backdrop" role="presentation" onMouseDown={event=>event.target===event.currentTarget&&setShareData(null)}><section className="setup-dialog cash-dialog" role="dialog" aria-modal="true" aria-labelledby="payment-share-title"><header><div><span className="eyebrow">Seven-day secure link</span><h2 id="payment-share-title">Share {shareData.invoiceNumber}</h2><p>Share secure payment link with the resident.</p></div><button autoFocus className="icon-button" type="button" onClick={()=>setShareData(null)} aria-label="Close payment-link sharing"><X size={19}/></button></header><div className="modal-form"><div className="password-security-note"><ShieldCheck size={17}/><span>This link is unique to {shareData.residentName}.</span></div><label>Secure payment link<input value={shareData.url} readOnly onFocus={event=>event.currentTarget.select()}/></label><button className="button button-secondary button-full" type="button" onClick={async()=>{try{await navigator.clipboard.writeText(shareData.url);setShareCopied(true);}catch{setError("The browser could not copy the link. Select it manually instead.");}}}><Copy size={17}/>{shareCopied?"Link copied":"Copy secure link"}</button><a className="button button-primary button-full" href={`https://wa.me/${whatsappPhone}?text=${encodeURIComponent(whatsappMessage)}`} target="_blank" rel="noreferrer"><MessageCircle size={17}/>Open WhatsApp draft</a><small>Review the message in WhatsApp before sending.</small></div></section></div>}
       {cashOpen&&<div className="setup-dialog-backdrop" role="presentation" onMouseDown={e=>e.target===e.currentTarget&&!submitting&&setCashOpen(false)}><section className="setup-dialog cash-dialog" role="dialog" aria-modal="true" aria-labelledby="cash-dialog-title"><header><div><span className="eyebrow">Staff-collected payment</span><h2 id="cash-dialog-title">Record cash</h2></div><button className="icon-button" type="button" onClick={()=>setCashOpen(false)} disabled={submitting} aria-label="Close cash form"><X size={19}/></button></header><form className="modal-form" onSubmit={recordCash}><label>Invoice<select value={cashInvoiceId} onChange={e=>{setCashInvoiceId(e.target.value);const invoice=payableInvoices.find(x=>x.id===e.target.value);setCashAmount(String(invoice?invoice.totalAmount-invoice.paidAmount:""));}}>{payableInvoices.map(invoice=><option value={invoice.id} key={invoice.id}>{invoice.number} · {invoice.residentName}</option>)}</select></label><label>Amount received<input type="number" min="1" max={selectedCashInvoice?selectedCashInvoice.totalAmount-selectedCashInvoice.paidAmount:10000000} value={cashAmount} onChange={e=>setCashAmount(e.target.value)} required/></label><label>Collection note<input value={cashNote} onChange={e=>setCashNote(e.target.value)} maxLength={500} placeholder="Received at front desk"/></label><div className="password-security-note"><ShieldCheck size={17}/><span>Your account will be recorded as the receiver.</span></div><button className="button button-primary button-full" type="submit" disabled={submitting}>{submitting?"Recording safely…":"Record cash payment"}</button></form></section></div>}
     </AppShell>
