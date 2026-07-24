@@ -42,7 +42,7 @@ export function createCanonicalDemoSeed() {
   }));
   return {
     seedVersion: "1.0.0",
-    organization: { id: "org_demo_nivasa", name: "Nivasa Demo House", demoMode: true, fictional: true },
+    organization: { id: "org_sample_pgflow", name: "PGFlow Sample", demoMode: true, fictional: true },
     floors,
     rooms,
     beds,
