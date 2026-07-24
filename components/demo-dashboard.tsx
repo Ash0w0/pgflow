@@ -133,7 +133,7 @@ export function DemoDashboard() {
           <div>
             <div className="demo-kicker"><Sparkles size={14} /> Demo mode</div>
             <h1>Good morning, Aarav.</h1>
-            <p>Here is what needs attention at Nivasa today.</p>
+            <p>Here is what needs attention at your PG today.</p>
           </div>
           <div className="heading-actions">
             <button className="button button-secondary" type="button" onClick={() => setModal("notice")}>
