@@ -133,7 +133,7 @@ export async function GET(request: Request) {
       .maybeSingle(),
     admin
       .from("organizations")
-      .select("id,name,slug,state,created_at")
+      .select("id,name,slug,state,created_at,resident_limit")
       .eq("demo_mode", false)
       .order("created_at", { ascending: false }),
     admin
@@ -243,6 +243,7 @@ export async function GET(request: Request) {
       state: organization.state,
       hostname: hostnameByOrganization.get(organization.id) ?? null,
       createdAt: organization.created_at,
+      residentLimit: typeof organization.resident_limit === "number" ? organization.resident_limit : 2,
       provisioning: jobByOrganization.get(organization.id) ?? null,
       ownerInvitation: invitationByOrganization.get(organization.id) ?? null,
     })),

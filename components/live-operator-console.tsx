@@ -24,6 +24,7 @@ import { StatusPill } from "./status-pill";
 type RegistryOrganization = OwnerInvitationOrganization & {
   slug: string;
   createdAt: string;
+  residentLimit: number;
   provisioning: {
     jobId: string;
     state: string;
@@ -126,6 +127,7 @@ function isRegistryOrganization(value: unknown): value is RegistryOrganization {
     && typeof value.state === "string"
     && (typeof value.hostname === "string" || value.hostname === null)
     && typeof value.createdAt === "string"
+    && typeof value.residentLimit === "number"
     && validProvisioning
     && validOwnerInvitation
   );
@@ -212,6 +214,11 @@ export function LiveOperatorConsole() {
   const [domainVerified, setDomainVerified] = useState<boolean | null>(null);
   const [domainSubmitting, setDomainSubmitting] = useState(false);
   const [domainError, setDomainError] = useState<string | null>(null);
+
+  // Payment unlock state
+  const [unlockedOrganizationId, setUnlockedOrganizationId] = useState<string | null>(null);
+  const [unlockingOrganizationId, setUnlockingOrganizationId] = useState<string | null>(null);
+  const [unlockError, setUnlockError] = useState<string | null>(null);
 
   const loadRegistry = useCallback(async (signal?: AbortSignal) => {
     setRegistryLoading(true);
@@ -409,6 +416,34 @@ export function LiveOperatorConsole() {
       setDomainError(err instanceof Error ? err.message : "Verification check failed.");
     } finally {
       setDomainSubmitting(false);
+    }
+  }
+
+  async function unlockUnlimitedRooms(organizationId: string) {
+    if (unlockingOrganizationId) return;
+    setUnlockingOrganizationId(organizationId);
+    setUnlockError(null);
+    try {
+      const res = await fetch("/api/organizations/resident-limit", {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ organizationId, residentLimit: 100000 }),
+      });
+      const result: unknown = await res.json().catch(() => null);
+      if (!res.ok || !isRecord(result)) {
+        throw new Error(
+          isRecord(result) && typeof result.error === "string"
+            ? result.error
+            : "Failed to unlock unlimited rooms."
+        );
+      }
+      setUnlockedOrganizationId(organizationId);
+      await loadRegistry();
+    } catch (err) {
+      setUnlockError(err instanceof Error ? err.message : "Failed to unlock unlimited rooms.");
+    } finally {
+      setUnlockingOrganizationId(null);
     }
   }
 
@@ -633,7 +668,7 @@ export function LiveOperatorConsole() {
         ) : (
           <div className="table-wrap">
             <table className="data-table organizations-table">
-              <thead><tr><th>Organization</th><th>Hostname</th><th>Owner access</th><th>Provisioning</th><th>Organization state</th><th>Created</th><th>Actions</th></tr></thead>
+              <thead><tr><th>Organization</th><th>Hostname</th><th>Owner access</th><th>Provisioning</th><th>Organization state</th><th>Rooms</th><th>Created</th><th>Actions</th></tr></thead>
               <tbody>
                 {organizations.map((organization) => {
                   const provisioningState = organization.provisioning?.state ?? "not_started";
@@ -642,6 +677,7 @@ export function LiveOperatorConsole() {
                   const credentialExpiry = invitationState === "activated"
                     ? null
                     : invitation?.temporaryPasswordExpiresAt ?? invitation?.expiresAt;
+                  const isUnlocked = organization.residentLimit >= 100000;
                   return (
                     <tr key={organization.id}>
                       <td>
@@ -663,6 +699,28 @@ export function LiveOperatorConsole() {
                       </td>
                       <td><StatusPill tone={stateTone(provisioningState)}>{stateLabel(provisioningState)}</StatusPill>{organization.provisioning && <small>{organization.provisioning.jobId}</small>}</td>
                       <td><StatusPill tone={stateTone(organization.state)}>{stateLabel(organization.state)}</StatusPill></td>
+                      <td>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <div>
+                            <strong>{isUnlocked ? "Unlimited" : organization.residentLimit}</strong>
+                            <small>{isUnlocked ? "Paid" : "Starter limit"}</small>
+                          </div>
+                          {!isUnlocked && (
+                            <button
+                              className="button button-quiet"
+                              type="button"
+                              onClick={() => void unlockUnlimitedRooms(organization.id)}
+                              disabled={unlockingOrganizationId === organization.id || unlockedOrganizationId === organization.id}
+                              title="Mark this PG as paid to unlock unlimited rooms"
+                            >
+                              {unlockingOrganizationId === organization.id ? "Unlocking…" : "Mark paid"}
+                            </button>
+                          )}
+                          {unlockedOrganizationId === organization.id && (
+                            <StatusPill tone="success"><Check size={14} /></StatusPill>
+                          )}
+                        </div>
+                      </td>
                       <td><time dateTime={organization.createdAt}>{formatCreatedAt(organization.createdAt)}</time></td>
                       <td>
                         {organization.state === "draft" ? (
