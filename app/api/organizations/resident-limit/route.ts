@@ -2,10 +2,8 @@ import { jsonError, requireOperator } from "@/lib/http";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 export async function PATCH(request: Request) {
-  try {
-    await requireOperator();
-  } catch (error) {
-    return jsonError("Unauthorized", 401);
+  if (!await requireOperator(request)) {
+    return jsonError("Platform operator authorization is required.", 403);
   }
 
   let body: unknown;
@@ -42,4 +40,3 @@ export async function PATCH(request: Request) {
 
   return Response.json({ success: true, residentLimit });
 }
-

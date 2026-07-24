@@ -216,7 +216,7 @@ export function LiveOperatorConsole() {
   const [domainError, setDomainError] = useState<string | null>(null);
 
   // Payment unlock state
-  const [unlockedOrganizationId, setUnlockedOrganizationId] = useState<string | null>(null);
+  const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
   const [unlockingOrganizationId, setUnlockingOrganizationId] = useState<string | null>(null);
   const [unlockError, setUnlockError] = useState<string | null>(null);
 
@@ -438,7 +438,7 @@ export function LiveOperatorConsole() {
             : "Failed to unlock unlimited rooms."
         );
       }
-      setUnlockedOrganizationId(organizationId);
+      setUnlockedIds((prev) => new Set(prev).add(organizationId));
       await loadRegistry();
     } catch (err) {
       setUnlockError(err instanceof Error ? err.message : "Failed to unlock unlimited rooms.");
@@ -700,7 +700,7 @@ export function LiveOperatorConsole() {
                       <td><StatusPill tone={stateTone(provisioningState)}>{stateLabel(provisioningState)}</StatusPill>{organization.provisioning && <small>{organization.provisioning.jobId}</small>}</td>
                       <td><StatusPill tone={stateTone(organization.state)}>{stateLabel(organization.state)}</StatusPill></td>
                       <td>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <div className="resident-limit-cell">
                           <div>
                             <strong>{isUnlocked ? "Unlimited" : organization.residentLimit}</strong>
                             <small>{isUnlocked ? "Paid" : "Starter limit"}</small>
@@ -710,16 +710,19 @@ export function LiveOperatorConsole() {
                               className="button button-quiet"
                               type="button"
                               onClick={() => void unlockUnlimitedRooms(organization.id)}
-                              disabled={unlockingOrganizationId === organization.id || unlockedOrganizationId === organization.id}
+                              disabled={unlockingOrganizationId === organization.id || unlockedIds.has(organization.id)}
                               title="Mark this PG as paid to unlock unlimited rooms"
                             >
                               {unlockingOrganizationId === organization.id ? "Unlocking…" : "Mark paid"}
                             </button>
                           )}
-                          {unlockedOrganizationId === organization.id && (
+                          {unlockedIds.has(organization.id) && (
                             <StatusPill tone="success"><Check size={14} /></StatusPill>
                           )}
                         </div>
+                        {unlockError && unlockingOrganizationId === null && !unlockedIds.has(organization.id) && (
+                          <div className="live-operator-feedback feedback-error" role="alert"><AlertCircle size={14} /><span>{unlockError}</span></div>
+                        )}
                       </td>
                       <td><time dateTime={organization.createdAt}>{formatCreatedAt(organization.createdAt)}</time></td>
                       <td>

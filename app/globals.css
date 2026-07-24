@@ -386,6 +386,7 @@ a { color: inherit; text-decoration: none; }
 .live-organizations-panel time { color: var(--ink-soft); font-size: 9px; white-space: nowrap; }
 .organization-delete-button { min-height: 36px; padding: 0 10px; white-space: nowrap; font-size: 9px; }
 .organization-action-unavailable { color: var(--ink-faint); font-size: 8px; white-space: nowrap; }
+.resident-limit-cell { display: flex; align-items: center; gap: 8px; }
 .delete-draft-modal { width: min(520px,100%); }
 .delete-draft-eyebrow { color: #9c423e; }
 .delete-draft-warning { display: flex; align-items: flex-start; gap: 9px; margin-top: 18px; padding: 12px 13px; border: 1px solid #efd0cb; border-radius: 11px; color: #8b4039; background: #fff0ed; font-size: 10px; line-height: 1.5; }
