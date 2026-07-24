@@ -1,8 +1,5 @@
-import type { Metadata } from "next";
-import { SalesPresentation } from "@/components/sales-presentation";
-
-export const metadata: Metadata = { title: "Product presentation" };
+import { redirect } from "next/navigation";
 
 export default function PresentationPage() {
-  return <SalesPresentation />;
+  redirect("/");
 }
