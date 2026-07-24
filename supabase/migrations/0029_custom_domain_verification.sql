@@ -25,6 +25,15 @@ alter table public.domain_mappings
   add constraint domain_mappings_state_check
   check (state in ('pending', 'dns_checking', 'verified', 'failed'));
 
+-- Backfill before enforcing the verified timestamp invariant.
+update public.domain_mappings
+  set state = 'verified', verified_at = now()
+  where kind = 'platform_subdomain' and state = 'pending';
+
+update public.domain_mappings
+  set verified_at = now()
+  where state = 'verified' and verified_at is null;
+
 -- Verified custom domains must have a DNS challenge token
 alter table public.domain_mappings
   add constraint domain_mappings_custom_requires_challenge
@@ -41,15 +50,6 @@ alter table public.domain_mappings
     state != 'verified'
     or verified_at is not null
   );
-
--- Auto-verify existing platform subdomains and backfill verified_at timestamp
-update public.domain_mappings
-  set state = 'verified', verified_at = now()
-  where kind = 'platform_subdomain' and state = 'pending';
-
-update public.domain_mappings
-  set verified_at = now()
-  where state = 'verified' and verified_at is null;
 
 -- Update provision_organization_core to include verified_at when inserting verified domain_mappings
 create or replace function public.provision_organization_core(
