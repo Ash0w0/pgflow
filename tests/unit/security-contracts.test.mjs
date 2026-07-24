@@ -324,7 +324,83 @@ test("manual owner recovery is one-time, intent-bound, and server-only", async (
     assert.match(migration, new RegExp(`security definer[\\s\\S]*?${rpc}|${rpc}[\\s\\S]*?security definer`, "i"));
     assert.match(migration, new RegExp(`grant execute on function public\\.${rpc}[\\s\\S]*?to service_role`, "i"));
   }
-  assert.match(migration,…1246 tokens truncated…Response\(\)/);
+  assert.match(migration, /credential_hash = null[\s\S]*?state = 'completed'|state = 'completed'[\s\S]*?credential_hash = null/i);
+  assert.doesNotMatch(migration, /after_data[\s\S]{0,500}credential_hash/i);
+
+  assert.match(issueRoute, /verifyOperatorPassword\(operatorUserId, operatorPassword\)/);
+  assert.match(issueRoute, /manualPhoneConfirmed/);
+  assert.match(issueRoute, /issue_owner_password_recovery/);
+  assert.match(recoveryLibrary, /recoveryRequestId.*credential.*newPassword/s);
+  assert.match(recoverRoute, /claim_owner_password_recovery/);
+  assert.match(recoverRoute, /updateUserById\(claim\.authUserId, \{ password: newPassword \}\)/);
+  assert.match(recoverRoute, /signOut\(\{ scope: "global" \}\)/);
+  assert.match(recoverRoute, /complete_owner_password_recovery/);
+  assert.doesNotMatch(recoverRoute, /signInWithPassword\(\{\s*phone,\s*password: credential/s);
+  assert.match(recoveryForm, /crypto\.randomUUID\(\)/);
+  assert.doesNotMatch(recoveryForm, /localStorage|sessionStorage|document\.cookie/);
+});
+
+test("authenticated owner password changes reauthorize and revoke sessions", async () => {
+  const [route, card, settings] = await Promise.all([
+    readFile(new URL("app/api/auth/update-password/route.ts", root), "utf8"),
+    readFile(new URL("components/password-change-card.tsx", root), "utf8"),
+    readFile(new URL("app/settings/page.tsx", root), "utf8"),
+  ]);
+
+  assert.match(route, /requireActor\(request, \["owner"\]\)/);
+  assert.match(route, /auth\.getUser\(\)/);
+  assert.match(route, /user\.id !== actor\.id/);
+  assert.match(route, /consumeAuthenticationLimits/);
+  assert.match(route, /verifyExactPassword\(user\.id, user\.phone, currentPassword\)/);
+  assert.match(route, /updateUserById\(user\.id, \{ password: newPassword \}\)/);
+  assert.match(route, /verifyNewPasswordAndRevokeSessions/);
+  assert.match(route, /signOut\(\{ scope: "global" \}\)/);
+  assert.match(route, /action: "account_password\.changed"/);
+  assert.match(route, /after_data:\s*\{ sessionsRevoked: true, method: "current_password" \}/);
+  assert.doesNotMatch(route, /after_data:\s*\{[^}]*(?:currentPassword|newPassword)/);
+  assert.match(card, /autoComplete="current-password"/);
+  assert.equal((card.match(/autoComplete="new-password"/g) ?? []).length, 2);
+  assert.doesNotMatch(card, /localStorage|sessionStorage|document\.cookie/);
+  assert.match(settings, /<PasswordChangeCard/);
+});
+
+test("platform operator can rotate an exposed password without browser persistence", async () => {
+  const [route, reauth, card, consoleSource, loginForm] = await Promise.all([
+    readFile(new URL("app/api/auth/operator-password/route.ts", root), "utf8"),
+    readFile(new URL("lib/operator-reauth.ts", root), "utf8"),
+    readFile(new URL("components/operator-password-card.tsx", root), "utf8"),
+    readFile(new URL("components/live-operator-console.tsx", root), "utf8"),
+    readFile(new URL("components/login-form.tsx", root), "utf8"),
+  ]);
+
+  assert.match(route, /requireOperatorActor\(request\)/);
+  assert.match(route, /auth\.getUser\(\)/);
+  assert.match(route, /user\.id !== operatorUserId/);
+  assert.match(route, /consumeAuthenticationLimits/);
+  assert.match(route, /verifyOperatorPassword\(operatorUserId, currentPassword\)/);
+  assert.match(route, /updateUserById\(operatorUserId, \{ password: newPassword \}\)/);
+  assert.match(route, /verifyOperatorPasswordAndRevokeSessions\(operatorUserId, newPassword\)/);
+  assert.match(reauth, /signOut\(\{ scope: "global" \}\)/);
+  assert.doesNotMatch(route + reauth, /localStorage|sessionStorage|document\.cookie/);
+  assert.doesNotMatch(route, /console\./);
+  assert.match(card, /autoComplete="current-password"/);
+  assert.equal((card.match(/autoComplete="new-password"/g) ?? []).length, 2);
+  assert.match(card, /aria-pressed=\{visible\}/);
+  assert.doesNotMatch(card, /localStorage|sessionStorage|document\.cookie/);
+  assert.match(consoleSource, /<OperatorPasswordCard \/>/);
+  assert.equal((loginForm.match(/className="password-visibility-button"/g) ?? []).length, 3);
+});
+
+test("production provisioning is operator-authenticated, server-derived, and persisted", async () => {
+  const [http, provisioning] = await Promise.all([
+    readFile(new URL("lib/http.ts", root), "utf8"),
+    readFile(new URL("app/api/provisioning/route.ts", root), "utf8"),
+  ]);
+
+  assert.match(http, /requireOperatorActor/);
+  assert.match(http, /return operator\.auth_user_id/);
+  assert.match(http, /Boolean\(await requireOperatorActor\(request\)\)/);
+  assert.match(provisioning, /if \(isDemoRuntime\(\)\) return demoRegistryResponse\(\)/);
   assert.match(provisioning, /NEXT_PUBLIC_PLATFORM_DOMAIN/);
   assert.doesNotMatch(provisioning, /payload\.hostname/);
   assert.match(provisioning, /crypto\.subtle\.digest\("SHA-256"/);
