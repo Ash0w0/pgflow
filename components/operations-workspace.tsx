@@ -133,9 +133,10 @@ export function OperationsWorkspace({ demoMode }: { demoMode?: boolean }) {
       <div className="page-stack operations-page">
         <section className="page-heading">
           <div>
-            <div className="demo-kicker">
+            <div className="eyebrow">
               <Wrench size={14} /> Operations & Maintenance
             </div>
+
             <h1>PG Operations Control Room</h1>
             <p>Manage resident maintenance tickets, move-out settlements, and operational notices.</p>
           </div>

@@ -28,9 +28,10 @@ export function ReportsWorkspace({ demoMode }: { demoMode?: boolean }) {
       <div className="page-stack reports-page">
         <section className="page-heading flex items-center justify-between">
           <div>
-            <div className="demo-kicker">
+            <div className="eyebrow">
               <FileBarChart size={14} /> Analytics & Financial Reports
             </div>
+
             <h1>PG Performance Reports</h1>
             <p>Export monthly rent collections, bed occupancy trends, and deposit liability audits.</p>
           </div>

@@ -167,30 +167,10 @@ export function AppShell({ children, demoMode }: { children: ReactNode; demoMode
               </Link>
             );
           })}
-
-          {demoMode && (
-            <>
-              <span className="nav-kicker nav-kicker-spaced">Explore demo</span>
-              {demoNav.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.href}
-                    className={`nav-item ${pathname.startsWith(item.href) ? "active" : ""}`}
-                    href={item.href}
-                    onClick={() => setMobileOpen(false)}
-                    aria-current={pathname.startsWith(item.href) ? "page" : undefined}
-                  >
-                    <Icon size={18} strokeWidth={1.9} />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-            </>
-          )}
         </nav>
 
         <div className="sidebar-foot">
+
           <Link className={`nav-item ${pathname.startsWith("/settings") ? "active" : ""}`} href="/settings" aria-current={pathname.startsWith("/settings") ? "page" : undefined}>
             <Settings size={18} />
             <span>Settings</span>

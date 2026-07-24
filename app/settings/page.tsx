@@ -22,7 +22,8 @@ export default async function Page() {
         <div className="page-stack live-settings-page">
           <section className="page-heading">
             <div>
-              <div className="demo-kicker"><Settings2 size={14}/> Owner controls</div>
+              <div className="eyebrow"><Settings2 size={14}/> Owner controls</div>
+
               <h1>Property settings</h1>
               <p>Manage branding, payment destination, WhatsApp communications, and account security.</p>
             </div>
