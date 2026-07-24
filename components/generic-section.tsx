@@ -148,7 +148,7 @@ export function GenericSection({ title, description, label, children }: { title:
       recipientPhone: phone,
       amount: 8500,
       billingPeriod: "July 2026",
-      pgName: "Nivasa PG",
+      pgName: "Sample PG",
       dueDate: "05 July 2026",
     });
     setIsWhatsAppOpen(true);
