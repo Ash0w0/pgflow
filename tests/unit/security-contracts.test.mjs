@@ -101,15 +101,16 @@ test("trusted mutations validate the public proxy origin and fail closed", async
 });
 
 test("production hostname and storage boundaries fail closed", async () => {
-  const [branding, tenancy, upload, hostnameHardening, rlsTests] = await Promise.all([
+  const [branding, demoBranding, tenancy, upload, hostnameHardening, rlsTests] = await Promise.all([
     readFile(new URL("lib/branding.ts", root), "utf8"),
+    readFile(new URL("demo/branding.ts", root), "utf8"),
     readFile(new URL("lib/tenancy.ts", root), "utf8"),
     readFile(new URL("app/api/uploads/payment-evidence/route.ts", root), "utf8"),
     readFile(new URL("supabase/migrations/0005_domain_hostname_hardening.sql", root), "utf8"),
     readFile(new URL("supabase/tests/rls.sql", root), "utf8"),
   ]);
-  assert.match(branding, /\?\? null/);
-  assert.doesNotMatch(branding, /\?\? approvedDemoHosts\.localhost/);
+  assert.doesNotMatch(branding, /approvedDemoHosts|DEMO_BRAND/);
+  assert.match(demoBranding, /\? DEMO_BRAND\s*:\s*null/);
   assert.match(tenancy, /eq\("hostname", hostname\)/);
   assert.match(tenancy, /eq\("state", "verified"\)/);
   assert.doesNotMatch(upload, /cloudflare:workers/);
@@ -240,7 +241,7 @@ test("protected pages re-authorize users at the server component boundary", asyn
   assert.match(authorization, /redirect\("\/login"\)/);
   assert.match(authorization, /OPERATOR_HOSTNAME/);
   assert.match(authorization, /from\("platform_operators"\)/);
-  assert.equal((staffPages.match(/requireStaffPage\(/g) ?? []).length, 7);
+  assert.equal((staffPages.match(/requireStaffPage\(/g) ?? []).length, 8); // Home checks the explicit demo boundary before production authorization.
   assert.match(tenantPage, /requireTenantPage\(\)/);
   assert.match(operatorPage, /requireOperatorPage\(\)/);
 });
@@ -778,14 +779,13 @@ test("demo runtime is explicit and never inferred from absent production credent
 });
 
 test("approved demo hosts never shadow a production apex domain", async () => {
-  const branding = await readFile(new URL("lib/branding.ts", root), "utf8");
-  const block = branding.match(/approvedDemoHosts:[\s\S]*?\n\};/)?.[0] ?? "";
+  const branding = await readFile(new URL("demo/branding.ts", root), "utf8");
 
-  assert.ok(block, "approvedDemoHosts table could not be located");
-  for (const productionApex of ["pgflow.co", "pgflow.app", "www.pgflow.co"]) {
-    assert.doesNotMatch(block, new RegExp(`["']${productionApex.replace(/\./g, "\\.")}["']\\s*:`));
-  }
-  assert.match(block, /"demo\.pgflow\.co"\s*:/);
+  assert.match(branding, /hostname === "demo\.pgflow\.co"/);
+  assert.match(branding, /hostname === "localhost"/);
+  assert.match(branding, /hostname\.endsWith\("\.vercel\.app"\)/);
+  assert.doesNotMatch(branding, /hostname === "(?:www\.)?pgflow\.co"/);
+  assert.doesNotMatch(branding, /demo\.pgflow\.app|iris\.pgflow\.app|metronest\.pgflow\.app/);
 });
 
 test("brand colors reaching CSS custom properties are hex-validated in one shared place", async () => {

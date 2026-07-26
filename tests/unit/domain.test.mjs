@@ -9,8 +9,7 @@ import {
   isValidUtr,
   normalizeUtr,
 } from "../../lib/domain.ts";
-import { BLANK_TEMPLATE, createCanonicalDemoSeed } from "../../lib/template.ts";
-import { isApprovedHostname, resolveApprovedBrand } from "../../lib/branding.ts";
+import { BLANK_TEMPLATE } from "../../lib/template.ts";
 import { createTemporaryPassword } from "../../lib/owner-invitations.ts";
 import { isStrongOwnerPassword } from "../../lib/passwords.ts";
 
@@ -49,23 +48,9 @@ test("validates safe property slugs", () => {
   assert.equal(isValidPropertySlug("Unsafe Space"), false);
 });
 
-test("keeps the blank template empty and demo seed canonical", () => {
-  const seed = createCanonicalDemoSeed();
+test("keeps the production template empty", () => {
   assert.equal(BLANK_TEMPLATE.businessData, false);
   assert.equal(BLANK_TEMPLATE.demoRecords, 0);
-  assert.equal(seed.floors.length, 3);
-  assert.equal(seed.rooms.length, 24);
-  assert.equal(seed.beds.length, 60);
-  assert.equal(seed.tenants.length, 48);
-  assert.equal(new Set(seed.tenants.map((tenant) => tenant.bedId)).size, 48);
-  assert.ok(seed.tenants.every((tenant) => tenant.phone.startsWith("+91000000")));
-});
-
-test("resolves branding only from an approved hostname map", () => {
-  assert.equal(resolveApprovedBrand("iris.pgflow.app").shortName, "Iris");
-  assert.equal(resolveApprovedBrand("unknown.example"), null);
-  assert.equal(isApprovedHostname("unknown.example"), false);
-  assert.equal(isApprovedHostname("DEMO.PGFLOW.APP:443"), true);
 });
 
 test("generates strong one-time owner passwords", () => {
