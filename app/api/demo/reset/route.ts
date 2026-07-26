@@ -1,8 +1,10 @@
 import { requireOperator, jsonError } from "@/lib/http";
-import { createCanonicalDemoSeed } from "@/lib/template";
+import { isDemoRuntime } from "@/lib/runtime";
 
 export async function POST(request: Request) {
+  if (!isDemoRuntime()) return jsonError("Not found.", 404);
   if (!await requireOperator(request)) return jsonError("Platform operator authorization is required.", 403);
+  const { createCanonicalDemoSeed } = await import("@/demo/seed");
   const seed = createCanonicalDemoSeed();
   return Response.json({
     reset: false,
