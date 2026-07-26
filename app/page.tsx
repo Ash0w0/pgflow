@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { AppShell } from "@/components/app-shell";
 import { BusinessHomepage } from "@/components/business-homepage";
-import { DemoDashboard } from "@/components/demo-dashboard";
 import { ProductionOverview } from "@/components/production-overview";
 import { normalizeHostname } from "@/lib/branding";
 import { getCollectionsData } from "@/lib/collections";
@@ -11,9 +10,11 @@ import { requireStaffPage, type StaffPageRole } from "@/lib/page-authorization";
 import { getResidentSetupData } from "@/lib/resident-setup";
 import { getRoomSetupData } from "@/lib/room-setup";
 import { hostnameFromHeaders } from "@/lib/tenancy";
+import { isDemoRuntime } from "@/lib/runtime";
 import { isPlatformLoginHostname } from "@/lib/workspace-login";
 
 const isPublicPlatformHomepage = cache(async () => {
+  if (isDemoRuntime()) return false;
   const hostname = hostnameFromHeaders(await headers());
   const platformDomain = normalizeHostname(process.env.NEXT_PUBLIC_PLATFORM_DOMAIN ?? null);
 
@@ -25,6 +26,12 @@ const isPublicPlatformHomepage = cache(async () => {
 });
 
 export async function generateMetadata(): Promise<Metadata> {
+  if (isDemoRuntime()) {
+    return {
+      title: "Guided product demo",
+      description: "Explore PGFlow with fictional, isolated sample data.",
+    };
+  }
   if (await isPublicPlatformHomepage()) {
     return {
       title: "WhatsApp-first PG operations",
@@ -39,13 +46,18 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  if (await isPublicPlatformHomepage()) return <BusinessHomepage />;
-
-  const authorization = await requireStaffPage(["owner", "manager", "accountant"]);
-  if (authorization.mode === "demo") {
+  if (isDemoRuntime()) {
+    await requireStaffPage(["owner", "manager", "accountant"]);
+    const { DemoDashboard } = await import("@/demo/components/demo-dashboard");
     return <AppShell demoMode><DemoDashboard /></AppShell>;
   }
 
+  if (await isPublicPlatformHomepage()) return <BusinessHomepage />;
+
+  const authorization = await requireStaffPage(["owner", "manager", "accountant"]);
+  if (authorization.mode !== "production") {
+    throw new Error("Demo authorization cannot enter the production home route.");
+  }
   const staffRole = authorization.actor.role as StaffPageRole;
   const propertyId = authorization.actor.propertyId;
   if (!propertyId) {
