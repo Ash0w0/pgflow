@@ -255,6 +255,12 @@ create table public.whatsapp_action_challenges (
 create index whatsapp_action_challenges_active_idx
   on public.whatsapp_action_challenges(token_hash, expires_at) where state = 'pending';
 
+-- Older receipt migrations expose organization-scoped uniqueness through the
+-- receipt number/payment constraints but not through the identifier itself.
+-- Add the composite key required by the tenant-scoped receipt-link foreign key.
+alter table public.receipts
+  add constraint receipts_organization_id_id_key unique (organization_id, id);
+
 create table public.resident_receipt_links (
   id uuid primary key default extensions.gen_random_uuid(),
   organization_id uuid not null references public.organizations(id) on delete cascade,

@@ -21,6 +21,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22.13.0
+      # Node 22.13 ships an older Corepack trust store that cannot verify
+      # current pnpm signatures. Pin Corepack itself before activating pnpm.
+      - run: npm install --global corepack@0.35.0
       - run: corepack enable
       - run: corepack prepare pnpm@10.28.0 --activate
       - run: pnpm install --frozen-lockfile
