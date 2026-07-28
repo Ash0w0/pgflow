@@ -1,146 +1,32 @@
-import { NextResponse } from "next/server";
 import { requireActor } from "@/lib/http";
-import { sendWhatsAppTemplate } from "@/lib/whatsapp/client";
 import {
-  buildRentDueReminderPayload,
-  buildPaymentReceiptPayload,
-  buildDailyOwnerDigestPayload,
-  getRentDueReminderPreview,
-  getPaymentReceiptPreview,
-  getDailyOwnerDigestPreview,
-} from "@/lib/whatsapp/templates";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+  enqueueWhatsAppIntent,
+  parseWhatsAppIntent,
+  resolveWhatsAppIntent,
+} from "@/lib/whatsapp/intents";
 
 export async function POST(request: Request) {
+  const actor = await requireActor(request, ["owner", "manager", "accountant"]);
+  if (!actor) return Response.json({ error: "Unauthorized." }, { status: 401 });
+
+  let body: unknown;
   try {
-    const actor = await requireActor(request, ["owner", "manager", "accountant"]);
-    if (!actor) {
-      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const body = (await request.json()) as Record<string, any>;
+    body = await request.json();
+  } catch {
+    return Response.json({ error: "A JSON intent is required." }, { status: 400 });
+  }
+  const intent = parseWhatsAppIntent(body);
+  if (!intent) return Response.json({ error: "Invalid WhatsApp intent." }, { status: 400 });
 
-    const type = typeof body.type === "string" ? body.type : "";
-    const recipientPhone = typeof body.recipientPhone === "string" ? body.recipientPhone : "";
-    const language = (typeof body.language === "string" ? body.language : "en") as "en" | "hi";
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const payload = (body.payload && typeof body.payload === "object" ? body.payload : {}) as Record<string, any>;
-
-    if (!type || !recipientPhone || !payload) {
-      return NextResponse.json(
-        { error: "Message type, recipient phone, and payload are required." },
-        { status: 400 }
-      );
-    }
-
-    let templateOptions;
-    let messagePreview = "";
-
-    if (type === "rent_due") {
-      templateOptions = buildRentDueReminderPayload({
-        recipientPhone,
-        residentName: payload.residentName || "Resident",
-        amount: Number(payload.amount || 0),
-        billingPeriod: payload.billingPeriod || "Current Month",
-        pgName: payload.pgName || "Your PG",
-        dueDate: payload.dueDate || "5th",
-        paymentUrl: payload.paymentUrl || "http://localhost:3001/pay",
-        language,
-      });
-      messagePreview = getRentDueReminderPreview({
-        recipientPhone,
-        residentName: payload.residentName || "Resident",
-        amount: Number(payload.amount || 0),
-        billingPeriod: payload.billingPeriod || "Current Month",
-        pgName: payload.pgName || "Your PG",
-        dueDate: payload.dueDate || "5th",
-        paymentUrl: payload.paymentUrl || "http://localhost:3001/pay",
-        language,
-      });
-    } else if (type === "payment_receipt") {
-      templateOptions = buildPaymentReceiptPayload({
-        recipientPhone,
-        residentName: payload.residentName || "Resident",
-        amount: Number(payload.amount || 0),
-        billingPeriod: payload.billingPeriod || "Current Month",
-        receiptNumber: payload.receiptNumber || "REC-001",
-        receiptUrl: payload.receiptUrl || "http://localhost:3001/receipt",
-        language,
-      });
-      messagePreview = getPaymentReceiptPreview({
-        recipientPhone,
-        residentName: payload.residentName || "Resident",
-        amount: Number(payload.amount || 0),
-        billingPeriod: payload.billingPeriod || "Current Month",
-        receiptNumber: payload.receiptNumber || "REC-001",
-        receiptUrl: payload.receiptUrl || "http://localhost:3001/receipt",
-        language,
-      });
-    } else if (type === "daily_digest") {
-      templateOptions = buildDailyOwnerDigestPayload({
-        ownerPhone: recipientPhone,
-        ownerName: payload.ownerName || "Owner",
-        dateStr: payload.dateStr || new Date().toISOString().split("T")[0],
-        todayCollections: Number(payload.todayCollections || 0),
-        collectionsCount: Number(payload.collectionsCount || 0),
-        pendingAmount: Number(payload.pendingAmount || 0),
-        pendingCount: Number(payload.pendingCount || 0),
-        occupiedBeds: Number(payload.occupiedBeds || 0),
-        vacantBeds: Number(payload.vacantBeds || 0),
-        openTickets: Number(payload.openTickets || 0),
-      });
-      messagePreview = getDailyOwnerDigestPreview({
-        ownerPhone: recipientPhone,
-        ownerName: payload.ownerName || "Owner",
-        dateStr: payload.dateStr || new Date().toISOString().split("T")[0],
-        todayCollections: Number(payload.todayCollections || 0),
-        collectionsCount: Number(payload.collectionsCount || 0),
-        pendingAmount: Number(payload.pendingAmount || 0),
-        pendingCount: Number(payload.pendingCount || 0),
-        occupiedBeds: Number(payload.occupiedBeds || 0),
-        vacantBeds: Number(payload.vacantBeds || 0),
-        openTickets: Number(payload.openTickets || 0),
-      });
-    } else {
-      return NextResponse.json(
-        { error: `Unsupported WhatsApp message type: '${type}'` },
-        { status: 400 }
-      );
-    }
-
-    const dispatchResult = await sendWhatsAppTemplate(templateOptions);
-    if (!dispatchResult.ok) {
-      return NextResponse.json(
-        { error: dispatchResult.error || "Failed to dispatch WhatsApp message." },
-        { status: 500 }
-      );
-    }
-
-    const isDemo = process.env.PGFLOW_RUNTIME === "demo";
-    if (!isDemo) {
-      const admin = getSupabaseAdmin();
-      await admin.rpc("log_whatsapp_message", {
-        p_organization_id: actor.organizationId,
-        p_recipient_phone: recipientPhone,
-        p_direction: "outbound",
-        p_template_name: templateOptions.templateName,
-        p_language_code: language,
-        p_wamid: dispatchResult.wamid || null,
-        p_delivery_status: "sent",
-        p_idempotency_key: payload.idempotencyKey || null,
-        p_payload: { messagePreview },
-        p_resident_id: payload.residentId || null,
-      });
-    }
-
-    return NextResponse.json({
-      ok: true,
-      wamid: dispatchResult.wamid,
-      demo: dispatchResult.demo || false,
-      messagePreview,
+  try {
+    const context = await resolveWhatsAppIntent(actor.organizationId, intent);
+    const result = await enqueueWhatsAppIntent(context);
+    return Response.json(result, {
+      status: 202,
+      headers: { "cache-control": "no-store" },
     });
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Internal server error";
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to enqueue WhatsApp intent.";
+    return Response.json({ error: message }, { status: 409 });
   }
 }

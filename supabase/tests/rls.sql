@@ -2,13 +2,19 @@
 -- every fixture and exercises policies as real authenticated JWT subjects.
 
 begin;
-select plan(93);
+select plan(99);
 
 select has_function('public', 'current_organization_ids', array[]::text[], 'RLS organization helper exists');
 select ok(not has_table_privilege('anon', 'public.organizations', 'select'), 'anonymous users cannot read organizations');
 select ok(not has_table_privilege('authenticated', 'public.platform_operators', 'select'), 'platform operator registry is server-only');
 select ok(not has_table_privilege('authenticated', 'public.memberships', 'update'), 'clients cannot directly change roles');
 select ok(not has_table_privilege('authenticated', 'public.brand_themes', 'update'), 'clients cannot directly change branding');
+select ok(not has_table_privilege('anon', 'public.whatsapp_contacts', 'select'), 'anonymous users cannot read WhatsApp contacts');
+select ok(not has_table_privilege('authenticated', 'public.whatsapp_messages', 'select'), 'PG staff cannot bypass operator WhatsApp message views');
+select ok(not has_table_privilege('authenticated', 'public.whatsapp_outbox_jobs', 'update'), 'clients cannot mutate WhatsApp delivery jobs');
+select ok(not has_function_privilege('authenticated', 'public.claim_whatsapp_outbox(text,integer,integer)', 'execute'), 'clients cannot claim WhatsApp jobs');
+select ok(not has_function_privilege('authenticated', 'public.confirm_whatsapp_payment_action(text,text,text,text,text)', 'execute'), 'clients cannot bypass signed owner confirmation');
+select ok(has_function_privilege('service_role', 'public.enqueue_whatsapp_intent(uuid,uuid,uuid,text,text,text,jsonb,timestamptz)', 'execute'), 'service role can atomically enqueue WhatsApp intents');
 select has_function('public', 'update_brand_theme', array['uuid','uuid','text','text'], 'audited brand theme update function exists');
 select ok(
   not has_function_privilege('anon', 'public.update_brand_theme(uuid,uuid,text,text)', 'execute')

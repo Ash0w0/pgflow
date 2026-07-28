@@ -20,7 +20,7 @@ export function SignupOnboardingForm({ whatsappNumber }: SignupOnboardingFormPro
 
   const configured = /^\d{10,15}$/.test(whatsappNumber);
   const message = useMemo(() => [
-    "Hi PGFlow, I want to create a new PG workspace.",
+    "Hi PGFlow, I want to request onboarding for a new PG workspace.",
     `Owner: ${cleanLine(ownerName) || "Not provided"}`,
     `PG name: ${cleanLine(pgName) || "Not provided"}`,
     `City: ${cleanLine(city) || "Not provided"}`,
@@ -59,7 +59,7 @@ export function SignupOnboardingForm({ whatsappNumber }: SignupOnboardingFormPro
       </div>
       <button className="home-primary-button signup-submit" type="submit" disabled={!configured}>
         <MessageCircle size={19} />
-        Continue on WhatsApp
+        Request onboarding on WhatsApp
         <ArrowRight size={18} />
       </button>
       {configured ? (

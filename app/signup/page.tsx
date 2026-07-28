@@ -4,8 +4,8 @@ import { ArrowLeft, Check, MessageCircle, ShieldCheck, UsersRound } from "lucide
 import { SignupOnboardingForm } from "@/components/signup-onboarding-form";
 
 export const metadata: Metadata = {
-  title: "Create your PG",
-  description: "Start a PGFlow workspace with WhatsApp-assisted onboarding.",
+  title: "Request PGFlow onboarding",
+  description: "Request manual PGFlow onboarding through WhatsApp.",
 };
 
 function publicWhatsAppNumber() {
@@ -26,8 +26,8 @@ export default function SignupPage() {
       <div className="signup-layout">
         <section className="signup-story" aria-labelledby="signup-title">
           <span className="home-kicker"><MessageCircle size={17} /> WhatsApp-assisted setup</span>
-          <h1 id="signup-title">Create the workspace for your PG.</h1>
-          <p>Tell us the basics. PGFlow will continue the setup with you on WhatsApp and prepare the first real operating flow.</p>
+          <h1 id="signup-title">Request onboarding for your PG.</h1>
+          <p>Tell us the basics. A PGFlow operator will review the request, provision the workspace manually, and guide the first real operating flow on WhatsApp.</p>
           <div className="signup-start-limit">
             <UsersRound size={26} />
             <div>
@@ -43,7 +43,7 @@ export default function SignupPage() {
           </ul>
         </section>
         <section className="signup-form-panel" aria-labelledby="signup-form-title">
-          <span>New PG onboarding</span>
+          <span>Manual PG onboarding request</span>
           <h2 id="signup-form-title">Start the conversation</h2>
           <p>We’ll prepare a message with these details. You review it before anything is sent.</p>
           <SignupOnboardingForm whatsappNumber={publicWhatsAppNumber()} />

@@ -20,6 +20,7 @@ import { OwnerInvitationPanel, type OwnerInvitationOrganization } from "./owner-
 import { OwnerRecoveryPanel } from "./owner-recovery-panel";
 import { OperatorPasswordCard } from "./operator-password-card";
 import { StatusPill } from "./status-pill";
+import { WhatsAppOperatorPanel } from "./whatsapp-operator-panel";
 
 type RegistryOrganization = OwnerInvitationOrganization & {
   slug: string;
@@ -489,6 +490,8 @@ export function LiveOperatorConsole() {
           <div><small>Persistence</small><strong>Connected</strong><p>Operator authorization required</p></div>
         </article>
       </section>
+
+      <WhatsAppOperatorPanel />
 
       <section className="operator-grid live-operator-grid">
         <article className="panel live-provision-panel">

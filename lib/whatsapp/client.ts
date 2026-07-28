@@ -12,8 +12,9 @@ export interface SendWhatsAppTemplateOptions {
     sub_type?: "url" | "quick_reply";
     index?: string;
     parameters: Array<{
-      type: "text" | "currency" | "date_time" | "image";
+      type: "text" | "currency" | "date_time" | "image" | "payload";
       text?: string;
+      payload?: string;
       currency?: { fallback_value: string; code: string; amount_1000: number };
       image?: { link: string };
     }>;
@@ -24,8 +25,13 @@ export interface WhatsAppSendResult {
   ok: boolean;
   wamid?: string;
   demo?: boolean;
+  outcome?: "provider_accepted" | "retryable" | "delivery_uncertain" | "permanent_failure" | "suppressed";
+  httpStatus?: number;
+  providerErrorCode?: string;
   error?: string;
 }
+
+import { getWhatsAppConfig } from "./config.ts";
 
 /**
  * Normalizes Indian phone numbers to Meta E.164 format (e.g. 919876543210).
@@ -52,7 +58,7 @@ export function normalizeWhatsAppPhone(phone: string): string {
 }
 
 /**
- * Dispatches a WhatsApp Template message via Meta Graph API v18.0 or demo mock.
+ * Dispatches an approved WhatsApp template. Only explicit demo runtime simulates.
  */
 export async function sendWhatsAppTemplate(
   options: SendWhatsAppTemplateOptions
@@ -60,23 +66,26 @@ export async function sendWhatsAppTemplate(
   const normalizedPhone = normalizeWhatsAppPhone(options.recipientPhone);
   const languageCode = options.languageCode || "en";
 
-  const isDemo =
-    process.env.PGFLOW_RUNTIME === "demo" ||
-    !process.env.WHATSAPP_TOKEN ||
-    !process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const config = getWhatsAppConfig();
 
-  if (isDemo) {
+  if (config.runtime === "demo") {
     const mockWamid = `wamid.HBgL${Math.random().toString(36).substring(2, 12).toUpperCase()}`;
     return {
       ok: true,
       wamid: mockWamid,
       demo: true,
+      outcome: "provider_accepted",
     };
   }
 
-  const token = process.env.WHATSAPP_TOKEN;
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  const graphUrl = `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`;
+  if (config.sendMode === "disabled") {
+    return { ok: false, outcome: "suppressed", error: "WhatsApp sending is disabled." };
+  }
+  if (config.sendMode === "allowlist" && !config.allowlist.has(normalizedPhone)) {
+    return { ok: false, outcome: "suppressed", error: "Recipient is not in the staging allowlist." };
+  }
+
+  const graphUrl = `https://graph.facebook.com/${config.graphVersion}/${config.phoneNumberId}/messages`;
 
   const payload = {
     messaging_product: "whatsapp",
@@ -94,25 +103,80 @@ export async function sendWhatsAppTemplate(
     const res = await fetch(graphUrl, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${config.accessToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(15_000),
     });
 
     const data = (await res.json()) as {
-      error?: { message?: string };
+      error?: { message?: string; code?: number | string };
       messages?: Array<{ id?: string }>;
     };
     if (!res.ok) {
       const msg = data.error?.message || "Failed to dispatch WhatsApp message via Meta Cloud API.";
-      return { ok: false, error: msg };
+      const retryable = res.status === 429 || res.status >= 500;
+      return {
+        ok: false,
+        outcome: retryable ? "retryable" : "permanent_failure",
+        httpStatus: res.status,
+        providerErrorCode: data.error?.code ? String(data.error.code) : undefined,
+        error: msg,
+      };
     }
 
     const wamid = data.messages?.[0]?.id;
-    return { ok: true, wamid };
+    return { ok: true, wamid, outcome: "provider_accepted", httpStatus: res.status };
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Network error contacting Meta API.";
-    return { ok: false, error: errorMsg };
+    return {
+      ok: false,
+      outcome: "delivery_uncertain",
+      error: errorMsg,
+    };
+  }
+}
+
+export async function sendWhatsAppText(
+  recipientPhone: string,
+  body: string,
+): Promise<WhatsAppSendResult> {
+  const normalizedPhone = normalizeWhatsAppPhone(recipientPhone);
+  const config = getWhatsAppConfig();
+  if (config.runtime === "demo") {
+    return { ok: true, demo: true, wamid: `wamid.demo.${crypto.randomUUID()}`, outcome: "provider_accepted" };
+  }
+  if (config.sendMode === "disabled") return { ok: false, outcome: "suppressed", error: "WhatsApp sending is disabled." };
+  if (config.sendMode === "allowlist" && !config.allowlist.has(normalizedPhone)) {
+    return { ok: false, outcome: "suppressed", error: "Recipient is not in the staging allowlist." };
+  }
+  try {
+    const response = await fetch(
+      `https://graph.facebook.com/${config.graphVersion}/${config.phoneNumberId}/messages`,
+      {
+        method: "POST",
+        headers: { authorization: `Bearer ${config.accessToken}`, "content-type": "application/json" },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to: normalizedPhone,
+          type: "text",
+          text: { preview_url: false, body: body.slice(0, 1000) },
+        }),
+        signal: AbortSignal.timeout(15_000),
+      },
+    );
+    const data = await response.json() as { messages?: Array<{ id?: string }>; error?: { code?: string | number; message?: string } };
+    if (!response.ok) return {
+      ok: false,
+      outcome: response.status === 429 || response.status >= 500 ? "retryable" : "permanent_failure",
+      httpStatus: response.status,
+      providerErrorCode: data.error?.code ? String(data.error.code) : undefined,
+      error: data.error?.message ?? "Meta text delivery failed.",
+    };
+    return { ok: true, outcome: "provider_accepted", httpStatus: response.status, wamid: data.messages?.[0]?.id };
+  } catch (error) {
+    return { ok: false, outcome: "delivery_uncertain", error: error instanceof Error ? error.message : "Meta delivery timed out." };
   }
 }

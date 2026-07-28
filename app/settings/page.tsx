@@ -57,7 +57,14 @@ export default async function Page() {
   }
 
   // A live WhatsApp dispatch needs Meta credentials; without them the card must not claim readiness.
-  const whatsappConfigured = demoMode || Boolean(process.env.WHATSAPP_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID);
+  const whatsappConfigured = demoMode || Boolean(
+    process.env.WHATSAPP_ACCESS_TOKEN
+    && process.env.WHATSAPP_PHONE_NUMBER_ID
+    && process.env.WHATSAPP_WABA_ID
+    && process.env.WHATSAPP_APP_SECRET
+    && process.env.WHATSAPP_WORKER_SECRET
+    && process.env.WHATSAPP_SEND_MODE !== "disabled"
+  );
 
   return (
     <AppShell demoMode={demoMode}>

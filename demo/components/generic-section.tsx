@@ -140,15 +140,12 @@ export function GenericSection({ title, description, label, children }: { title:
     setIsMoveOutOpen(true);
   };
 
-  const openWhatsAppModal = (type: "rent_due" | "payment_receipt" | "daily_digest" = "rent_due", residentName = "Mira Kapoor", phone = "919876543210") => {
+  const openWhatsAppModal = (_type: "rent_due" | "payment_receipt" | "daily_digest" = "rent_due", residentName = "Mira Kapoor", _phone = "919876543210") => {
     setWhatsAppTarget({
-      type,
+      invoiceId: "demo-invoice",
+      invoiceNumber: "INV-DEMO-001",
       recipientName: residentName,
-      recipientPhone: phone,
-      amount: 8500,
-      billingPeriod: "July 2026",
-      pgName: "Sample PG",
-      dueDate: "05 July 2026",
+      stage: "due",
     });
     setIsWhatsAppOpen(true);
   };

@@ -1,0 +1,15 @@
+import { requireWorkerRequest } from "@/lib/whatsapp/config";
+import { drainWebhookEvents } from "@/lib/whatsapp/webhook-worker";
+
+export async function POST(request: Request) {
+  if (!requireWorkerRequest(request)) {
+    return Response.json({ error: "Unauthorized." }, { status: 401 });
+  }
+  const requestId = request.headers.get("x-vercel-id") ?? crypto.randomUUID();
+  try {
+    const result = await drainWebhookEvents(`webhook:${requestId}`);
+    return Response.json(result, { headers: { "cache-control": "no-store" } });
+  } catch {
+    return Response.json({ error: "Webhook worker unavailable.", requestId }, { status: 503 });
+  }
+}

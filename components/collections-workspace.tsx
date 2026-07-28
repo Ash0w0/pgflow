@@ -6,7 +6,6 @@ import { Banknote, CalendarDays, CheckCircle2, CircleAlert, Copy, FileText, Indi
 import { useState, type FormEvent } from "react";
 import type { CollectionsData } from "@/lib/collections-types";
 import { AppShell } from "./app-shell";
-import { useBrand } from "./brand-provider";
 import { WhatsAppSendModal, type WhatsAppSendTarget } from "./whatsapp-send-modal";
 
 const currency = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
@@ -24,7 +23,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 export function CollectionsWorkspace({ data, canGenerate, canReview }: { data: CollectionsData; canGenerate: boolean; canReview: boolean }) {
   const router = useRouter();
-  const brand = useBrand();
   const [confirmed, setConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,17 +41,11 @@ export function CollectionsWorkspace({ data, canGenerate, canReview }: { data: C
   const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
 
   function triggerWhatsAppModal(invoice: CollectionsData["invoices"][number]) {
-    // Never fall back to a placeholder number: the reminder would reach an unrelated person.
-    if (!invoice.residentPhone) return;
     setWhatsappTarget({
-      type: "rent_due",
+      invoiceId: invoice.id,
+      invoiceNumber: invoice.number,
       recipientName: invoice.residentName,
-      recipientPhone: invoice.residentPhone,
-      amount: invoice.totalAmount - invoice.paidAmount,
-      billingPeriod: data.periodLabel,
-      pgName: brand.name,
-      dueDate: displayDate(invoice.dueDate),
-      paymentUrl: `${window.location.origin}/pay/${invoice.id}`,
+      stage: invoice.state === "overdue" ? "t+2" : "due",
     });
     setWhatsappModalOpen(true);
   }
@@ -145,13 +137,6 @@ export function CollectionsWorkspace({ data, canGenerate, canReview }: { data: C
     }
   }
 
-  const whatsappPhone = shareData
-    ? (() => { const digits = shareData.residentPhone.replace(/\D/g, ""); return digits.length === 10 ? `91${digits}` : digits; })()
-    : "";
-  const whatsappMessage = shareData
-    ? `Hi ${shareData.residentName}, your ${shareData.invoiceNumber} rent balance is ${currency.format(shareData.amount)}. Pay via UPI and submit proof here: ${shareData.url}\n\nLink expires ${new Date(shareData.expiresAt).toLocaleString("en-IN")}.`
-    : "";
-
   return (
     <AppShell demoMode={false}>
       <div className="page-stack collections-page">
@@ -233,11 +218,10 @@ export function CollectionsWorkspace({ data, canGenerate, canReview }: { data: C
                           <>
                             <button
                               type="button"
-                              className={`resident-manage-button ${invoice.residentPhone ? "" : "disabled"}`}
-                              style={invoice.residentPhone ? { color: "#059669", borderColor: "#a7f3d0" } : undefined}
-                              disabled={!invoice.residentPhone}
+                              className="resident-manage-button"
+                              style={{ color: "#059669", borderColor: "#a7f3d0" }}
                               onClick={() => triggerWhatsAppModal(invoice)}
-                              title={invoice.residentPhone ? "Send WhatsApp rent reminder" : "No phone number on file for this resident"}
+                              title="Queue an approved reminder for an activated resident"
                             >
                               <MessageCircle size={14} /> WhatsApp
                             </button>
@@ -275,13 +259,13 @@ export function CollectionsWorkspace({ data, canGenerate, canReview }: { data: C
           target={whatsappTarget}
           onClose={() => setWhatsappModalOpen(false)}
           onSuccess={() => {
-            setSuccess("WhatsApp message sent successfully!");
+            setSuccess("WhatsApp reminder queued. PGFlow will deliver it through the approved template.");
             router.refresh();
           }}
         />
       )}
 
-      {shareData&&<div className="setup-dialog-backdrop" role="presentation" onMouseDown={event=>event.target===event.currentTarget&&setShareData(null)}><section className="setup-dialog cash-dialog" role="dialog" aria-modal="true" aria-labelledby="payment-share-title"><header><div><span className="eyebrow">Seven-day secure link</span><h2 id="payment-share-title">Share {shareData.invoiceNumber}</h2><p>Share secure payment link with the resident.</p></div><button autoFocus className="icon-button" type="button" onClick={()=>setShareData(null)} aria-label="Close payment-link sharing"><X size={19}/></button></header><div className="modal-form"><div className="password-security-note"><ShieldCheck size={17}/><span>This link is unique to {shareData.residentName}.</span></div><label>Secure payment link<input value={shareData.url} readOnly onFocus={event=>event.currentTarget.select()}/></label><button className="button button-secondary button-full" type="button" onClick={async()=>{try{await navigator.clipboard.writeText(shareData.url);setShareCopied(true);}catch{setError("The browser could not copy the link. Select it manually instead.");}}}><Copy size={17}/>{shareCopied?"Link copied":"Copy secure link"}</button><a className="button button-primary button-full" href={`https://wa.me/${whatsappPhone}?text=${encodeURIComponent(whatsappMessage)}`} target="_blank" rel="noreferrer"><MessageCircle size={17}/>Open WhatsApp draft</a><small>Review the message in WhatsApp before sending.</small></div></section></div>}
+      {shareData&&<div className="setup-dialog-backdrop" role="presentation" onMouseDown={event=>event.target===event.currentTarget&&setShareData(null)}><section className="setup-dialog cash-dialog" role="dialog" aria-modal="true" aria-labelledby="payment-share-title"><header><div><span className="eyebrow">Seven-day secure link</span><h2 id="payment-share-title">Share {shareData.invoiceNumber}</h2><p>Use this only as an app-managed fallback. Normal reminders are queued through the approved WhatsApp template.</p></div><button autoFocus className="icon-button" type="button" onClick={()=>setShareData(null)} aria-label="Close payment-link sharing"><X size={19}/></button></header><div className="modal-form"><div className="password-security-note"><ShieldCheck size={17}/><span>This link is unique to {shareData.residentName}.</span></div><label>Secure payment link<input value={shareData.url} readOnly onFocus={event=>event.currentTarget.select()}/></label><button className="button button-secondary button-full" type="button" onClick={async()=>{try{await navigator.clipboard.writeText(shareData.url);setShareCopied(true);}catch{setError("The browser could not copy the link. Select it manually instead.");}}}><Copy size={17}/>{shareCopied?"Link copied":"Copy secure link"}</button><small>PGFlow never inserts this link into an unapproved free-form message.</small></div></section></div>}
       {cashOpen&&<div className="setup-dialog-backdrop" role="presentation" onMouseDown={e=>e.target===e.currentTarget&&!submitting&&setCashOpen(false)}><section className="setup-dialog cash-dialog" role="dialog" aria-modal="true" aria-labelledby="cash-dialog-title"><header><div><span className="eyebrow">Staff-collected payment</span><h2 id="cash-dialog-title">Record cash</h2></div><button className="icon-button" type="button" onClick={()=>setCashOpen(false)} disabled={submitting} aria-label="Close cash form"><X size={19}/></button></header><form className="modal-form" onSubmit={recordCash}><label>Invoice<select value={cashInvoiceId} onChange={e=>{setCashInvoiceId(e.target.value);const invoice=payableInvoices.find(x=>x.id===e.target.value);setCashAmount(String(invoice?invoice.totalAmount-invoice.paidAmount:""));}}>{payableInvoices.map(invoice=><option value={invoice.id} key={invoice.id}>{invoice.number} · {invoice.residentName}</option>)}</select></label><label>Amount received<input type="number" min="1" max={selectedCashInvoice?selectedCashInvoice.totalAmount-selectedCashInvoice.paidAmount:10000000} value={cashAmount} onChange={e=>setCashAmount(e.target.value)} required/></label><label>Collection note<input value={cashNote} onChange={e=>setCashNote(e.target.value)} maxLength={500} placeholder="Received at front desk"/></label><div className="password-security-note"><ShieldCheck size={17}/><span>Your account will be recorded as the receiver.</span></div><button className="button button-primary button-full" type="submit" disabled={submitting}>{submitting?"Recording safely…":"Record cash payment"}</button></form></section></div>}
     </AppShell>
   );

@@ -14,6 +14,8 @@ export const PII_FIELDS = Object.freeze({
   maintenance_tickets: ["reporter_name"],
   invoices: ["resident_name"],
   whatsapp_message_logs: ["recipient_phone"],
+  whatsapp_contacts: ["display_name", "phone_e164"],
+  whatsapp_conversations: ["phone_e164"],
 } as const);
 
 /**
@@ -36,7 +38,7 @@ export const RETENTION_POLICY = Object.freeze({
     basis: "Income Tax Act Section 44AA — books of account retention",
   },
   personalData: {
-    tables: ["tenants"],
+    tables: ["tenants", "whatsapp_contacts", "whatsapp_conversations", "whatsapp_consent_events"],
     retentionYears: 3,
     basis: "DPDP Act 2023 — purpose limitation after tenancy ends",
     triggerField: "departed_at",

@@ -57,13 +57,18 @@ test("public proof upload and submission revalidate the exact payment link", asy
   assert.match(component, /invoice is still unpaid until approval/i);
 });
 
-test("Collections shares only a user-reviewed WhatsApp draft", async () => {
-  const workspace = await readFile(new URL("components/collections-workspace.tsx", root), "utf8");
+test("Collections queues a server-resolved approved WhatsApp intent", async () => {
+  const [workspace, modal, route] = await Promise.all([
+    readFile(new URL("components/collections-workspace.tsx", root), "utf8"),
+    readFile(new URL("components/whatsapp-send-modal.tsx", root), "utf8"),
+    readFile(new URL("app/api/whatsapp/send/route.ts", root), "utf8"),
+  ]);
   assert.match(workspace, /fetch\("\/api\/payment-requests"/);
-  assert.match(workspace, /https:\/\/wa\.me\/\$\{whatsappPhone\}/);
-  assert.match(workspace, /Open WhatsApp draft/);
-  assert.match(workspace, /Review the message in WhatsApp before sending/);
-  assert.doesNotMatch(workspace, /graph\.facebook\.com|WHATSAPP_ACCESS_TOKEN/);
+  assert.doesNotMatch(workspace, /https:\/\/wa\.me\/\$\{whatsappPhone\}/);
+  assert.match(modal, /kind: "rent_reminder"/);
+  assert.match(modal, /invoiceId: activeTarget\.invoiceId/);
+  assert.doesNotMatch(modal, /recipientPhone|paymentUrl|amount:/);
+  assert.match(route, /resolveWhatsAppIntent\(actor\.organizationId, intent\)/);
 });
 
 test("the database refuses payment links until the exact property has UPI configured", async () => {

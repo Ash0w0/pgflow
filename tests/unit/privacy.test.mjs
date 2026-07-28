@@ -19,6 +19,8 @@ test("PII registry covers all expected tables", () => {
   assert.ok(registeredTables.includes("memberships"), "memberships table must be registered");
   assert.ok(registeredTables.includes("owner_invitations"), "owner_invitations table must be registered");
   assert.ok(registeredTables.includes("whatsapp_message_logs"), "whatsapp_message_logs must be registered");
+  assert.ok(registeredTables.includes("whatsapp_contacts"), "whatsapp_contacts must be registered");
+  assert.ok(registeredTables.includes("whatsapp_conversations"), "whatsapp_conversations must be registered");
   assert.ok(ALL_PII_FIELD_NAMES.length > 0, "PII field list must not be empty");
 });
 

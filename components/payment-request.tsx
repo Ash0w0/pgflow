@@ -65,6 +65,34 @@ export function PaymentRequest({
     );
   }
 
+  if (data.journeyState === "under_review" || data.journeyState === "approved") {
+    const approved = data.journeyState === "approved";
+    return (
+      <div className="payment-page">
+        <header className="payment-nav">
+          <BrandMark />
+          <span><ShieldCheck size={15} />Secure PG payment status</span>
+        </header>
+        <main className="payment-card">
+          <div className="payment-title">
+            <span className="demo-kicker">{data.invoiceNumber} · {data.period}</span>
+            <h1>{approved ? "Payment approved" : "Proof under review"}</h1>
+            <p>{approved
+              ? "The PG approved this payment and created an immutable receipt."
+              : "The PG team must verify the bank or UPI account before this invoice is marked paid."}</p>
+          </div>
+          <div className="live-operator-feedback feedback-success" role="status">
+            <CheckCircle2 size={18} />
+            <span>{approved
+              ? `Receipt ${data.receiptNumber ?? "issued"} is available from the secure link sent on WhatsApp.`
+              : "No further submission is needed. This secure page remains available while the proof is reviewed."}</span>
+          </div>
+        </main>
+        <footer className="payment-footer"><PoweredBy /></footer>
+      </div>
+    );
+  }
+
   async function submitProof(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!data || !file || submitting) return;
@@ -177,6 +205,12 @@ export function PaymentRequest({
           <Info size={17} />
           <span><strong>Payment is not automatically verified.</strong> After paying, submit the bank UTR and screenshot below. Staff must check the PG bank account.</span>
         </div>
+        {data.journeyState === "rejected" && (
+          <div className="live-operator-feedback feedback-error" role="alert">
+            <Info size={17} />
+            <span>Your previous proof was rejected: {data.rejectionReason || "more information is needed"}. Submit corrected proof below.</span>
+          </div>
+        )}
         {complete ? (
           <div className="live-operator-feedback feedback-success" role="status">
             <CheckCircle2 size={17} />
