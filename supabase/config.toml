@@ -18,9 +18,6 @@ enabled = false
 [studio]
 enabled = false
 
-[local_smtp]
-enabled = false
-
 [storage]
 enabled = true
 file_size_limit = "50MiB"
