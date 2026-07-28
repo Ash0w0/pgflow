@@ -64,9 +64,14 @@ test("CI and package manager are pinned and cover production, demo, rehearsals a
   assert.match(pkg, /"node": "22\.x"/);
   assert.equal(nvmrc.trim(), "22.13.0");
   assert.match(ci, /pnpm install --frozen-lockfile/);
+  assert.match(ci, /npm install --global corepack@0\.34\.4/);
   assert.match(ci, /pnpm run demo:build/);
   assert.match(ci, /pnpm run test:rehearsals/);
   assert.match(ci, /version: 2\.101\.0/);
   assert.match(ci, /supabase test db/);
-  assert.doesNotMatch(ci, /npm audit fix|version: latest|(?:^|\s)npm install/m);
+  const dependencyInstallLines = ci.split("\n")
+    .filter((line) => /\bnpm install\b/.test(line))
+    .filter((line) => !/npm install --global corepack@0\.34\.4/.test(line));
+  assert.deepEqual(dependencyInstallLines, []);
+  assert.doesNotMatch(ci, /npm audit fix|version: latest/);
 });

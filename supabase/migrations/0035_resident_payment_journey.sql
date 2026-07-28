@@ -56,3 +56,13 @@ $$;
 revoke all on function public.record_resident_receipt_open(text,uuid)
   from public, anon, authenticated;
 grant execute on function public.record_resident_receipt_open(text,uuid) to service_role;
+
+-- Reassert the public proof-submission boundary after extending the payment
+-- journey. This remains a server-only operation even though the resident uses
+-- an unauthenticated, scoped link in the browser.
+revoke all on function public.submit_public_upi_payment_evidence(
+  text,uuid,bigint,text,timestamptz,text,text,text,text
+) from public, anon, authenticated;
+grant execute on function public.submit_public_upi_payment_evidence(
+  text,uuid,bigint,text,timestamptz,text,text,text,text
+) to service_role;
