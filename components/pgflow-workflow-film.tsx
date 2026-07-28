@@ -25,6 +25,13 @@ export const WORKFLOW_FILM_DURATION = 720;
 export const WORKFLOW_FILM_WIDTH = 1600;
 export const WORKFLOW_FILM_HEIGHT = 900;
 
+const sceneTiming = {
+  rentReminder: { from: 0, duration: 170 },
+  secureLink: { from: 180, duration: 170 },
+  ownerReview: { from: 360, duration: 170 },
+  controlRoom: { from: 540, duration: 180 },
+} as const;
+
 const colors = {
   forest: "#123d32",
   forestDeep: "#082a22",
@@ -176,7 +183,7 @@ function WhatsAppHeader() {
 
 function RentReminderScene() {
   const frame = useCurrentFrame();
-  const duration = 200;
+  const duration = sceneTiming.rentReminder.duration;
   const opacity = fade(frame, duration);
   const messageProgress = interpolate(frame, [30, 80], [0, 1], {
     extrapolateLeft: "clamp",
@@ -254,7 +261,7 @@ function RentReminderScene() {
 
 function SecureLinkScene() {
   const frame = useCurrentFrame();
-  const duration = 200;
+  const duration = sceneTiming.secureLink.duration;
   const opacity = fade(frame, duration);
   const relay = interpolate(frame, [28, 110], [0, 1], {
     extrapolateLeft: "clamp",
@@ -342,7 +349,7 @@ function SecureLinkScene() {
 
 function OwnerReviewScene() {
   const frame = useCurrentFrame();
-  const duration = 200;
+  const duration = sceneTiming.ownerReview.duration;
   const opacity = fade(frame, duration);
   const approval = interpolate(frame, [90, 138], [0, 1], {
     extrapolateLeft: "clamp",
@@ -420,7 +427,7 @@ function OwnerReviewScene() {
 
 function ControlRoomScene() {
   const frame = useCurrentFrame();
-  const duration = 210;
+  const duration = sceneTiming.controlRoom.duration;
   const opacity = fade(frame, duration);
   const settle = interpolate(frame, [36, 100], [0, 1], {
     extrapolateLeft: "clamp",
@@ -545,16 +552,32 @@ export function PGFlowWorkflowFilm() {
         </span>
       </div>
 
-      <Sequence from={0} durationInFrames={200} premountFor={30}>
+      <Sequence
+        from={sceneTiming.rentReminder.from}
+        durationInFrames={sceneTiming.rentReminder.duration}
+        premountFor={30}
+      >
         <RentReminderScene />
       </Sequence>
-      <Sequence from={170} durationInFrames={200} premountFor={30}>
+      <Sequence
+        from={sceneTiming.secureLink.from}
+        durationInFrames={sceneTiming.secureLink.duration}
+        premountFor={30}
+      >
         <SecureLinkScene />
       </Sequence>
-      <Sequence from={340} durationInFrames={200} premountFor={30}>
+      <Sequence
+        from={sceneTiming.ownerReview.from}
+        durationInFrames={sceneTiming.ownerReview.duration}
+        premountFor={30}
+      >
         <OwnerReviewScene />
       </Sequence>
-      <Sequence from={510} durationInFrames={210} premountFor={30}>
+      <Sequence
+        from={sceneTiming.controlRoom.from}
+        durationInFrames={sceneTiming.controlRoom.duration}
+        premountFor={30}
+      >
         <ControlRoomScene />
       </Sequence>
 
