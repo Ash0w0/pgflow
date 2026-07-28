@@ -16,7 +16,7 @@
     "demo:start": "cross-env PGFLOW_RUNTIME=demo WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
     "test": "node --experimental-strip-types --test tests/unit/*.test.mjs",
     "test:rendered": "node --test tests/rendered-html.test.mjs",
-    "test:rehearsals": "node --test tests/rehearsals/*.test.mjs",
+    "test:rehearsals": "node --experimental-strip-types --test tests/rehearsals/*.test.mjs",
     "test:full": "pnpm run build && pnpm test",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern .next-verify --ignore-pattern .next-verify-* --ignore-pattern .next-cache-backup-* --ignore-pattern .vercel",
