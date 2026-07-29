@@ -22,7 +22,7 @@ declare
   v_room text := 'Unassigned';
   v_ticket_id uuid;
 begin
-  if pg_catalog.btrim(pg_catalog.coalesce(p_provider_wamid, '')) = ''
+  if pg_catalog.btrim(coalesce(p_provider_wamid, '')) = ''
     or p_category not in ('wifi','plumbing','electrical','cleaning','food','other')
     or pg_catalog.length(pg_catalog.btrim(p_description)) not between 3 and 1000
   then raise exception using errcode='22023', message='Maintenance details are invalid.'; end if;
@@ -49,7 +49,7 @@ begin
     organization_id,resident_id,room_number,category,title,description,status,priority,
     source_provider_wamid
   ) values (
-    v_contact.organization_id,v_tenant.id,pg_catalog.coalesce(v_room,'Unassigned'),p_category,
+    v_contact.organization_id,v_tenant.id,coalesce(v_room,'Unassigned'),p_category,
     pg_catalog.initcap(p_category)||' issue',pg_catalog.left(pg_catalog.btrim(p_description),1000),
     'open','medium',p_provider_wamid
   )
@@ -231,7 +231,7 @@ declare
   v_request public.move_out_requests;
   v_property_id uuid;
 begin
-  if pg_catalog.btrim(pg_catalog.coalesce(p_provider_wamid, '')) = ''
+  if pg_catalog.btrim(coalesce(p_provider_wamid, '')) = ''
     or p_exit_date < pg_catalog.current_date or p_exit_date > pg_catalog.current_date + 365
   then raise exception using errcode='22023', message='Move-out date is invalid.'; end if;
   select * into strict v_contact from public.whatsapp_contacts

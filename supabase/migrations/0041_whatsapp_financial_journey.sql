@@ -91,7 +91,7 @@ declare
     pg_catalog.regexp_replace(pg_catalog.btrim(p_reference), '[^A-Za-z0-9]', '', 'g')
   );
 begin
-  if pg_catalog.btrim(pg_catalog.coalesce(p_provider_wamid, '')) = '' then
+  if pg_catalog.btrim(coalesce(p_provider_wamid, '')) = '' then
     raise exception using errcode = '22023', message = 'WhatsApp message identity is required.';
   end if;
   select * into v_contact
@@ -253,7 +253,7 @@ begin
     pg_catalog.jsonb_build_object(
       'kind', 'proof_rejected',
       'paymentId', new.id,
-      'reason', pg_catalog.coalesce(new.rejection_reason, 'Payment evidence could not be verified')
+      'reason', coalesce(new.rejection_reason, 'Payment evidence could not be verified')
     ),
     pg_catalog.now() + interval '7 days'
   );
@@ -297,7 +297,7 @@ as $$
     'paymentMethod', payment.method,
     'paymentReference', payment.reference,
     'paymentDate', payment.paid_at,
-    'roomNumber', pg_catalog.coalesce(room.code, property.name),
+    'roomNumber', coalesce(room.code, property.name),
     'bedNumber', bed.label
   )
   from public.organizations organization

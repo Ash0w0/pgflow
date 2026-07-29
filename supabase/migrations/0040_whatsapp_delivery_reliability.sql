@@ -56,7 +56,7 @@ declare
   v_candidate_id uuid;
   v_created boolean := false;
 begin
-  if pg_catalog.btrim(pg_catalog.coalesce(p_dedupe_key, '')) = ''
+  if pg_catalog.btrim(coalesce(p_dedupe_key, '')) = ''
     or p_language_code not in ('en', 'hi')
   then
     raise exception using errcode = '22023', message = 'Invalid WhatsApp intent.';
@@ -251,7 +251,7 @@ begin
   ) values (
     v_job.organization_id, v_job.message_id, v_job.id, v_job.attempts, p_outcome,
     p_provider_wamid, p_http_status, p_error_code,
-    pg_catalog.left(p_error_summary, 500), pg_catalog.coalesce(v_job.leased_at, pg_catalog.now())
+    pg_catalog.left(p_error_summary, 500), coalesce(v_job.leased_at, pg_catalog.now())
   )
   on conflict (outbox_job_id, attempt_number) do nothing;
 
@@ -263,7 +263,7 @@ begin
       end,
       error_code = case
         when p_outcome = 'provider_accepted' then null
-        else pg_catalog.coalesce(p_error_code, p_outcome)
+        else coalesce(p_error_code, p_outcome)
       end,
       updated_at = pg_catalog.now()
   where id = v_job.message_id
@@ -280,7 +280,7 @@ begin
   set state = v_job_state,
       available_at = case
         when v_job_state = 'retry_wait' then
-          pg_catalog.coalesce(p_available_at, pg_catalog.now() + interval '1 minute')
+          coalesce(p_available_at, pg_catalog.now() + interval '1 minute')
         else available_at
       end,
       lease_owner = null,
@@ -323,7 +323,7 @@ begin
   set state = v_state,
       processed_at = case when v_state = 'processed' then pg_catalog.now() else processed_at end,
       available_at = case
-        when v_state = 'retry_wait' then pg_catalog.coalesce(p_available_at, pg_catalog.now() + interval '1 minute')
+        when v_state = 'retry_wait' then coalesce(p_available_at, pg_catalog.now() + interval '1 minute')
         else available_at
       end,
       lease_owner = null,
@@ -365,7 +365,7 @@ begin
     organization_id, message_id, provider_wamid, status, provider_timestamp, payload
   ) values (
     v_message.organization_id, v_message.id, p_provider_wamid, p_status,
-    p_provider_timestamp, pg_catalog.coalesce(p_payload, '{}'::jsonb)
+    p_provider_timestamp, coalesce(p_payload, '{}'::jsonb)
   )
   on conflict (provider_wamid, status, provider_timestamp) do nothing;
 
