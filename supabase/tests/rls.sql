@@ -2,7 +2,7 @@
 -- every fixture and exercises policies as real authenticated JWT subjects.
 
 begin;
-select plan(99);
+select plan(107);
 
 select has_function('public', 'current_organization_ids', array[]::text[], 'RLS organization helper exists');
 select ok(not has_table_privilege('anon', 'public.organizations', 'select'), 'anonymous users cannot read organizations');
@@ -15,6 +15,24 @@ select ok(not has_table_privilege('authenticated', 'public.whatsapp_outbox_jobs'
 select ok(not has_function_privilege('authenticated', 'public.claim_whatsapp_outbox(text,integer,integer)', 'execute'), 'clients cannot claim WhatsApp jobs');
 select ok(not has_function_privilege('authenticated', 'public.confirm_whatsapp_payment_action(text,text,text,text,text)', 'execute'), 'clients cannot bypass signed owner confirmation');
 select ok(has_function_privilege('service_role', 'public.enqueue_whatsapp_intent(uuid,uuid,uuid,text,text,text,jsonb,timestamptz)', 'execute'), 'service role can atomically enqueue WhatsApp intents');
+select has_function('public', 'complete_whatsapp_outbox_attempt', array['uuid','text','text','text','integer','text','text','timestamp with time zone'], 'outbox completion is one fenced transaction');
+select has_function('public', 'finish_whatsapp_webhook', array['uuid','text','text','timestamp with time zone','text'], 'webhook completion is fenced by worker lease');
+select has_function('public', 'apply_whatsapp_status', array['text','text','timestamp with time zone','jsonb'], 'provider delivery states use a monotonic projection');
+select has_function('public', 'submit_whatsapp_upi_payment_evidence', array['uuid','uuid','text','timestamp with time zone','text','text','text','text'], 'WhatsApp evidence submission is atomic');
+select has_function('public', 'update_whatsapp_maintenance_ticket', array['uuid','uuid','text','text'], 'owner maintenance actions use a scoped transaction');
+select has_function('public', 'acknowledge_whatsapp_move_out_request', array['uuid','uuid','text'], 'owner move-out acknowledgement uses a scoped transaction');
+select ok(
+  not has_table_privilege('service_role', 'public.whatsapp_consent_events', 'update')
+  and not has_table_privilege('service_role', 'public.whatsapp_delivery_attempts', 'update')
+  and not has_table_privilege('service_role', 'public.whatsapp_status_events', 'update'),
+  'consent, delivery-attempt and provider-status histories are append-only'
+);
+select ok(
+  not has_function_privilege('anon', 'public.replay_whatsapp_dead_letter(uuid,uuid)', 'execute')
+  and not has_function_privilege('authenticated', 'public.replay_whatsapp_dead_letter(uuid,uuid)', 'execute')
+  and has_function_privilege('service_role', 'public.replay_whatsapp_dead_letter(uuid,uuid)', 'execute'),
+  'only the trusted operator server can replay a safe dead letter'
+);
 select has_function('public', 'update_brand_theme', array['uuid','uuid','text','text'], 'audited brand theme update function exists');
 select ok(
   not has_function_privilege('anon', 'public.update_brand_theme(uuid,uuid,text,text)', 'execute')

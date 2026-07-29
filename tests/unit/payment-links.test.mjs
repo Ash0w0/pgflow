@@ -68,7 +68,9 @@ test("Collections queues a server-resolved approved WhatsApp intent", async () =
   assert.match(modal, /kind: "rent_reminder"/);
   assert.match(modal, /invoiceId: activeTarget\.invoiceId/);
   assert.doesNotMatch(modal, /recipientPhone|paymentUrl|amount:/);
-  assert.match(route, /resolveWhatsAppIntent\(actor\.organizationId, intent\)/);
+  assert.match(route, /organizationId: actor\.organizationId/);
+  assert.match(route, /membershipId: actor\.membershipId/);
+  assert.match(route, /propertyId: actor\.propertyId/);
 });
 
 test("the database refuses payment links until the exact property has UPI configured", async () => {
@@ -79,4 +81,15 @@ test("the database refuses payment links until the exact property has UPI config
   assert.match(sql, /nullif\(pg_catalog\.btrim\(upi_id\), ''\) is not null/);
   assert.match(sql, /nullif\(pg_catalog\.btrim\(upi_payee_name\), ''\) is not null/);
   assert.match(sql, /Configure the property UPI ID and payee name/);
+});
+
+test("rejected public payment proof reopens the same unexpired link for resubmission", async () => {
+  const sql = await readFile(
+    new URL("supabase/migrations/0035_resident_payment_journey.sql", root),
+    "utf8",
+  );
+  assert.match(sql, /reopen_rejected_public_payment_request/);
+  assert.match(sql, /new\.state = 'rejected'/);
+  assert.match(sql, /set state = 'active'/);
+  assert.match(sql, /pg_catalog\.now\(\) \+ interval '7 days'/);
 });

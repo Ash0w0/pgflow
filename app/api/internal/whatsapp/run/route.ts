@@ -12,10 +12,13 @@ export async function POST(request: Request) {
   }
   const requestId = request.headers.get("x-vercel-id") ?? crypto.randomUUID();
   try {
-    const webhooks = await drainWebhookEvents(`webhook:${requestId}`, 50);
     const reminders = await enqueueDueRentReminders();
     const weekly = await enqueueDueWeeklyReports();
-    const outbox = await drainOutbox(`outbox:${requestId}`, 20);
+    // A single inbound media download can use 25 seconds and a Meta send can
+    // use another 15. Claim immediately before work so the 50-second function
+    // never leases a batch it cannot safely finish.
+    const webhooks = await drainWebhookEvents(`webhook:${requestId}`, 1);
+    const outbox = await drainOutbox(`outbox:${requestId}`, 1);
     return Response.json({ webhooks, reminders, weekly, outbox }, {
       headers: { "cache-control": "no-store" },
     });

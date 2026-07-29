@@ -19,7 +19,11 @@ export async function POST(request: Request) {
   if (!intent) return Response.json({ error: "Invalid WhatsApp intent." }, { status: 400 });
 
   try {
-    const context = await resolveWhatsAppIntent(actor.organizationId, intent);
+    const context = await resolveWhatsAppIntent({
+      organizationId: actor.organizationId,
+      membershipId: actor.membershipId,
+      propertyId: actor.propertyId,
+    }, intent);
     const result = await enqueueWhatsAppIntent(context);
     return Response.json(result, {
       status: 202,

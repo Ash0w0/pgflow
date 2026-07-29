@@ -6,18 +6,22 @@ const root = new URL("../../", import.meta.url);
 const read = (path) => readFile(new URL(path, root), "utf8");
 
 test("production delivery fails closed and classifies uncertain sends without blind retry", async () => {
-  const [client, config, outbox] = await Promise.all([
+  const [client, config, outbox, reliabilitySql] = await Promise.all([
     read("lib/whatsapp/client.ts"),
     read("lib/whatsapp/config.ts"),
     read("lib/whatsapp/outbox-worker.ts"),
+    read("supabase/migrations/0040_whatsapp_delivery_reliability.sql"),
   ]);
   assert.match(config, /runtime === "production" && sendMode !== "disabled"/);
   assert.match(config, /required\("WHATSAPP_ACCESS_TOKEN"\)/);
   assert.doesNotMatch(client, /!process\.env\.WHATSAPP_TOKEN/);
   assert.match(client, /outcome: "delivery_uncertain"/);
   assert.match(client, /res\.status === 429 \|\| res\.status >= 500/);
-  assert.match(outbox, /finish\(job, workerId, "delivery_uncertain"/);
+  assert.match(outbox, /completePostDispatch\(job, workerId, "delivery_uncertain"/);
   assert.doesNotMatch(outbox, /delivery_uncertain[\s\S]{0,120}retry_wait/);
+  assert.match(reliabilitySql, /recover_stale_whatsapp_outbox/);
+  assert.match(reliabilitySql, /state = 'delivery_uncertain'/);
+  assert.doesNotMatch(reliabilitySql, /state = 'leased'[\s\S]{0,120}state = 'queued'/);
 });
 
 test("consent, templates and two-step financial actions are enforced server-side", async () => {
@@ -41,15 +45,19 @@ test("consent, templates and two-step financial actions are enforced server-side
 });
 
 test("webhook media is private, scoped, validated and never auto-approved", async () => {
-  const [media, migration, worker] = await Promise.all([
+  const [media, migration, financialSql, worker] = await Promise.all([
     read("lib/whatsapp/media.ts"),
     read("supabase/migrations/0038_private_whatsapp_media.sql"),
+    read("supabase/migrations/0041_whatsapp_financial_journey.sql"),
     read("lib/whatsapp/webhook-worker.ts"),
   ]);
   assert.match(migration, /'whatsapp-inbound'[\s\S]*false/);
   assert.match(media, /image\/jpeg/);
   assert.match(media, /8 \* 1024 \* 1024/);
-  assert.match(media, /organizations\/\$\{organizationId\}\/whatsapp-inbound/);
+  assert.match(media, /organizations\/\$\{organizationId\}\/payment-evidence/);
+  assert.match(media, /storage\.from\("payment-evidence"\)/);
+  assert.match(financialSql, /submit_whatsapp_upi_payment_evidence/);
+  assert.match(financialSql, /state[\s\S]*'pending_review'/);
   assert.match(media, /createHash\("sha256"\)/);
   assert.doesNotMatch(worker, /auto.?approve/i);
 });

@@ -46,8 +46,11 @@ export async function downloadInboundImage(organizationId: string, mediaId: stri
     throw new Error("Inbound WhatsApp image hash does not match Meta metadata.");
   }
   const extension = contentType === "image/png" ? "png" : contentType === "image/webp" ? "webp" : "jpg";
-  const objectKey = `organizations/${organizationId}/whatsapp-inbound/${new Date().toISOString().slice(0, 10)}/${randomUUID()}.${extension}`;
-  const { error } = await getSupabaseAdmin().storage.from("whatsapp-inbound").upload(objectKey, bytes, {
+  // Inbound images currently enter the deterministic payment-proof flow.
+  // Store them in the same private bucket and organization-scoped namespace
+  // used by owner review so no cross-bucket copy is needed later.
+  const objectKey = `organizations/${organizationId}/payment-evidence/${randomUUID()}.${extension}`;
+  const { error } = await getSupabaseAdmin().storage.from("payment-evidence").upload(objectKey, bytes, {
     contentType,
     upsert: false,
   });

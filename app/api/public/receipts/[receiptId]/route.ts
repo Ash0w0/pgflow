@@ -28,52 +28,29 @@ export async function GET(
   const organizationId = access.organizationId as string;
   const { data: receipt } = await admin
     .from("receipts")
-    .select("id,property_id,payment_id,invoice_id,tenant_id,number,amount,issued_at")
+    .select("id,snapshot")
     .eq("organization_id", organizationId)
     .eq("id", receiptId)
     .maybeSingle();
   if (!receipt) return Response.json({ error: "Receipt not found." }, { status: 404 });
-
-  const [
-    { data: organization },
-    { data: property },
-    { data: payment },
-    { data: invoice },
-    { data: tenant },
-    { data: occupancy },
-  ] = await Promise.all([
-    admin.from("organizations").select("name").eq("id", organizationId).maybeSingle(),
-    admin.from("properties").select("name,address,support_phone").eq("id", receipt.property_id).maybeSingle(),
-    admin.from("payments").select("method,reference,paid_at").eq("id", receipt.payment_id).maybeSingle(),
-    admin.from("invoices").select("period").eq("id", receipt.invoice_id).maybeSingle(),
-    admin.from("tenant_profiles").select("full_name").eq("id", receipt.tenant_id).maybeSingle(),
-    admin.from("occupancies").select("bed_id").eq("organization_id", organizationId)
-      .eq("tenant_id", receipt.tenant_id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
-  ]);
-  let roomNumber = property?.name ?? "PG";
-  let bedNumber: string | undefined;
-  if (occupancy?.bed_id) {
-    const { data: bed } = await admin.from("beds").select("label,room_id").eq("id", occupancy.bed_id).maybeSingle();
-    if (bed) {
-      bedNumber = bed.label;
-      const { data: room } = await admin.from("rooms").select("code").eq("id", bed.room_id).maybeSingle();
-      if (room?.code) roomNumber = room.code;
-    }
+  const snapshot = receipt.snapshot as Record<string, unknown> | null;
+  if (!snapshot || Object.keys(snapshot).length === 0) {
+    return Response.json({ error: "Receipt snapshot is unavailable." }, { status: 409 });
   }
 
   const html = generateReceiptHtml({
-    receiptNumber: receipt.number,
-    pgName: organization?.name ?? property?.name ?? "PGFlow PG",
-    pgAddress: property?.address ?? "",
-    pgContact: property?.support_phone ?? "",
-    residentName: tenant?.full_name ?? "Resident",
-    roomNumber,
-    bedNumber,
-    paymentDate: String(payment?.paid_at ?? receipt.issued_at).slice(0, 10),
-    billingPeriod: invoice?.period ?? "Rent",
-    paymentMethod: payment?.method === "cash" ? "Cash" : "UPI",
-    referenceNumber: payment?.reference ?? "Not applicable",
-    amountPaid: Number(receipt.amount),
+    receiptNumber: String(snapshot.receiptNumber ?? ""),
+    pgName: String(snapshot.organizationName ?? snapshot.propertyName ?? "PGFlow PG"),
+    pgAddress: String(snapshot.propertyAddress ?? ""),
+    pgContact: String(snapshot.propertyContact ?? ""),
+    residentName: String(snapshot.residentName ?? "Resident"),
+    roomNumber: String(snapshot.roomNumber ?? snapshot.propertyName ?? "PG"),
+    bedNumber: snapshot.bedNumber ? String(snapshot.bedNumber) : undefined,
+    paymentDate: String(snapshot.paymentDate ?? snapshot.issuedAt ?? "").slice(0, 10),
+    billingPeriod: String(snapshot.billingPeriod ?? "Rent"),
+    paymentMethod: snapshot.paymentMethod === "cash" ? "Cash" : "UPI",
+    referenceNumber: String(snapshot.paymentReference ?? "Not applicable"),
+    amountPaid: Number(snapshot.amount),
     issuedBy: "PGFlow verified approval",
   });
   return new Response(html, {

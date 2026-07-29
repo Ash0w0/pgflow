@@ -127,6 +127,14 @@ export async function sendWhatsAppTemplate(
     }
 
     const wamid = data.messages?.[0]?.id;
+    if (!wamid) {
+      return {
+        ok: false,
+        outcome: "delivery_uncertain",
+        httpStatus: res.status,
+        error: "Meta accepted the request without returning a message identifier.",
+      };
+    }
     return { ok: true, wamid, outcome: "provider_accepted", httpStatus: res.status };
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Network error contacting Meta API.";
@@ -175,7 +183,14 @@ export async function sendWhatsAppText(
       providerErrorCode: data.error?.code ? String(data.error.code) : undefined,
       error: data.error?.message ?? "Meta text delivery failed.",
     };
-    return { ok: true, outcome: "provider_accepted", httpStatus: response.status, wamid: data.messages?.[0]?.id };
+    const wamid = data.messages?.[0]?.id;
+    if (!wamid) return {
+      ok: false,
+      outcome: "delivery_uncertain",
+      httpStatus: response.status,
+      error: "Meta accepted the request without returning a message identifier.",
+    };
+    return { ok: true, outcome: "provider_accepted", httpStatus: response.status, wamid };
   } catch (error) {
     return { ok: false, outcome: "delivery_uncertain", error: error instanceof Error ? error.message : "Meta delivery timed out." };
   }

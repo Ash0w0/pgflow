@@ -16,7 +16,9 @@ function kolkataParts(now: Date) {
 }
 
 function previousMonday(dateText: string) {
-  const date = new Date(`${dateText}T00:00:00+05:30`);
+  // Treat the calendar date as a date, not an instant. Converting Kolkata
+  // midnight to UTC before slicing moves it back to Sunday.
+  const date = new Date(`${dateText}T00:00:00Z`);
   date.setUTCDate(date.getUTCDate() - 7);
   return date.toISOString().slice(0, 10);
 }

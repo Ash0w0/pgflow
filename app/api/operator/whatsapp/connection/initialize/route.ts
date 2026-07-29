@@ -1,6 +1,7 @@
 import { requireOperator } from "@/lib/http";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getWhatsAppConfig } from "@/lib/whatsapp/config";
+import { expectedTemplateSchemas } from "@/lib/whatsapp/template-schema";
 
 const purposes = [
   "welcome_consent",
@@ -43,11 +44,11 @@ export async function POST(request: Request) {
     meta_name: `pgflow_${purpose}_${language}`,
     language_code: language,
     category: "UTILITY",
-    parameter_schema: [],
+    parameter_schema: expectedTemplateSchemas[purpose],
     approval_state: "unknown",
   })));
   const { error: templateError } = await admin.from("whatsapp_templates")
-    .upsert(rows, { onConflict: "connection_id,purpose,language_code", ignoreDuplicates: true });
+    .upsert(rows, { onConflict: "connection_id,purpose,language_code" });
   if (templateError) return Response.json({ error: "Template registry could not be initialized." }, { status: 409 });
   return Response.json({ connectionId: connection.id, templatesRegistered: rows.length }, { status: 201 });
 }

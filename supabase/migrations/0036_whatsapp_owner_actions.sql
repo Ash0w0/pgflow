@@ -41,6 +41,7 @@ begin
   from public.whatsapp_contacts
   where id = v_challenge.contact_id
     and organization_id = v_challenge.organization_id
+    and membership_id = v_challenge.membership_id
     and phone_e164 = p_sender_phone
     and consent_state = 'opted_in';
 

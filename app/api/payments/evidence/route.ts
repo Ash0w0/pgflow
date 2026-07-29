@@ -3,7 +3,6 @@ import { isTrustedMutationRequest, jsonError, requireActor } from "@/lib/http";
 import { isUuid } from "@/lib/owner-invitations";
 import { hashPaymentLinkToken, isPaymentLinkToken } from "@/lib/payment-links";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { enqueueOwnerPaymentReview } from "@/lib/whatsapp/workflow-enqueue";
 
 export async function POST(request: Request) {
   if (!isTrustedMutationRequest(request)) return jsonError("Cross-origin payment submissions are not allowed.", 403);
@@ -78,13 +77,11 @@ export async function POST(request: Request) {
       error.code === "42501" ? 403 : error.code === "23505" ? 409 : 400,
     );
   }
-  const paymentId = data && typeof data === "object" && "paymentId" in data
-    ? String((data as { paymentId: unknown }).paymentId)
-    : null;
-  const ownerNotification = paymentId
-    ? await enqueueOwnerPaymentReview(paymentId).catch(() => ({ queued: false, reason: "enqueue_failed" }))
-    : { queued: false, reason: "payment_id_unavailable" };
-  return Response.json({ submitted: true, payment: data, ownerNotification }, {
+  return Response.json({
+    submitted: true,
+    payment: data,
+    ownerNotification: { handledBy: "database_trigger" },
+  }, {
     status: 201,
     headers: { "cache-control": "no-store", "referrer-policy": "no-referrer" },
   });

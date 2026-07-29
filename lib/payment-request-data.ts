@@ -12,7 +12,13 @@ export type LivePaymentRequest = {
   receiptNumber?: string | null;
 };
 
-async function loadPaymentRequestData(organizationId:string, propertyId:string, invoiceId:string, requirePayable=true):Promise<LivePaymentRequest> {
+async function loadPaymentRequestData(
+  organizationId:string,
+  propertyId:string,
+  invoiceId:string,
+  requirePayable=true,
+  settledAmount?:number,
+):Promise<LivePaymentRequest> {
   const admin=getSupabaseAdmin();
   const [org,property,invoice]=await Promise.all([
     admin.from("organizations").select("name").eq("id",organizationId).single(),
@@ -24,7 +30,7 @@ async function loadPaymentRequestData(organizationId:string, propertyId:string, 
   const tenant=await admin.from("tenant_profiles").select("full_name").eq("organization_id",organizationId).eq("property_id",propertyId).eq("id",invoice.data.tenant_id).single();
   if(tenant.error)throw new Error("Resident could not be loaded.");
   const outstanding=Number(invoice.data.total_amount)-Number(invoice.data.paid_amount);
-  const amount=requirePayable?outstanding:Math.max(outstanding,Number(invoice.data.total_amount));
+  const amount=settledAmount ?? outstanding;
   const reference=`${property.data.upi_note_prefix}-${invoice.data.number}`.slice(0,35);
   const upiUri=createUpiUri({upiId:property.data.upi_id,payeeName:property.data.upi_payee_name,amount,reference});
   let uploadedQrUrl:string|null=null;if(property.data.upi_qr_object_key){const signed=await admin.storage.from("upi-qr-assets").createSignedUrl(property.data.upi_qr_object_key,900);if(!signed.error)uploadedQrUrl=signed.data.signedUrl;}
@@ -44,17 +50,23 @@ export async function getPublicPaymentRequestData(invoiceId: string, token: stri
     .in("state",["active","submitted"]).gt("expires_at",new Date().toISOString()).maybeSingle();
   if(!request)return null;
   if(request.state==="active")await resolvePaymentLink(token,invoiceId,{recordOpen:true});
-  const base=await loadPaymentRequestData(request.organization_id,request.property_id,request.invoice_id,false);
-  const {data:payment}=await admin.from("payments").select("id,state,rejection_reason")
+  const {data:payment}=await admin.from("payments").select("id,state,rejection_reason,amount")
     .eq("organization_id",request.organization_id).eq("payment_request_id",request.id)
     .order("created_at",{ascending:false}).limit(1).maybeSingle();
+  const base=await loadPaymentRequestData(
+    request.organization_id,
+    request.property_id,
+    request.invoice_id,
+    false,
+    payment ? Number(payment.amount) : undefined,
+  );
   if(!payment)return base;
-  if(payment.state==="pending_review")return{...base,journeyState:"under_review"};
-  if(payment.state==="rejected")return{...base,journeyState:"rejected",rejectionReason:payment.rejection_reason};
+  if(payment.state==="pending_review")return{...base,amount:Number(payment.amount),journeyState:"under_review"};
+  if(payment.state==="rejected")return{...base,amount:Number(payment.amount),journeyState:"rejected",rejectionReason:payment.rejection_reason};
   if(payment.state==="approved"){
     const {data:receipt}=await admin.from("receipts").select("number")
       .eq("organization_id",request.organization_id).eq("payment_id",payment.id).maybeSingle();
-    return{...base,journeyState:"approved",receiptNumber:receipt?.number??null};
+    return{...base,amount:Number(payment.amount),journeyState:"approved",receiptNumber:receipt?.number??null};
   }
   return base;
 }
