@@ -273,13 +273,18 @@ select is(
   'a different outbox worker cannot finish the lease'
 );
 
+create temporary table runtime_outbox_finish (
+  result boolean not null
+) on commit drop;
+
+insert into runtime_outbox_finish (result)
+select public.finish_whatsapp_outbox(
+  id, 'runtime-outbox-a', 'retry_wait', null, 'retry', 'expected retry'
+)
+from runtime_claimed_outbox;
+
 select ok(
-  (
-    select public.finish_whatsapp_outbox(
-      id, 'runtime-outbox-a', 'retry_wait', null, 'retry', 'expected retry'
-    )
-    from runtime_claimed_outbox
-  )
+  (select result from runtime_outbox_finish)
   and (
     select job.state = 'retry_wait'
       and job.lease_owner is null
@@ -332,13 +337,18 @@ select is(
   'a different webhook worker cannot finish the lease'
 );
 
+create temporary table runtime_webhook_finish (
+  result boolean not null
+) on commit drop;
+
+insert into runtime_webhook_finish (result)
+select public.finish_whatsapp_webhook(
+  id, 'runtime-webhook-a', 'processed', null, null
+)
+from runtime_claimed_webhook;
+
 select ok(
-  (
-    select public.finish_whatsapp_webhook(
-      id, 'runtime-webhook-a', 'processed', null, null
-    )
-    from runtime_claimed_webhook
-  )
+  (select result from runtime_webhook_finish)
   and (
     select event.state = 'processed'
       and event.processed_at is not null
