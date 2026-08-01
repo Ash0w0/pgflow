@@ -4,11 +4,19 @@ import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, MessageSquare, RefreshCcw, RotateCcw } from "lucide-react";
 
 type Overview = {
+  status: "ready" | "degraded";
+  degradedReasons: string[];
   connections: Array<{ id: string; label: string; state: string; graph_version: string }>;
   templates: Array<{ purpose: string; language_code: string; approval_state: string }>;
   unresolved: number;
   backlog: Array<{ id: string; state: string; attempts: number }>;
+  backlogCount: number;
   deadLetters: Array<{ id: string; attempts: number; last_error_code: string | null }>;
+  deadLetterCount: number;
+  webhookBacklog: Array<{ id: string; event_kind: string; state: string; attempts: number }>;
+  webhookBacklogCount: number;
+  webhookDeadLetters: Array<{ id: string; event_kind: string; attempts: number }>;
+  webhookDeadLetterCount: number;
   heartbeats: Array<{ worker: string; last_completed_at: string | null }>;
 };
 
@@ -77,10 +85,17 @@ export function WhatsAppOperatorPanel() {
         <button className="button button-secondary" type="button" onClick={() => void load()} disabled={busy}><RefreshCcw size={16} />Refresh</button>
       </div>
       {error && <div className="setup-feedback error" role="alert"><AlertTriangle size={17} />{error}</div>}
+      {overview?.degradedReasons.length ? (
+        <div className="setup-feedback error" role="status">
+          <AlertTriangle size={17} />
+          Messaging is degraded: {overview.degradedReasons.map((reason) => reason.replaceAll("_", " ")).join(", ")}.
+        </div>
+      ) : null}
       <div className="operator-metric-grid">
         <article><span><MessageSquare size={19} /></span><div><small>Connection</small><strong>{overview?.connections[0]?.state ?? "Missing"}</strong><p>{overview?.connections[0]?.graph_version ?? "No Graph version"}</p></div></article>
         <article><span><CheckCircle2 size={19} /></span><div><small>Approved templates</small><strong>{approved}</strong><p>Exact language/schema matches only</p></div></article>
-        <article><span><RefreshCcw size={19} /></span><div><small>Queue backlog</small><strong>{overview?.backlog.length ?? "—"}</strong><p>{overview?.deadLetters.length ?? 0} dead letters</p></div></article>
+        <article><span><RefreshCcw size={19} /></span><div><small>Outbox queue</small><strong>{overview?.backlogCount ?? "—"}</strong><p>{overview?.deadLetterCount ?? 0} dead letters</p></div></article>
+        <article><span><RefreshCcw size={19} /></span><div><small>Webhook queue</small><strong>{overview?.webhookBacklogCount ?? "—"}</strong><p>{overview?.webhookDeadLetterCount ?? 0} dead letters</p></div></article>
         <article><span><AlertTriangle size={19} /></span><div><small>Needs routing</small><strong>{overview?.unresolved ?? "—"}</strong><p>No PG data disclosed while unresolved</p></div></article>
       </div>
       <div className="invoice-actions">

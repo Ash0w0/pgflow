@@ -76,7 +76,7 @@ export async function POST(request: Request) {
   }
   if (newPassword !== confirmation) return jsonError("The two new passwords do not match.");
   if (!isStrongOwnerPassword(newPassword)) {
-    return jsonError("Use 12â€“128 characters with uppercase, lowercase, a number, and a symbol.");
+    return jsonError("Use 12–128 characters with uppercase, lowercase, a number, and a symbol.");
   }
   if (newPassword === currentPassword) return jsonError("Choose a new password different from the exposed password.");
   if (!await verifyOperatorPassword(operatorUserId, currentPassword)) {

@@ -28,7 +28,7 @@ export async function enqueueDueRentReminders(now = new Date()) {
   ] as const);
   const admin = getSupabaseAdmin();
   const { data: invoices, error } = await admin.from("invoices")
-    .select("id,organization_id,tenant_id,due_date,state")
+    .select("id,organization_id,property_id,tenant_id,due_date,state")
     .in("due_date", [...stages.keys()])
     .in("state", ["issued", "partially_paid", "overdue"]);
   if (error) throw error;
@@ -40,20 +40,65 @@ export async function enqueueDueRentReminders(now = new Date()) {
     const { data: contact } = await admin.from("whatsapp_contacts")
       .select("id,connection_id,language_code").eq("organization_id", invoice.organization_id)
       .eq("tenant_id", invoice.tenant_id).eq("consent_state", "opted_in")
+      .eq("routing_active", true)
       .eq("reminders_enabled", true).maybeSingle();
-    if (!contact) { skipped += 1; continue; }
-    const { data, error: enqueueError } = await admin.rpc("enqueue_whatsapp_intent", {
-      p_organization_id: invoice.organization_id,
-      p_connection_id: contact.connection_id,
-      p_contact_id: contact.id,
-      p_kind: "rent_reminder",
-      p_language_code: contact.language_code,
-      p_dedupe_key: `rent:${invoice.id}:${stage}`,
-      p_intent: { kind: "rent_reminder", invoiceId: invoice.id, stage },
-      p_expires_at: new Date(`${shiftDate(invoice.due_date, 7)}T23:59:59+05:30`).toISOString(),
-    });
-    if (enqueueError) throw enqueueError;
-    if (!data?.deduplicated) queued += 1;
+    if (!contact) {
+      skipped += 1;
+    } else {
+      const kind = stage === "t+2" ? "overdue_reminder" : "rent_reminder";
+      const { data, error: enqueueError } = await admin.rpc("enqueue_whatsapp_intent", {
+        p_organization_id: invoice.organization_id,
+        p_connection_id: contact.connection_id,
+        p_contact_id: contact.id,
+        p_kind: kind,
+        p_language_code: contact.language_code,
+        p_dedupe_key: `rent:${invoice.id}:${stage}`,
+        p_intent: { kind, invoiceId: invoice.id, stage },
+        p_expires_at: new Date(`${shiftDate(invoice.due_date, 7)}T23:59:59+05:30`).toISOString(),
+      });
+      if (enqueueError) throw enqueueError;
+      if (!data?.deduplicated) queued += 1;
+    }
+
+    if (stage !== "t+2") continue;
+    const { data: ownerMemberships, error: membershipError } = await admin
+      .from("memberships")
+      .select("id")
+      .eq("organization_id", invoice.organization_id)
+      .eq("property_id", invoice.property_id)
+      .in("role", ["owner", "accountant"])
+      .eq("state", "active");
+    if (membershipError) throw membershipError;
+    const ownerMembershipIds = (ownerMemberships ?? []).map((membership) => membership.id);
+    if (ownerMembershipIds.length === 0) continue;
+    const { data: ownerContacts, error: ownerContactError } = await admin
+      .from("whatsapp_contacts")
+      .select("id,connection_id,language_code")
+      .eq("organization_id", invoice.organization_id)
+      .in("role", ["owner", "accountant"])
+      .in("membership_id", ownerMembershipIds)
+      .eq("routing_active", true)
+      .in("consent_state", ["opted_in", "opted_out"])
+      .eq("essential_enabled", true);
+    if (ownerContactError) throw ownerContactError;
+    for (const ownerContact of ownerContacts ?? []) {
+      const { data, error: enqueueError } = await admin.rpc("enqueue_whatsapp_intent", {
+        p_organization_id: invoice.organization_id,
+        p_connection_id: ownerContact.connection_id,
+        p_contact_id: ownerContact.id,
+        p_kind: "important_owner_alert",
+        p_language_code: ownerContact.language_code,
+        p_dedupe_key: `important:invoice:${invoice.id}:t+2:${ownerContact.id}`,
+        p_intent: {
+          kind: "important_owner_alert",
+          invoiceId: invoice.id,
+          stage,
+        },
+        p_expires_at: new Date(now.getTime() + 48 * 3_600_000).toISOString(),
+      });
+      if (enqueueError) throw enqueueError;
+      if (!data?.deduplicated) queued += 1;
+    }
   }
   return { due: true, queued, skipped };
 }

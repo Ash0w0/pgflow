@@ -13,6 +13,7 @@ import {
   templateSchemasMatch,
   type TemplateParameterSchema,
 } from "./template-schema";
+import { logWhatsAppJobFailure } from "./observability";
 
 type OutboxJob = {
   id: string;
@@ -33,11 +34,20 @@ type MessageRecord = {
   intent: Record<string, string>;
 };
 
+class SupersededIntentError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "SupersededIntentError";
+  }
+}
+
 const essentialTemplateKinds = new Set([
+  "proof_received",
   "proof_rejected",
   "receipt",
   "maintenance_update",
   "move_out_update",
+  "important_owner_alert",
 ]);
 
 function tokenPair() {
@@ -63,11 +73,14 @@ async function approvedTemplate(message: MessageRecord) {
 async function contactForMessage(message: MessageRecord) {
   const { data, error } = await getSupabaseAdmin()
     .from("whatsapp_contacts")
-    .select("phone_e164,display_name,consent_state,essential_enabled,reminders_enabled,weekly_report_enabled")
+    .select("phone_e164,display_name,consent_state,essential_enabled,reminders_enabled,weekly_report_enabled,routing_active")
     .eq("id", message.contact_id)
     .eq("organization_id", message.organization_id)
     .maybeSingle();
   if (error || !data) throw new Error("WhatsApp contact is unavailable.");
+  if (!data.routing_active) {
+    throw new SupersededIntentError("WhatsApp contact routing was superseded.");
+  }
   return data;
 }
 
@@ -112,6 +125,29 @@ function validateRenderedTemplate(
   return { options } as const;
 }
 
+async function renderWelcomeConsent(
+  message: MessageRecord,
+  recipientPhone: string,
+  templateName: string,
+  displayName: string | null,
+): Promise<SendWhatsAppTemplateOptions> {
+  const { data: organization, error } = await getSupabaseAdmin()
+    .from("organizations")
+    .select("name")
+    .eq("id", message.organization_id)
+    .maybeSingle();
+  if (error || !organization) throw new Error("WhatsApp activation organization is unavailable.");
+  return {
+    recipientPhone,
+    templateName,
+    languageCode: message.language_code,
+    components: [bodyParameters([
+      displayName || (message.intent.role === "resident" ? "Resident" : "Owner"),
+      organization.name,
+    ])],
+  };
+}
+
 async function renderRentReminder(
   message: MessageRecord,
   recipientPhone: string,
@@ -119,14 +155,18 @@ async function renderRentReminder(
 ): Promise<SendWhatsAppTemplateOptions> {
   const admin = getSupabaseAdmin();
   const invoiceId = message.intent.invoiceId;
-  const { data: invoice } = await admin
+  const { data: invoice, error: invoiceError } = await admin
     .from("invoices")
     .select("id,property_id,tenant_id,period,due_date,total_amount,paid_amount,state")
     .eq("id", invoiceId)
     .eq("organization_id", message.organization_id)
     .maybeSingle();
-  if (!invoice || !["issued", "partially_paid", "overdue"].includes(invoice.state)) {
-    throw new Error("Invoice is no longer payable.");
+  if (invoiceError || !invoice) {
+    throw new Error("Invoice is unavailable.");
+  }
+  const outstanding = Number(invoice.total_amount) - Number(invoice.paid_amount);
+  if (!["issued", "partially_paid", "overdue"].includes(invoice.state) || outstanding <= 0) {
+    throw new SupersededIntentError("Invoice is no longer payable.");
   }
   const [{ data: tenant }, { data: property }, { data: owner }] = await Promise.all([
     admin.from("tenant_profiles").select("full_name").eq("id", invoice.tenant_id).maybeSingle(),
@@ -157,7 +197,7 @@ async function renderRentReminder(
     components: [
       bodyParameters([
         tenant.full_name,
-        (invoice.total_amount - invoice.paid_amount).toLocaleString("en-IN"),
+        outstanding.toLocaleString("en-IN"),
         invoice.period,
         property.name,
         invoice.due_date,
@@ -239,13 +279,35 @@ async function paymentSnapshot(message: MessageRecord) {
   return { payment, tenant, property, room };
 }
 
+async function renderProofReceived(
+  message: MessageRecord,
+  recipientPhone: string,
+  templateName: string,
+): Promise<SendWhatsAppTemplateOptions> {
+  const { payment, tenant } = await paymentSnapshot(message);
+  if (payment.state !== "pending_review") {
+    throw new SupersededIntentError("Payment acknowledgement was superseded.");
+  }
+  return {
+    recipientPhone,
+    templateName,
+    languageCode: message.language_code,
+    components: [bodyParameters([
+      tenant?.full_name ?? "Resident",
+      Number(payment.amount).toLocaleString("en-IN"),
+    ])],
+  };
+}
+
 async function renderPaymentReview(
   message: MessageRecord,
   recipientPhone: string,
   templateName: string,
 ): Promise<SendWhatsAppTemplateOptions> {
   const { payment, tenant, property, room } = await paymentSnapshot(message);
-  if (payment.state !== "pending_review") throw new Error("Payment is no longer pending.");
+  if (payment.state !== "pending_review") {
+    throw new SupersededIntentError("Payment review is no longer pending.");
+  }
   return {
     recipientPhone,
     templateName,
@@ -271,7 +333,9 @@ async function renderPaymentRejection(
   templateName: string,
 ): Promise<SendWhatsAppTemplateOptions> {
   const { payment, tenant } = await paymentSnapshot(message);
-  if (payment.state !== "rejected") throw new Error("Payment is no longer rejected.");
+  if (payment.state !== "rejected") {
+    throw new SupersededIntentError("Payment rejection was superseded.");
+  }
   return {
     recipientPhone,
     templateName,
@@ -291,7 +355,9 @@ async function renderPaymentConfirmation(
 ) {
   const admin = getSupabaseAdmin();
   const { payment, tenant, room } = await paymentSnapshot(message);
-  if (payment.state !== "pending_review") throw new Error("Payment is no longer pending.");
+  if (payment.state !== "pending_review") {
+    throw new SupersededIntentError("Payment action is no longer pending.");
+  }
   const { data: contact } = await admin.from("whatsapp_contacts")
     .select("membership_id").eq("id", message.contact_id)
     .eq("organization_id", message.organization_id).maybeSingle();
@@ -329,6 +395,48 @@ async function renderPaymentConfirmation(
         quickReply("0", `confirm_${decision}:${token}`),
       ],
     } satisfies SendWhatsAppTemplateOptions,
+  };
+}
+
+async function renderImportantOwnerAlert(
+  message: MessageRecord,
+  recipientPhone: string,
+  templateName: string,
+): Promise<SendWhatsAppTemplateOptions> {
+  const admin = getSupabaseAdmin();
+  const { data: invoice, error: invoiceError } = await admin
+    .from("invoices")
+    .select("id,property_id,tenant_id,due_date,total_amount,paid_amount,state")
+    .eq("id", message.intent.invoiceId)
+    .eq("organization_id", message.organization_id)
+    .maybeSingle();
+  if (invoiceError || !invoice) {
+    throw new Error("Overdue invoice is unavailable.");
+  }
+  const outstanding = Math.max(0, Number(invoice.total_amount) - Number(invoice.paid_amount));
+  if (!["issued", "partially_paid", "overdue"].includes(invoice.state) || outstanding <= 0) {
+    throw new SupersededIntentError("Owner overdue alert was superseded.");
+  }
+  const [{ data: property }, { data: tenant }] = await Promise.all([
+    admin.from("properties").select("name").eq("id", invoice.property_id).maybeSingle(),
+    admin.from("tenant_profiles").select("full_name").eq("id", invoice.tenant_id).maybeSingle(),
+  ]);
+  if (!property || !tenant) throw new Error("Owner alert routing data is incomplete.");
+  const alertText = message.language_code === "hi"
+    ? `${tenant.full_name}: INR ${outstanding.toLocaleString("en-IN")} बकाया`
+    : `${tenant.full_name}: INR ${outstanding.toLocaleString("en-IN")} overdue`;
+  const dueText = message.language_code === "hi"
+    ? `देय तिथि ${invoice.due_date}`
+    : `Due ${invoice.due_date}`;
+  return {
+    recipientPhone,
+    templateName,
+    languageCode: message.language_code,
+    components: [bodyParameters([
+      property.name,
+      alertText,
+      dueText,
+    ])],
   };
 }
 
@@ -572,14 +680,25 @@ async function renderMessage(message: MessageRecord) {
   if (contact.consent_state !== "opted_in" && !essentialAfterOptOut) {
     return { suppressed: "Contact has not opted in." } as const;
   }
-  if (message.kind === "rent_reminder" && !contact.reminders_enabled) {
+  if (["rent_reminder", "overdue_reminder"].includes(message.kind) && !contact.reminders_enabled) {
     return { suppressed: "Rent reminders are disabled." } as const;
   }
   if (message.kind === "weekly_report" && !contact.weekly_report_enabled) {
     return { suppressed: "Weekly reports are disabled." } as const;
   }
   const template = await approvedTemplate(message);
-  if (message.kind === "rent_reminder") {
+  if (message.kind === "welcome_consent") {
+    return validateRenderedTemplate(
+      template.parameter_schema,
+      await renderWelcomeConsent(
+        message,
+        contact.phone_e164,
+        template.meta_name,
+        contact.display_name,
+      ),
+    );
+  }
+  if (message.kind === "rent_reminder" || message.kind === "overdue_reminder") {
     return validateRenderedTemplate(
       template.parameter_schema,
       await renderRentReminder(message, contact.phone_e164, template.meta_name),
@@ -597,10 +716,22 @@ async function renderMessage(message: MessageRecord) {
       await renderPaymentReview(message, contact.phone_e164, template.meta_name),
     );
   }
+  if (message.kind === "proof_received") {
+    return validateRenderedTemplate(
+      template.parameter_schema,
+      await renderProofReceived(message, contact.phone_e164, template.meta_name),
+    );
+  }
   if (message.kind === "proof_rejected") {
     return validateRenderedTemplate(
       template.parameter_schema,
       await renderPaymentRejection(message, contact.phone_e164, template.meta_name),
+    );
+  }
+  if (message.kind === "important_owner_alert") {
+    return validateRenderedTemplate(
+      template.parameter_schema,
+      await renderImportantOwnerAlert(message, contact.phone_e164, template.meta_name),
     );
   }
   if (message.kind === "payment_action_confirmation") {
@@ -707,7 +838,21 @@ async function processJob(job: OutboxJob, workerId: string) {
   if (messageError) throw new Error(`Outbox message lookup failed: ${messageError.message}`);
   if (!message) throw new Error("Outbox message is missing.");
 
-  const rendered = await renderMessage(message as MessageRecord);
+  let rendered: Awaited<ReturnType<typeof renderMessage>>;
+  try {
+    rendered = await renderMessage(message as MessageRecord);
+  } catch (renderError) {
+    if (renderError instanceof SupersededIntentError) {
+      await completeAttempt(job, workerId, "suppressed", {
+        ok: false,
+        outcome: "suppressed",
+        providerErrorCode: "intent_superseded",
+        error: renderError.message,
+      });
+      return "suppressed";
+    }
+    throw renderError;
+  }
   if ("suppressed" in rendered) {
     await completeAttempt(job, workerId, "suppressed", {
       ok: false,
@@ -771,6 +916,13 @@ export async function drainOutbox(workerId: string, limit = 20) {
       const outcome = await processJob(job, workerId);
       results[outcome] = (results[outcome] ?? 0) + 1;
     } catch (jobError) {
+      logWhatsAppJobFailure("outbox", {
+        workerId,
+        jobId: job.id,
+        organizationId: job.organization_id,
+        messageId: job.message_id,
+        attempt: job.attempts,
+      }, jobError);
       if (jobError instanceof PostDispatchPersistenceError) {
         results.uncertain = (results.uncertain ?? 0) + 1;
         continue;

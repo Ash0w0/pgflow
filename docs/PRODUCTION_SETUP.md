@@ -16,6 +16,7 @@ Use separate Supabase projects for local development, staging, and production. N
 | `OPERATOR_HOSTNAME` | Server | Dedicated operator-console hostname; operator APIs reject every other host |
 | `WHATSAPP_VERIFY_TOKEN` | Server secret | Meta webhook challenge |
 | `WHATSAPP_APP_SECRET` | Server secret | Meta webhook signature verification |
+| `WHATSAPP_POLICY_VERSION` | Server | Policy version recorded with consent evidence; change only after a reviewed policy update |
 | `NEXT_PUBLIC_PGFLOW_WHATSAPP_NUMBER` | Public | PGFlow onboarding number used by `/signup`, in international digits only |
 
 The service-role key bypasses RLS. It must stay in server-only modules and encrypted environment variables. Never log it, return it, or prefix it with `NEXT_PUBLIC_`.

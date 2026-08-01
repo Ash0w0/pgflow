@@ -74,6 +74,7 @@ async function contactForTenant(organizationId: string, tenantId: string) {
     .select("id,connection_id,language_code,consent_state,reminders_enabled")
     .eq("organization_id", organizationId)
     .eq("tenant_id", tenantId)
+    .eq("routing_active", true)
     .eq("role", "resident")
     .maybeSingle();
   if (error || !data) throw new Error("Resident WhatsApp activation is incomplete.");
@@ -88,6 +89,7 @@ async function contactForMembership(organizationId: string, membershipId: string
     .select("id,connection_id,language_code,consent_state,weekly_report_enabled")
     .eq("organization_id", organizationId)
     .eq("membership_id", membershipId)
+    .eq("routing_active", true)
     .maybeSingle();
   if (error || !data) throw new Error("Owner WhatsApp activation is incomplete.");
   if (data.consent_state !== "opted_in") throw new Error("Owner has not opted in.");

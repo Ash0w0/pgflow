@@ -1439,6 +1439,151 @@ a { color: inherit; text-decoration: none; }
   .home-owner-summary small, .home-owner-summary strong { margin: 0; }
 }
 
+.whatsapp-journey-panel { padding: 0; overflow: hidden; }
+.whatsapp-journey-panel > .panel-head { padding: 20px; }
+.whatsapp-journey-panel > .setup-feedback { margin: 0 20px 20px; }
+.whatsapp-journey-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  border-top: 1px solid var(--line);
+}
+.whatsapp-journey-section { min-width: 0; padding: 20px; }
+.whatsapp-journey-section + .whatsapp-journey-section { border-left: 1px solid var(--line); }
+.whatsapp-section-heading { display: grid; grid-template-columns: 40px 1fr; align-items: start; gap: 12px; }
+.whatsapp-section-heading > span,
+.move-out-request-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  color: var(--brand);
+  background: #e9f1ec;
+}
+.whatsapp-section-heading h3 { margin: 1px 0 0; color: var(--ink); font-size: 14px; letter-spacing: -.02em; }
+.whatsapp-section-heading p {
+  max-width: 62ch;
+  margin: 5px 0 0;
+  color: var(--ink-faint);
+  font-size: 9px;
+  line-height: 1.55;
+}
+.whatsapp-journey-section > .modal-form { margin-top: 18px; }
+.whatsapp-contact-state { margin: -2px 0 0; color: var(--ink-faint); font-size: 9px; }
+.whatsapp-contact-state strong { color: var(--ink); text-transform: capitalize; }
+.activation-result {
+  display: grid;
+  grid-template-columns: 176px minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.activation-qr {
+  display: grid;
+  place-items: center;
+  width: 176px;
+  min-height: 176px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: var(--brand);
+  background: #fff;
+}
+.activation-qr img { display: block; width: 174px; height: 174px; border-radius: 13px; }
+.activation-link-copy { min-width: 0; }
+.activation-link-copy > strong { display: block; color: var(--ink); font-size: 11px; }
+.activation-link-copy > p { margin: 5px 0 12px; color: var(--ink-faint); font-size: 9px; line-height: 1.5; }
+.activation-link-copy > label { display: block; color: var(--ink-soft); font-size: 9px; font-weight: 700; }
+.activation-link-copy > input { width: 100%; margin-top: 5px; }
+.activation-link-copy .invoice-actions { flex-wrap: wrap; margin-top: 10px; }
+.activation-link-copy > small { display: block; margin-top: 8px; color: var(--brand); font-size: 9px; }
+.weekly-preview { margin-top: 16px; padding-top: 18px; border-top: 1px solid var(--line); }
+.weekly-preview-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.weekly-preview-heading strong { display: block; color: var(--ink); font-size: 11px; }
+.weekly-preview-heading p { margin: 4px 0 0; color: var(--ink-faint); font-size: 9px; }
+.weekly-ready,
+.weekly-blocked {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 8px;
+  font-weight: 750;
+}
+.weekly-ready { color: #315f4d; background: #eaf6ee; }
+.weekly-blocked { color: #8a4b21; background: #fff2df; }
+.weekly-metric-list { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; margin: 14px 0 0; }
+.weekly-metric-list > div { padding: 10px 0; border-top: 1px solid var(--line); }
+.weekly-metric-list dt { color: var(--ink-faint); font-size: 8px; font-weight: 700; }
+.weekly-metric-list dd { margin: 4px 0 0; color: var(--ink); font-size: 9px; font-weight: 700; line-height: 1.45; }
+.weekly-blockers { margin: 12px 0 0; padding: 11px 12px 11px 28px; color: #8a4b21; background: #fff8ed; font-size: 9px; line-height: 1.55; }
+.weekly-confirmation {
+  display: grid !important;
+  grid-template-columns: 17px 1fr;
+  align-items: start;
+  gap: 9px;
+  margin: 13px 0;
+  color: var(--ink-soft) !important;
+  font-size: 9px !important;
+  font-weight: 650 !important;
+  line-height: 1.45;
+}
+.weekly-confirmation input { width: 16px !important; height: 16px; margin: 1px 0 0; }
+.move-out-request-panel { padding: 0; overflow: hidden; }
+.move-out-request-panel > .panel-head { padding: 20px; }
+.move-out-request-count {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border-radius: 999px;
+  color: var(--brand);
+  background: #e9f1ec;
+  font-size: 8px;
+  font-weight: 750;
+}
+.move-out-request-list { border-top: 1px solid var(--line); }
+.move-out-request-row {
+  display: grid;
+  grid-template-columns: 40px minmax(180px, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+}
+.move-out-request-row + .move-out-request-row { border-top: 1px solid var(--line); }
+.move-out-request-copy strong { display: block; color: var(--ink); font-size: 10px; }
+.move-out-request-copy p { margin: 4px 0 0; color: var(--ink-faint); font-size: 8px; }
+.move-out-state {
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: var(--ink-soft);
+  background: #f1f3f2;
+  font-size: 8px;
+  font-weight: 750;
+}
+.move-out-state-settlement_ready { color: #315f4d; background: #eaf6ee; }
+
+@media (max-width: 1000px) {
+  .whatsapp-journey-grid { grid-template-columns: 1fr; }
+  .whatsapp-journey-section + .whatsapp-journey-section { border-top: 1px solid var(--line); border-left: 0; }
+  .move-out-request-row { grid-template-columns: 40px minmax(0, 1fr) auto; }
+  .move-out-request-row .button { grid-column: 2 / 4; justify-self: start; }
+}
+
+@media (max-width: 600px) {
+  .whatsapp-journey-panel > .panel-head,
+  .whatsapp-journey-section,
+  .move-out-request-panel > .panel-head { padding: 15px; }
+  .activation-result { grid-template-columns: 1fr; }
+  .activation-qr { justify-self: center; }
+  .weekly-metric-list { grid-template-columns: 1fr; }
+  .move-out-request-row { grid-template-columns: 34px minmax(0, 1fr); padding: 13px 15px; }
+  .move-out-request-icon { width: 34px; height: 34px; }
+  .move-out-state { grid-column: 2; justify-self: start; }
+  .move-out-request-row .button { grid-column: 2; width: 100%; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .home-primary-button, .home-secondary-button, .home-nav nav a, .home-link-button, .home-footer a { transition: none; }
   .home-primary-button:hover, .home-secondary-button:hover { transform: none; }

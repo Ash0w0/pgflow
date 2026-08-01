@@ -39,7 +39,7 @@ const primaryNav = [
  * them are backed by real data yet.
  */
 const demoSearchRecords = [
-  { title: "Aarav Shah (Resident, Room 101)", type: "Resident", href: "/residents" },
+  { title: "Demo Resident 01 (Room 101)", type: "Resident", href: "/residents" },
   { title: "Rohan Sharma (Resident, Room 204)", type: "Resident", href: "/residents" },
   { title: "Priya Patel (Resident, Room 302)", type: "Resident", href: "/residents" },
   { title: "Room 101 (Floor 1, 2 Beds)", type: "Room", href: "/rooms" },
@@ -310,10 +310,10 @@ export function AppShell({ children, demoMode }: { children: ReactNode; demoMode
               aria-label="Open profile menu"
               aria-expanded={profileOpen}
             >
-              <span className="avatar avatar-olive">AS</span>
+              <span className="avatar avatar-olive">{demoMode ? "DO" : "PG"}</span>
               <span className="profile-copy">
-                <strong>Aarav Shah</strong>
-                <small>Owner</small>
+                <strong>{demoMode ? "Demo Owner" : "Workspace member"}</strong>
+                <small>{demoMode ? "Demo workspace" : "Signed in"}</small>
               </span>
               <ChevronDown size={15} />
             </button>

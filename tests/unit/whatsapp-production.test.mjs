@@ -83,3 +83,33 @@ test("CI and package manager are pinned and cover production, demo, rehearsals a
   assert.deepEqual(dependencyInstallLines, []);
   assert.doesNotMatch(ci, /npm audit fix|version: latest/);
 });
+
+test("every registered launch template has a runtime enqueue and rendering path", async () => {
+  const [outbox, scheduler, worker, activationSql, sanitization] = await Promise.all([
+    read("lib/whatsapp/outbox-worker.ts"),
+    read("lib/whatsapp/rent-scheduler.ts"),
+    read("lib/whatsapp/webhook-worker.ts"),
+    read("supabase/migrations/0044_atomic_whatsapp_activation.sql"),
+    read("lib/whatsapp/webhook-sanitization.ts"),
+  ]);
+  for (const kind of [
+    "welcome_consent",
+    "overdue_reminder",
+    "proof_received",
+    "important_owner_alert",
+  ]) {
+    assert.match(outbox, new RegExp(`message\\.kind === "${kind}"`));
+  }
+  assert.match(scheduler, /stage === "t\+2" \? "overdue_reminder" : "rent_reminder"/);
+  assert.match(scheduler, /p_kind: "important_owner_alert"/);
+  assert.match(worker, /\.rpc\(\s*"activate_whatsapp_contact"/);
+  assert.match(worker, /purpose: "select-pg"[\s\S]{0,240}allowWithoutConsent: true/);
+  assert.match(activationSql, /for update of token/);
+  assert.match(activationSql, /on conflict \(contact_id, provider_wamid, event\) do nothing/);
+  assert.match(activationSql, /'welcome:' \|\| v_contact\.id::text \|\| ':' \|\| v_token\.policy_version/);
+  assert.match(activationSql, /production_whatsapp_runtime_v1/);
+  assert.match(worker, /\.eq\("routing_active", true\)/);
+  assert.match(sanitization, /START \[TOKEN REDACTED\]/);
+  assert.match(sanitization, /createHash\("sha256"\)/);
+  assert.doesNotMatch(sanitization, /token[^\n]*provider_payload/);
+});

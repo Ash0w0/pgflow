@@ -34,6 +34,7 @@ export async function enqueueDueWeeklyReports(now = new Date()) {
   const { data: contacts, error } = await admin.from("whatsapp_contacts")
     .select("id,organization_id,connection_id,membership_id,language_code")
     .in("role", ["owner", "accountant"])
+    .eq("routing_active", true)
     .eq("consent_state", "opted_in")
     .eq("weekly_report_enabled", true);
   if (error) throw error;

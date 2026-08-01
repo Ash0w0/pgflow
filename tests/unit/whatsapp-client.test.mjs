@@ -1,7 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { normalizeWhatsAppPhone, sendWhatsAppTemplate } from "../../lib/whatsapp/client.ts";
+import {
+  normalizeWhatsAppPhone,
+  sendWhatsAppTemplate,
+  setWhatsAppTransportForTesting,
+} from "../../lib/whatsapp/client.ts";
 import { getRentDueReminderPreview } from "../../lib/whatsapp/templates.ts";
 
 const root = new URL("../../", import.meta.url);
@@ -40,6 +44,91 @@ test("only explicit demo runtime simulates a provider acceptance", async () => {
   assert.equal(result.ok, true);
   assert.equal(result.outcome, "provider_accepted");
   assert.equal(result.demo, true);
+});
+
+test("classifies Meta responses and ambiguous network failures behaviorally", async (t) => {
+  const previousEnvironment = {
+    NODE_ENV: process.env.NODE_ENV,
+    PGFLOW_RUNTIME: process.env.PGFLOW_RUNTIME,
+    PGFLOW_ENV: process.env.PGFLOW_ENV,
+    WHATSAPP_SEND_MODE: process.env.WHATSAPP_SEND_MODE,
+    WHATSAPP_TEST_RECIPIENTS: process.env.WHATSAPP_TEST_RECIPIENTS,
+    WHATSAPP_ACCESS_TOKEN: process.env.WHATSAPP_ACCESS_TOKEN,
+    WHATSAPP_PHONE_NUMBER_ID: process.env.WHATSAPP_PHONE_NUMBER_ID,
+    WHATSAPP_WABA_ID: process.env.WHATSAPP_WABA_ID,
+    WHATSAPP_APP_SECRET: process.env.WHATSAPP_APP_SECRET,
+    WHATSAPP_VERIFY_TOKEN: process.env.WHATSAPP_VERIFY_TOKEN,
+    WHATSAPP_WORKER_SECRET: process.env.WHATSAPP_WORKER_SECRET,
+    WHATSAPP_GRAPH_VERSION: process.env.WHATSAPP_GRAPH_VERSION,
+  };
+  Object.assign(process.env, {
+    NODE_ENV: "test",
+    PGFLOW_RUNTIME: "production",
+    PGFLOW_ENV: "staging",
+    WHATSAPP_SEND_MODE: "allowlist",
+    WHATSAPP_TEST_RECIPIENTS: "919876543210",
+    WHATSAPP_ACCESS_TOKEN: "test-access-token",
+    WHATSAPP_PHONE_NUMBER_ID: "test-phone-id",
+    WHATSAPP_WABA_ID: "test-waba-id",
+    WHATSAPP_APP_SECRET: "test-app-secret",
+    WHATSAPP_VERIFY_TOKEN: "test-verify-token",
+    WHATSAPP_WORKER_SECRET: "test-worker-secret",
+    WHATSAPP_GRAPH_VERSION: "v23.0",
+  });
+  t.after(() => {
+    setWhatsAppTransportForTesting(null);
+    for (const [name, value] of Object.entries(previousEnvironment)) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  });
+
+  const sendWith = async (transport) => {
+    setWhatsAppTransportForTesting(transport);
+    return sendWhatsAppTemplate({
+      recipientPhone: "9876543210",
+      templateName: "pgflow_rent_reminder_en",
+      languageCode: "en",
+    });
+  };
+
+  const rateLimited = await sendWith(async () => Response.json(
+    { error: { code: 4, message: "Rate limited" } },
+    { status: 429 },
+  ));
+  assert.equal(rateLimited.outcome, "retryable");
+  assert.equal(rateLimited.httpStatus, 429);
+
+  const unavailable = await sendWith(async () => Response.json(
+    { error: { code: 2, message: "Temporarily unavailable" } },
+    { status: 503 },
+  ));
+  assert.equal(unavailable.outcome, "retryable");
+
+  const invalid = await sendWith(async () => Response.json(
+    { error: { code: 100, message: "Invalid template" } },
+    { status: 400 },
+  ));
+  assert.equal(invalid.outcome, "permanent_failure");
+
+  const missingWamid = await sendWith(async () => Response.json(
+    { messages: [] },
+    { status: 200 },
+  ));
+  assert.equal(missingWamid.outcome, "delivery_uncertain");
+
+  const timedOut = await sendWith(async () => {
+    throw new DOMException("Timed out", "AbortError");
+  });
+  assert.equal(timedOut.outcome, "delivery_uncertain");
+
+  const accepted = await sendWith(async () => Response.json(
+    { messages: [{ id: "wamid.test-accepted" }] },
+    { status: 200 },
+  ));
+  assert.equal(accepted.ok, true);
+  assert.equal(accepted.outcome, "provider_accepted");
+  assert.equal(accepted.wamid, "wamid.test-accepted");
 });
 
 test("durable transport migration includes dedupe, leases, uncertain delivery and RLS", async () => {

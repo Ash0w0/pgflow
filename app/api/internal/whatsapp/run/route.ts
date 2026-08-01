@@ -1,4 +1,5 @@
 import { requireWorkerRequest } from "@/lib/whatsapp/config";
+import { logWhatsAppWorkerFailure } from "@/lib/whatsapp/observability";
 import { drainOutbox } from "@/lib/whatsapp/outbox-worker";
 import { drainWebhookEvents } from "@/lib/whatsapp/webhook-worker";
 import { enqueueDueWeeklyReports } from "@/lib/whatsapp/weekly-report";
@@ -22,7 +23,8 @@ export async function POST(request: Request) {
     return Response.json({ webhooks, reminders, weekly, outbox }, {
       headers: { "cache-control": "no-store" },
     });
-  } catch {
+  } catch (error) {
+    logWhatsAppWorkerFailure("combined", requestId, error);
     return Response.json({ error: "WhatsApp worker unavailable.", requestId }, { status: 503 });
   }
 }

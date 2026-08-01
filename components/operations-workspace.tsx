@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "./app-shell";
-import { CheckCircle2, Plus, UserX, Wrench, X } from "lucide-react";
+import { CalendarClock, CheckCircle2, Plus, UserX, Wrench, X } from "lucide-react";
 import { getCategoryLabel, type MaintenanceTicket, type TicketStatus } from "@/lib/maintenance-tickets";
+import type { PendingMoveOutRequest } from "@/lib/move-out-request-data";
 import { MaintenanceTicketModal } from "./maintenance-ticket-modal";
 import { MoveOutModal, type ResidentMoveOutTarget } from "./move-out-modal";
 
@@ -41,10 +42,17 @@ function formatDate(value: string) {
   return parsed.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+const MOVE_OUT_STATE_LABELS: Record<PendingMoveOutRequest["state"], string> = {
+  requested: "New request",
+  acknowledged: "Acknowledged",
+  settlement_ready: "Settlement ready",
+};
+
 export type OperationsData = {
   tickets: MaintenanceTicket[];
   residents: ResidentMoveOutTarget[];
   noticePeriodCount: number;
+  moveOutRequests: PendingMoveOutRequest[];
 };
 
 export function OperationsWorkspace({
@@ -172,6 +180,62 @@ export function OperationsWorkspace({
             <strong>{data.noticePeriodCount}</strong>
             <p>Residents in notice period</p>
           </article>
+        </section>
+
+        <section className="panel move-out-request-panel" aria-labelledby="move-out-requests-title">
+          <header className="panel-head">
+            <div>
+              <span className="eyebrow">Resident requests</span>
+              <h2 id="move-out-requests-title">Pending move-outs</h2>
+              <p>Requests started in WhatsApp stay here until the deposit settlement is completed.</p>
+            </div>
+            <span className="move-out-request-count">{data.moveOutRequests.length} pending</span>
+          </header>
+
+          {data.moveOutRequests.length === 0 ? (
+            <div className="collections-empty">
+              <CalendarClock size={25} />
+              <div>
+                <strong>No pending move-out requests</strong>
+                <p>Resident requests from WhatsApp will appear here with a direct path to settlement.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="move-out-request-list">
+              {data.moveOutRequests.map((request) => {
+                const resident = data.residents.find((candidate) => candidate.id === request.tenantId) ?? null;
+                return (
+                  <div className="move-out-request-row" key={request.id}>
+                    <span className="move-out-request-icon"><CalendarClock size={18} /></span>
+                    <div className="move-out-request-copy">
+                      <strong>{request.resident?.fullName ?? "Resident record unavailable"}</strong>
+                      <p>
+                        Requested exit {formatDate(request.requestedExitDate)}
+                        {" · "}Received {formatDate(request.createdAt)}
+                      </p>
+                    </div>
+                    <span className={`move-out-state move-out-state-${request.state}`}>
+                      {MOVE_OUT_STATE_LABELS[request.state]}
+                    </span>
+                    {canManage && (
+                      <button
+                        className="button button-secondary"
+                        type="button"
+                        onClick={() => resident && setMoveOutResident({
+                          ...resident,
+                          requestedExitDate: request.requestedExitDate,
+                        })}
+                        disabled={!resident}
+                        title={resident ? "Open the deposit settlement" : "Resident is no longer eligible for settlement"}
+                      >
+                        Prepare settlement
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         <section className="panel">
@@ -314,6 +378,7 @@ export function OperationsWorkspace({
       />
 
       <MoveOutModal
+        key={`${moveOutResident?.id ?? "closed"}:${moveOutResident?.requestedExitDate ?? "new"}`}
         isOpen={moveOutResident !== null}
         resident={moveOutResident}
         onClose={() => setMoveOutResident(null)}

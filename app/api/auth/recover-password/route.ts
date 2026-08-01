@@ -90,7 +90,7 @@ export async function POST(request: Request) {
   if (!isUuid(recoveryRequestId)) return jsonError("The recovery request is invalid.");
   if (newPassword !== passwordConfirmation) return jsonError("The two passwords do not match.");
   if (!isStrongOwnerPassword(newPassword)) {
-    return jsonError("Use 12â€“128 characters with uppercase, lowercase, a number, and a symbol.");
+    return jsonError("Use 12–128 characters with uppercase, lowercase, a number, and a symbol.");
   }
   if (newPassword === credential) return jsonError("Choose a password different from the recovery credential.");
 

@@ -3,10 +3,9 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { normalizeWhatsAppPhone } from "./client";
-import {
-  enqueuePaymentConfirmation,
-} from "./workflow-enqueue";
+import { enqueuePaymentConfirmation } from "./workflow-enqueue";
 import { downloadInboundImage } from "./media";
+import { logWhatsAppJobFailure } from "./observability";
 
 type WebhookJob = {
   id: string;
@@ -85,11 +84,15 @@ async function recordConsent(
   providerWamid: string,
   value: Record<string, unknown>,
 ) {
+  const policyVersion = typeof value.policyVersion === "string"
+    ? value.policyVersion
+    : null;
   const { error } = await getSupabaseAdmin().from("whatsapp_consent_events").upsert({
     organization_id: organizationId,
     contact_id: contactId,
     event,
     source: "inbound_command",
+    policy_version: policyVersion,
     provider_wamid: providerWamid,
     value,
   }, { onConflict: "contact_id,provider_wamid,event", ignoreDuplicates: true });
@@ -132,6 +135,12 @@ async function recordMessage(job: WebhookJob) {
   const textObject = value.text as { body?: string } | undefined;
   const body = textObject?.body?.trim() ?? "";
   const command = body.toUpperCase();
+  const storedActivationHash = typeof value.pgflow_activation_token_hash === "string"
+    && /^[a-f0-9]{64}$/.test(value.pgflow_activation_token_hash)
+    ? value.pgflow_activation_token_hash
+    : "";
+  const legacyActivation = body.match(/^START\s+([A-Za-z0-9_-]{20,128})\s*$/i);
+  const activationTokenHash = storedActivationHash || (legacyActivation ? sha256(legacyActivation[1]) : "");
   const interactive = value.interactive as {
     button_reply?: { id?: string };
   } | undefined;
@@ -142,6 +151,7 @@ async function recordMessage(job: WebhookJob) {
     .from("whatsapp_contacts")
     .select("id,organization_id,consent_state,language_code,role,membership_id,tenant_id")
     .eq("connection_id", connectionId)
+    .eq("routing_active", true)
     .eq("phone_e164", phoneE164);
   if (error) throw error;
   const matches = (contacts ?? []) as ContactRecord[];
@@ -206,13 +216,11 @@ async function recordMessage(job: WebhookJob) {
       && candidate.organization_id === currentConversation.organization_id
     )) ?? null;
   }
-  if (!contact && command.startsWith("START ")) {
+  if (!contact && activationTokenHash) {
     const { data: activation, error: activationLookupError } = await admin
       .from("whatsapp_activation_tokens")
       .select("organization_id,contact_id")
-      .eq("token_hash", sha256(body.slice(6).trim()))
-      .is("used_at", null)
-      .gt("expires_at", new Date().toISOString())
+      .eq("token_hash", activationTokenHash)
       .maybeSingle();
     if (activationLookupError) throw activationLookupError;
     contact = matches.find((candidate) => (
@@ -248,6 +256,7 @@ async function recordMessage(job: WebhookJob) {
       inboundWamid: providerWamid,
       purpose: "select-pg",
       text: `Which PG is this about?\n${choices.join("\n")}\nReply PG 1, PG 2, and so on.`,
+      allowWithoutConsent: true,
     });
     const { error: ambiguousError } = await admin.from("whatsapp_conversations").upsert({
       connection_id: connectionId,
@@ -460,11 +469,6 @@ async function recordMessage(job: WebhookJob) {
         conversationState = "resolved";
         conversationFlow = "payment_proof";
         conversationContext = { paymentId: payment.paymentId };
-        await enqueueSessionReply({
-          organizationId: contact.organization_id, connectionId, contactId: contact.id,
-          languageCode: contact.language_code, inboundWamid: providerWamid, purpose: "proof-submitted",
-          text: "Your payment proof is under review. The PG owner will verify the bank or UPI account before approval.",
-        });
       }
     }
   } else if (currentConversation?.state === "awaiting_pg" && /^PG\s+\d{1,2}$/.test(command)) {
@@ -478,38 +482,19 @@ async function recordMessage(job: WebhookJob) {
         ? "PG selected. Reply DUES, PAY, RECEIPTS, ISSUE, MOVE OUT, or HELP."
         : "PG selected. Use the action buttons in PGFlow alerts or reply HELP.",
     });
-  } else if (command.startsWith("START ")) {
-    const token = body.slice(6).trim();
-    const { data: activation, error: activationError } = await admin
-      .from("whatsapp_activation_tokens")
-      .select("id,policy_version,expires_at,used_at")
-      .eq("organization_id", contact.organization_id)
-      .eq("contact_id", contact.id)
-      .eq("token_hash", sha256(token))
-      .maybeSingle();
+  } else if (activationTokenHash) {
+    const { data: activation, error: activationError } = await admin.rpc(
+      "activate_whatsapp_contact",
+      {
+        p_connection_id: connectionId,
+        p_sender_phone: phoneE164,
+        p_token_hash: activationTokenHash,
+        p_provider_wamid: providerWamid,
+      },
+    );
     if (activationError) throw activationError;
-    if (activation && !activation.used_at && new Date(activation.expires_at) > new Date()) {
-      const { error: tokenUseError } = await admin.from("whatsapp_activation_tokens")
-        .update({ used_at: new Date().toISOString() }).eq("id", activation.id);
-      if (tokenUseError) throw tokenUseError;
-      const { error: activationUpdateError } = await admin.from("whatsapp_contacts").update({
-        consent_state: "opted_in",
-        reminders_enabled: true,
-        activated_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }).eq("id", contact.id);
-      if (activationUpdateError) throw activationUpdateError;
-      await recordConsent(contact.organization_id, contact.id, "opt_in", providerWamid, {
-        policyVersion: activation.policy_version,
-      });
-      await enqueueSessionReply({
-        organizationId: contact.organization_id, connectionId, contactId: contact.id,
-        languageCode: contact.language_code, inboundWamid: providerWamid, purpose: "activation-confirmed",
-        text: contact.role === "resident"
-          ? "WhatsApp is activated for this PG. Reply DUES, PAY, RECEIPTS, ISSUE, MOVE OUT, or HELP."
-          : "WhatsApp owner alerts are activated for this PG. Reply HELP for available actions.",
-      });
-    } else {
+    const activationResult = activation as { activated?: boolean } | null;
+    if (!activationResult?.activated) {
       await enqueueSessionReply({
         organizationId: contact.organization_id, connectionId, contactId: contact.id,
         languageCode: contact.language_code, inboundWamid: providerWamid, purpose: "activation-invalid",
@@ -825,6 +810,12 @@ export async function drainWebhookEvents(workerId: string, limit = 50) {
       await finishJob(job, workerId);
       processed += 1;
     } catch (jobError) {
+      logWhatsAppJobFailure("webhook", {
+        workerId,
+        jobId: job.id,
+        providerWamid: job.provider_wamid,
+        attempt: job.attempts,
+      }, jobError);
       await finishJob(job, workerId, jobError);
       failed += 1;
     }

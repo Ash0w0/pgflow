@@ -9,6 +9,7 @@ export interface ResidentMoveOutTarget {
   roomNumber?: string;
   securityDeposit: number;
   monthlyRent: number;
+  requestedExitDate?: string;
 }
 
 interface MoveOutModalProps {
@@ -26,7 +27,7 @@ export function MoveOutModal({
 }: MoveOutModalProps) {
   const todayIso = new Date().toISOString().split("T")[0];
 
-  const [exitDate, setExitDate] = useState(todayIso);
+  const [exitDate, setExitDate] = useState(resident?.requestedExitDate ?? todayIso);
   const [utilityDeductions, setUtilityDeductions] = useState("0");
   const [damageDeductions, setDamageDeductions] = useState("0");
   const [unpaidRentDeductions, setUnpaidRentDeductions] = useState("0");

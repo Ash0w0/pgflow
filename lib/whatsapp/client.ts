@@ -33,6 +33,26 @@ export interface WhatsAppSendResult {
 
 import { getWhatsAppConfig } from "./config.ts";
 
+type WhatsAppTransport = (
+  input: string | URL | Request,
+  init?: RequestInit,
+) => Promise<Response>;
+
+let whatsappTransport: WhatsAppTransport = (input, init) => fetch(input, init);
+
+/**
+ * Installs a deterministic transport for behavioral tests without exposing an
+ * environment-variable backdoor in deployed builds.
+ */
+export function setWhatsAppTransportForTesting(
+  transport: WhatsAppTransport | null,
+) {
+  if (process.env.NODE_ENV !== "test") {
+    throw new Error("The WhatsApp test transport is only available in NODE_ENV=test.");
+  }
+  whatsappTransport = transport ?? ((input, init) => fetch(input, init));
+}
+
 /**
  * Normalizes Indian phone numbers to Meta E.164 format (e.g. 919876543210).
  */
@@ -100,7 +120,7 @@ export async function sendWhatsAppTemplate(
   };
 
   try {
-    const res = await fetch(graphUrl, {
+    const res = await whatsappTransport(graphUrl, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${config.accessToken}`,
@@ -160,7 +180,7 @@ export async function sendWhatsAppText(
     return { ok: false, outcome: "suppressed", error: "Recipient is not in the staging allowlist." };
   }
   try {
-    const response = await fetch(
+    const response = await whatsappTransport(
       `https://graph.facebook.com/${config.graphVersion}/${config.phoneNumberId}/messages`,
       {
         method: "POST",

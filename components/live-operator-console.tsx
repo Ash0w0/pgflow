@@ -20,6 +20,7 @@ import { OwnerInvitationPanel, type OwnerInvitationOrganization } from "./owner-
 import { OwnerRecoveryPanel } from "./owner-recovery-panel";
 import { OperatorPasswordCard } from "./operator-password-card";
 import { StatusPill } from "./status-pill";
+import { WhatsAppJourneyOperatorPanel } from "./whatsapp-journey-operator-panel";
 import { WhatsAppOperatorPanel } from "./whatsapp-operator-panel";
 
 type RegistryOrganization = OwnerInvitationOrganization & {
@@ -492,6 +493,7 @@ export function LiveOperatorConsole() {
       </section>
 
       <WhatsAppOperatorPanel />
+      <WhatsAppJourneyOperatorPanel />
 
       <section className="operator-grid live-operator-grid">
         <article className="panel live-provision-panel">
@@ -843,7 +845,7 @@ export function LiveOperatorConsole() {
                 }
               >
                 {deleting ? <RefreshCcw className="spin" size={17} /> : <Trash2 size={17} />}
-                {deleting ? "Deleting empty draftâ€¦" : "Permanently delete draft"}
+                {deleting ? "Deleting empty draft…" : "Permanently delete draft"}
               </button>
             </form>
           </section>

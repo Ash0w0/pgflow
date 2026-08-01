@@ -1,6 +1,7 @@
 import { verifyMetaSignature } from "@/lib/http";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { requireWebhookConfig } from "@/lib/whatsapp/config";
+import { sanitizeInboundWhatsAppMessage } from "@/lib/whatsapp/webhook-sanitization";
 
 type MetaValue = {
   metadata?: { phone_number_id?: string };
@@ -61,13 +62,14 @@ export async function POST(request: Request) {
 
       for (const message of value.messages ?? []) {
         if (!message.id) continue;
+        const sanitizedMessage = sanitizeInboundWhatsAppMessage(message);
         rows.push({
           provider_event_key: `message:${message.id}`,
           entry_id: entry.id ?? null,
           phone_number_id: phoneNumberId,
           event_kind: "message",
           provider_wamid: message.id,
-          payload: { field: change.field, value: message, metadata: value.metadata },
+          payload: { field: change.field, value: sanitizedMessage, metadata: value.metadata },
         });
       }
       for (const status of value.statuses ?? []) {

@@ -1,4 +1,5 @@
 import { requireWorkerRequest } from "@/lib/whatsapp/config";
+import { logWhatsAppWorkerFailure } from "@/lib/whatsapp/observability";
 import { drainOutbox } from "@/lib/whatsapp/outbox-worker";
 
 export const maxDuration = 50;
@@ -11,7 +12,8 @@ export async function POST(request: Request) {
   try {
     const result = await drainOutbox(`outbox:${requestId}`, 2);
     return Response.json(result, { headers: { "cache-control": "no-store" } });
-  } catch {
+  } catch (error) {
+    logWhatsAppWorkerFailure("outbox", requestId, error);
     return Response.json({ error: "Outbox worker unavailable.", requestId }, { status: 503 });
   }
 }
