@@ -14,11 +14,32 @@ test("platform root renders the business homepage while tenant hosts retain the 
 test("homepage exposes the production entry points and approved workflow story", async () => {
   const source = await read("components/business-homepage.tsx");
   assert.match(source, /Run your PG from WhatsApp\./);
-  assert.match(source, /href="\/signup"/);
   assert.match(source, /href="\/login"/);
   assert.match(source, /Resident → WhatsApp → owner/);
-  assert.match(source, /first two residents/i);
-  assert.doesNotMatch(source, /fictional|demo|Nivasa/i);
+  assert.match(source, /Book a 15-min demo/);
+  assert.match(source, /demoBookingHref\(/);
+  assert.match(source, /Founding PG/);
+  assert.match(source, /href="\/privacy"/);
+  assert.match(source, /href="\/terms"/);
+  assert.doesNotMatch(source, /fictional|Nivasa/i);
+  assert.doesNotMatch(source, /\u2014/, "homepage copy uses no em dashes");
+});
+
+test("demo booking falls back to assisted signup when no WhatsApp number is configured", async () => {
+  const source = await read("lib/marketing.ts");
+  assert.match(source, /NEXT_PUBLIC_PGFLOW_WHATSAPP_NUMBER/);
+  assert.match(source, /https:\/\/wa\.me\//);
+  assert.match(source, /\|\| "\/signup"/);
+  assert.doesNotMatch(source, /\b91\d{10}\b/, "no phone number is committed to source");
+});
+
+test("privacy policy and terms pages exist and name a grievance contact", async () => {
+  const privacy = await read("app/privacy/page.tsx");
+  const terms = await read("app/terms/page.tsx");
+  assert.match(privacy, /Digital Personal Data Protection Act, 2023/);
+  assert.match(privacy, /Grievance contact/);
+  assert.match(terms, /not a bank, payment gateway or payment aggregator/);
+  assert.match(terms, /30 days/);
 });
 
 test("Remotion player respects reduced motion and keeps visible controls", async () => {
