@@ -146,16 +146,3 @@ export async function requireOperatorActor(request: Request): Promise<string | n
 export async function requireOperator(request: Request) {
   return Boolean(await requireOperatorActor(request));
 }
-
-export async function verifyMetaSignature(rawBody: string, signature: string | null) {
-  const secret = process.env.WHATSAPP_APP_SECRET;
-  if (!secret) return process.env.NODE_ENV !== "production";
-  if (!signature?.startsWith("sha256=")) return false;
-  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-  const digest = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(rawBody));
-  const actual = `sha256=${Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
-  if (actual.length !== signature.length) return false;
-  let difference = 0;
-  for (let index = 0; index < actual.length; index += 1) difference |= actual.charCodeAt(index) ^ signature.charCodeAt(index);
-  return difference === 0;
-}

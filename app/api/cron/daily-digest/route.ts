@@ -1,18 +1,12 @@
+import { authorizeCronRequest } from "../../../../lib/cron-auth.ts";
 import { sendWhatsAppTemplate } from "../../../../lib/whatsapp/client.ts";
 import { buildDailyOwnerDigestPayload, getDailyOwnerDigestPreview } from "../../../../lib/whatsapp/templates.ts";
 
 export async function GET(request: Request) {
   try {
-    const authHeader = request.headers.get("authorization");
-    const cronSecret = process.env.CRON_SECRET || "pgflow_cron_secret";
+    const unauthorized = authorizeCronRequest(request);
+    if (unauthorized) return unauthorized;
     const isDemo = process.env.PGFLOW_RUNTIME === "demo";
-
-    if (!isDemo && authHeader !== `Bearer ${cronSecret}`) {
-      return Response.json(
-        { error: "Unauthorized daily digest cron request." },
-        { status: 401 }
-      );
-    }
 
     const todayIso = new Date().toISOString().split("T")[0];
 

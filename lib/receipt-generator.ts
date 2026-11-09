@@ -30,7 +30,36 @@ export function formatReceiptNumber(id: string, dateIso: string): string {
   return `REC-${year}-${month}-${cleanId || "0001"}`;
 }
 
-export function generateReceiptHtml(data: ReceiptData): string {
+const HTML_ESCAPES: Record<string, string> = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+};
+
+/** Escapes text before it is interpolated into receipt markup. */
+export function escapeHtml(value: unknown): string {
+  return String(value ?? "").replace(/[&<>"']/g, (character) => HTML_ESCAPES[character]);
+}
+
+export function generateReceiptHtml(input: ReceiptData): string {
+  const data = {
+    ...input,
+    receiptNumber: escapeHtml(input.receiptNumber),
+    pgName: escapeHtml(input.pgName),
+    pgAddress: input.pgAddress ? escapeHtml(input.pgAddress) : "",
+    pgContact: input.pgContact ? escapeHtml(input.pgContact) : "",
+    residentName: escapeHtml(input.residentName),
+    roomNumber: escapeHtml(input.roomNumber),
+    bedNumber: input.bedNumber ? escapeHtml(input.bedNumber) : "",
+    paymentDate: escapeHtml(input.paymentDate),
+    billingPeriod: escapeHtml(input.billingPeriod),
+    paymentMethod: escapeHtml(input.paymentMethod),
+    referenceNumber: escapeHtml(input.referenceNumber),
+    issuedBy: escapeHtml(input.issuedBy),
+    notes: input.notes ? escapeHtml(input.notes) : "",
+  };
   const formattedAmount = data.amountPaid.toLocaleString("en-IN", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
