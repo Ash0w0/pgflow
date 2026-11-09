@@ -36,3 +36,28 @@ test("generates printable HTML rent receipt with all required fields", () => {
   assert.match(html, /₹8,500\.00/);
   assert.match(html, /Print \/ Save PDF/);
 });
+
+test("escapes every user-controlled receipt field", async () => {
+  const { generateReceiptHtml: render } = await import("../../lib/receipt-generator.ts");
+  const attack = `<script>alert("x")</script>`;
+  const html = render({
+    receiptNumber: attack,
+    pgName: attack,
+    pgAddress: attack,
+    pgContact: attack,
+    residentName: `<img src=x onerror=alert(1)>`,
+    roomNumber: attack,
+    bedNumber: attack,
+    paymentDate: attack,
+    billingPeriod: attack,
+    paymentMethod: "UPI",
+    referenceNumber: `"'><svg onload=alert(1)>`,
+    amountPaid: 8500,
+    issuedBy: attack,
+  });
+  assert.doesNotMatch(html, /<script>alert/);
+  assert.doesNotMatch(html, /<img src=x/);
+  assert.doesNotMatch(html, /<svg onload/);
+  assert.match(html, /&lt;script&gt;alert\(&quot;x&quot;\)&lt;\/script&gt;/);
+  assert.match(html, /&lt;img src=x onerror=alert\(1\)&gt;/);
+});
