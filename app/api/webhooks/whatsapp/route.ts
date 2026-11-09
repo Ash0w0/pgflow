@@ -1,4 +1,8 @@
+import { configuredSecret, secureEqual } from "../../../../lib/secure-compare.ts";
 import { normalizeWhatsAppPhone } from "../../../../lib/whatsapp/client.ts";
+import { verifyMetaSignature, whatsAppAppSecret } from "../../../../lib/whatsapp/signature.ts";
+
+const MAX_WEBHOOK_BYTES = 256 * 1024;
 
 /**
  * GET Handler - Meta WhatsApp Webhook Verification Challenge
@@ -8,21 +12,22 @@ import { normalizeWhatsAppPhone } from "../../../../lib/whatsapp/client.ts";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const mode = searchParams.get("hub.mode");
-  const token = searchParams.get("hub.verify_token");
+  const token = searchParams.get("hub.verify_token") ?? "";
   const challenge = searchParams.get("hub.challenge");
 
-  const validTokens = new Set(
-    [
-      (process.env.WHATSAPP_VERIFY_TOKEN ?? "").trim(),
-      "pgflow_webhook_verify_token",
-      "pgflow_wh_verify_secret_2026",
-    ].filter(Boolean)
-  );
+  // Only the deployment-configured token is accepted; there are no built-in fallbacks.
+  const verifyToken = configuredSecret("WHATSAPP_VERIFY_TOKEN");
+  if (!verifyToken) {
+    return Response.json(
+      { error: "WhatsApp webhook verification is not configured." },
+      { status: 503, headers: { "cache-control": "no-store" } },
+    );
+  }
 
-  if (mode === "subscribe" && token && validTokens.has(token)) {
+  if (mode === "subscribe" && secureEqual(token, verifyToken)) {
     return new Response(challenge ?? "OK", {
       status: 200,
-      headers: { "Content-Type": "text/plain" },
+      headers: { "Content-Type": "text/plain", "cache-control": "no-store" },
     });
   }
 
@@ -36,10 +41,31 @@ export async function GET(request: Request) {
  * POST Handler - Ingest Meta WhatsApp Webhook Events (Statuses & Inbound Proof Screenshots)
  */
 export async function POST(request: Request) {
+  const isDemo = process.env.PGFLOW_RUNTIME === "demo";
+  const rawBody = await request.text().catch(() => null);
+  if (rawBody === null || rawBody.length > MAX_WEBHOOK_BYTES) {
+    return Response.json({ error: "Invalid webhook payload." }, { status: 413 });
+  }
+
+  // The fictional demo never stores or sends real data; every other runtime
+  // must prove the event came from Meta before anything is parsed or written.
+  if (!isDemo) {
+    const appSecret = whatsAppAppSecret();
+    if (!appSecret) {
+      return Response.json(
+        { error: "WhatsApp webhook signing is not configured." },
+        { status: 503, headers: { "cache-control": "no-store" } },
+      );
+    }
+    const signature = request.headers.get("x-hub-signature-256");
+    if (!await verifyMetaSignature(rawBody, signature, appSecret)) {
+      return Response.json({ error: "Invalid webhook signature." }, { status: 401 });
+    }
+  }
+
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const body = (await request.json()) as Record<string, any>;
-    const isDemo = process.env.PGFLOW_RUNTIME === "demo";
+    const body = JSON.parse(rawBody) as Record<string, any>;
 
     const entryList = Array.isArray(body.entry) ? body.entry : [];
     const entry = (entryList[0] && typeof entryList[0] === "object" ? entryList[0] : null) as Record<string, unknown> | null;

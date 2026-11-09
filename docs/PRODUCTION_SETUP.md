@@ -14,8 +14,9 @@ Use separate Supabase projects for local development, staging, and production. N
 | `SUPABASE_SECRET_KEY` | Server secret | Operator, hostname, and trusted transaction services |
 | `NEXT_PUBLIC_PLATFORM_DOMAIN` | Browser-safe | Wildcard platform domain |
 | `OPERATOR_HOSTNAME` | Server | Dedicated operator-console hostname; operator APIs reject every other host |
-| `WHATSAPP_VERIFY_TOKEN` | Server secret | Meta webhook challenge |
-| `WHATSAPP_APP_SECRET` | Server secret | Meta webhook signature verification |
+| `WHATSAPP_VERIFY_TOKEN` | Server secret | Meta webhook challenge; at least 32 random characters. Unset means the webhook verification step returns 503 |
+| `WHATSAPP_APP_SECRET` | Server secret | Meta app secret for `X-Hub-Signature-256` verification. Unset means every production webhook event is refused with 503 |
+| `CRON_SECRET` | Server secret | Bearer secret Vercel Cron sends to `/api/cron/*`; at least 32 random characters. Unset means every cron request is refused with 503 |
 | `NEXT_PUBLIC_PGFLOW_WHATSAPP_NUMBER` | Public | PGFlow onboarding number used by `/signup`, in international digits only |
 
 The service-role key bypasses RLS. It must stay in server-only modules and encrypted environment variables. Never log it, return it, or prefix it with `NEXT_PUBLIC_`.
