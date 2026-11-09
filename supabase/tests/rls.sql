@@ -2,7 +2,7 @@
 -- every fixture and exercises policies as real authenticated JWT subjects.
 
 begin;
-select plan(93);
+select plan(96);
 
 select has_function('public', 'current_organization_ids', array[]::text[], 'RLS organization helper exists');
 select ok(not has_table_privilege('anon', 'public.organizations', 'select'), 'anonymous users cannot read organizations');
@@ -17,6 +17,36 @@ select ok(
   'brand theme updates are reachable only through the server role'
 );
 select ok(not has_table_privilege('authenticated', 'public.rooms', 'update'), 'clients cannot directly change room records');
+select is(
+  (
+    select pg_catalog.count(*)::integer
+    from pg_catalog.pg_proc as p
+    join pg_catalog.pg_namespace as n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.prosecdef
+      and pg_catalog.has_function_privilege('anon', p.oid, 'execute')
+  ),
+  0,
+  'anonymous clients cannot execute any security-definer function'
+);
+select is(
+  (
+    select pg_catalog.count(*)::integer
+    from pg_catalog.pg_proc as p
+    join pg_catalog.pg_namespace as n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.prosecdef
+      and pg_catalog.has_function_privilege('authenticated', p.oid, 'execute')
+      and p.proname not in ('current_organization_ids', 'has_org_role', 'is_own_tenant', 'has_storage_org_membership')
+  ),
+  0,
+  'signed-in clients can execute only the RLS helper security-definer functions'
+);
+select ok(
+  not has_function_privilege('anon', 'public.update_property_upi(uuid,uuid,uuid,text,text,text,text)', 'execute')
+  and not has_function_privilege('authenticated', 'public.update_property_upi(uuid,uuid,uuid,text,text,text,text)', 'execute')
+  and not has_function_privilege('authenticated', 'public.review_payment(uuid,uuid,uuid,uuid,text,text)', 'execute')
+  and has_function_privilege('service_role', 'public.update_property_upi(uuid,uuid,uuid,text,text,text,text)', 'execute'),
+  'UPI changes and payment approvals are reachable only through the server role'
+);
 select has_table('public', 'invoice_payment_requests', 'secure invoice payment-request table exists');
 select has_function('public', 'enforce_payment_request_upi_configuration', array[]::text[], 'payment links require property UPI configuration');
 select ok(not has_table_privilege('anon', 'public.invoice_payment_requests', 'select'), 'anonymous users cannot enumerate payment links');
