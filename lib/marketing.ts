@@ -4,57 +4,6 @@
  * number or address is committed to source.
  */
 
-export type FoundingPlan = {
-  id: "starter" | "growth" | "scale" | "chain";
-  name: string;
-  beds: string;
-  listPrice: string | null;
-  foundingPrice: string | null;
-  perMonth: string | null;
-  includes: string[];
-  highlight?: boolean;
-};
-
-export const FOUNDING_PLANS: FoundingPlan[] = [
-  {
-    id: "starter",
-    name: "Starter",
-    beds: "Up to 60 beds",
-    listPrice: "₹14,999",
-    foundingPrice: "₹8,999",
-    perMonth: "about ₹750 a month",
-    includes: ["Free setup from your register or Excel", "WhatsApp rent reminders and payment links", "UPI and cash review, receipts, reversals"],
-  },
-  {
-    id: "growth",
-    name: "Growth",
-    beds: "61 to 120 beds",
-    listPrice: "₹24,999",
-    foundingPrice: "₹14,999",
-    perMonth: "about ₹1,250 a month",
-    includes: ["Everything in Starter", "Logins for managers and staff", "Owner approval on every cash entry"],
-    highlight: true,
-  },
-  {
-    id: "scale",
-    name: "Scale",
-    beds: "121 to 200 beds",
-    listPrice: "₹34,999",
-    foundingPrice: "₹20,999",
-    perMonth: "about ₹1,750 a month",
-    includes: ["Everything in Growth", "Priority WhatsApp support", "Monthly collection review with the founder"],
-  },
-  {
-    id: "chain",
-    name: "Chain",
-    beds: "200+ beds or 3+ properties",
-    listPrice: null,
-    foundingPrice: null,
-    perMonth: null,
-    includes: ["Everything in Scale", "Your own brand and domain", "Custom pilot and onboarding plan"],
-  },
-];
-
 export const FOUNDING_TOTAL_SPOTS = 10;
 
 function digits(value: string | undefined) {

@@ -25,8 +25,7 @@ import { HomepageWorkflowPlayer } from "./homepage-workflow-player";
 import { LeakCalculator } from "./leak-calculator";
 import {
   FOUNDER,
-  FOUNDING_PLANS,
-  FOUNDING_REQUEST_MESSAGE,
+    FOUNDING_REQUEST_MESSAGE,
   FOUNDING_TOTAL_SPOTS,
   businessCity,
   contactEmail,
@@ -153,7 +152,7 @@ export function BusinessHomepage() {
         </Link>
         <nav aria-label="Main navigation">
           <a href="#how-it-works">How it works</a>
-          <a href="#pricing">Pricing</a>
+          <a href="#founding">Founding PGs</a>
           <a href="#faq">FAQ</a>
         </nav>
         <div className="home-nav-actions">
@@ -178,8 +177,8 @@ export function BusinessHomepage() {
                 <PlayCircle size={18} /> See a live demo PG
               </a>
             ) : (
-              <a className="home-secondary-button" href="#pricing">
-                <IndianRupee size={18} /> See founding prices
+              <a className="home-secondary-button" href="#how-it-works">
+                <PlayCircle size={18} /> See how it works
               </a>
             )}
           </div>
@@ -324,43 +323,6 @@ export function BusinessHomepage() {
               <h3>{title}</h3>
               <p>{description}</p>
               <Check size={20} aria-hidden="true" />
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="home-pricing-section" id="pricing" aria-labelledby="pricing-title">
-        <div className="home-section-heading">
-          <span>Simple yearly pricing</span>
-          <h2 id="pricing-title">Priced by beds. Founding PGs pay less, for 2 years.</h2>
-          <p>Billed once a year. No payment gateway fees, because rent goes straight to your UPI. Founding prices apply to the first {FOUNDING_TOTAL_SPOTS} PGs and stay locked for 2 years.</p>
-        </div>
-        <div className="home-pricing-grid">
-          {FOUNDING_PLANS.map((plan) => (
-            <article key={plan.id} className={plan.highlight ? "home-plan home-plan-highlight" : "home-plan"}>
-              <header>
-                <h3>{plan.name}</h3>
-                <span>{plan.beds}</span>
-              </header>
-              {plan.foundingPrice ? (
-                <div className="home-plan-price">
-                  <small>Founding price, year 1</small>
-                  <strong>{plan.foundingPrice}<span>/year</span></strong>
-                  <p><s>{plan.listPrice}</s> list price · {plan.perMonth}</p>
-                </div>
-              ) : (
-                <div className="home-plan-price">
-                  <small>For PG chains</small>
-                  <strong>Custom</strong>
-                  <p>Pilot first, then a plan built around your properties</p>
-                </div>
-              )}
-              <ul>
-                {plan.includes.map((item) => <li key={item}><Check size={15} aria-hidden="true" /> {item}</li>)}
-              </ul>
-              <ExternalAction className={plan.highlight ? "home-primary-button" : "home-secondary-button"} href={plan.foundingPrice ? foundingHref : demoHref}>
-                {plan.foundingPrice ? "Claim founding price" : "Talk to us"}
-              </ExternalAction>
             </article>
           ))}
         </div>
