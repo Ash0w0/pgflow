@@ -22,6 +22,7 @@ test("homepage exposes the production entry points and approved workflow story",
   assert.match(source, /href="\/privacy"/);
   assert.match(source, /href="\/terms"/);
   assert.doesNotMatch(source, /fictional|Nivasa/i);
+  assert.doesNotMatch(source, /FOUNDING_PLANS|₹\d/, "prices stay off the public homepage");
   assert.doesNotMatch(source, /\u2014/, "homepage copy uses no em dashes");
 });
 

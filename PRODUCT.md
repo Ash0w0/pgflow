@@ -46,7 +46,7 @@ Unlike a generic property dashboard, PGFlow is white-labelled per PG and is buil
 - A new PG may start with up to two tenants. Adding more than two tenants requires an upgrade through PGFlow support on WhatsApp.
 - The two-resident entitlement is enforced at the database boundary, and signup begins through a reviewed WhatsApp handoff. Fully automatic self-service organization creation and in-product paid upgrades are not yet live.
 - The public WhatsApp sales number remains an environment-configured deployment value; no personal number should be committed to source.
-- Pricing (decided Nov 2026, yearly, by beds): Starter up to 60 beds ₹14,999, Growth 61 to 120 beds ₹24,999, Scale 121 to 200 beds ₹34,999, Chain custom. Founding PG prices for the first 10 PGs: ₹8,999 / ₹14,999 / ₹20,999, locked for 2 years, 30-day money-back. Source of truth: `lib/marketing.ts`.
+- Pricing is yearly and decided, but it is shared only on calls and in demos, never on the public site or in this public repo (founder decision, Nov 2026). Founding PGs: first 10, price locked for 2 years, 30-day money-back.
 - The public homepage is demo-led: the primary action books a demo on WhatsApp; self-serve signup remains available as a fallback.
 - Do not invent customers, testimonials, operational benchmarks, pricing, or delivery guarantees.
 - Marketing claims must distinguish implemented capabilities from roadmap work.
@@ -67,7 +67,7 @@ Unlike a generic property dashboard, PGFlow is white-labelled per PG and is buil
 - Implemented room/bed setup, resident onboarding, monthly rent generation, invoice registers, direct UPI configuration, staff-recorded cash, payment-proof review, payment links, receipts, and reversals.
 - WhatsApp message infrastructure, secure WhatsApp draft sharing, and workflow code in the repository; every public claim must still match the deployed configuration.
 - Existing product UI and PG-specific branding components in the repository.
-- No approved customer testimonials, customer logos, or verified outcome benchmarks are currently available. Published pricing now lives in `lib/marketing.ts`.
+- No approved customer testimonials, customer logos, or verified outcome benchmarks are currently available. Pricing is kept off the public site by founder decision.
 
 ## Product Principles
 
