@@ -11,7 +11,7 @@ test("platform root renders the business homepage while tenant hosts retain the 
   assert.match(source, /requireStaffPage\(\["owner", "manager", "accountant"\]\)/);
 });
 
-test("homepage exposes the production entry points and approved workflow story", async () => {
+test("homepage exposes the production entry points and the register story", async () => {
   const source = await read("components/business-homepage.tsx");
   assert.match(source, /Run your PG from WhatsApp\./);
   assert.match(source, /href="\/login"/);
@@ -21,9 +21,29 @@ test("homepage exposes the production entry points and approved workflow story",
   assert.match(source, /Founding PG/);
   assert.match(source, /href="\/privacy"/);
   assert.match(source, /href="\/terms"/);
-  assert.doesNotMatch(source, /fictional|Nivasa/i);
-  assert.doesNotMatch(source, /FOUNDING_PLANS|₹\d/, "prices stay off the public homepage");
-  assert.doesNotMatch(source, /\u2014/, "homepage copy uses no em dashes");
+  assert.match(source, /<HeroRelay \/>/);
+  assert.match(source, /<FirstOfMonth \/>/);
+  assert.match(source, /<RegisterCompare \/>/);
+});
+
+test("homepage copy stays honest: no prices, fake proof, fictional brands or em dashes", async () => {
+  const files = [
+    "components/business-homepage.tsx",
+    "components/home/hero-relay.tsx",
+    "components/home/first-of-month.tsx",
+    "components/home/how-it-works.tsx",
+    "components/home/register-compare.tsx",
+    "components/home/leak-meter.tsx",
+    "components/home/closing-composer.tsx",
+  ];
+  for (const file of files) {
+    const source = await read(file);
+    assert.doesNotMatch(source, /fictional|Nivasa/i, file);
+    assert.doesNotMatch(source, /FOUNDING_PLANS|per bed per month|\/month|testimonial|trusted by/i, `${file}: no pricing or invented social proof`);
+    assert.doesNotMatch(source, /\u2014/, `${file}: no em dashes`);
+  }
+  const page = await read("components/business-homepage.tsx");
+  assert.doesNotMatch(page, /₹\d/, "PGFlow prices stay off the public homepage");
 });
 
 test("demo booking falls back to assisted signup when no WhatsApp number is configured", async () => {
@@ -43,12 +63,19 @@ test("privacy policy and terms pages exist and name a grievance contact", async 
   assert.match(terms, /30 days/);
 });
 
-test("Remotion player respects reduced motion and keeps visible controls", async () => {
-  const source = await read("components/homepage-workflow-player.tsx");
-  assert.match(source, /prefers-reduced-motion: reduce/);
-  assert.match(source, /autoPlay=\{!prefersReducedMotion\}/);
-  assert.match(source, /controls/);
-  assert.match(source, /showVolumeControls=\{false\}/);
+test("animated homepage scenes respect reduced motion without hydration mismatches", async () => {
+  const hook = await read("components/home/use-reduced-motion.ts");
+  assert.match(hook, /useSyncExternalStore/);
+  for (const file of ["hero-relay", "first-of-month", "how-it-works", "reveal", "closing-composer", "leak-meter"]) {
+    const source = await read(`components/home/${file}.tsx`);
+    assert.match(source, /usePrefersReducedMotion\(\)/, file);
+    assert.doesNotMatch(source, /useReducedMotion\(\)/, `${file} must use the hydration-safe hook`);
+  }
+  const relay = await read("components/home/hero-relay.tsx");
+  assert.match(relay, /aria-pressed/);
+  assert.match(relay, /Pause the walkthrough/);
+  const css = await read("components/home/home.css");
+  assert.match(css, /prefers-reduced-motion: reduce/);
 });
 
 test("signup prepares a reviewed WhatsApp message without posting owner data", async () => {

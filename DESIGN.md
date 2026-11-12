@@ -45,33 +45,34 @@ Forest carries trust and structure. Lime identifies one primary action or live h
 
 ## Composition
 
-- The homepage is video-first: the embedded Remotion workflow is the primary evidence, not a decorative background.
-- The opening viewport balances a compact promise and two clear actions with a dominant product workflow stage.
-- Subsequent sections unpack the same relay across WhatsApp, owner operations, and resident actions.
-- Prefer asymmetric editorial grids with clear alignment over repetitive equal-card galleries.
-- No customer-logo strips, testimonials, metrics, or social proof until real approved evidence exists.
+- The homepage tells one story: the paper rent register and the 1st-of-the-month WhatsApp chase becoming one calm screen.
+- Asymmetric, editorial layouts. Avoid centered hero stacks, repeated icon-card grids, and an eyebrow label above every heading.
+- Product evidence is code-native and live (animated UI), never a decorative video background.
+- No customer-logo strips, testimonials, metrics, or social proof until real approved evidence exists. Sample figures are labelled as samples.
 
-## Approved Homepage Direction
+## Approved Homepage Direction (Nov 2026 rebuild): "The Register, Out of the Drawer"
 
-The approved direction combines **Workflow Theatre** with **Three-role Relay**:
+The previous Remotion film and generic section stack were retired. The page follows the owner's month:
 
-- a compact, centered promise and two actions introduce the page;
-- a large 16:9 Remotion theatre dominates the opening experience;
-- the film follows a resident action into WhatsApp, through owner review, and into an auditable PGFlow record;
-- the next section explains the same system for owners, staff, and residents using an editorial relay rather than a generic feature-card grid;
-- the traveling lime signal is the single connective signature across the film and the surrounding page.
+1. **Hero: the live relay.** A short, human promise ("Every rupee of rent, accounted for.") beside a live, looping scene: reminder on WhatsApp, resident pays the PG's own UPI, owner checks the proof, receipt goes back and the ledger row settles. One lime signal travels between the steps. Steps are clickable and pause the loop.
+2. **"You know this day."** A scroll-scrubbed 1st of the month: real-sounding Hinglish messages pile up ("Kal pakka de dunga", "Cash Raju bhaiya ko diya tha"), then fold into one tidy, labelled sample status board.
+3. **How it works.** Three acts (Send, Review, Record) with a sticky product panel that changes as each act scrolls into view.
+4. **Your register, upgraded.** A draggable before/after: a handwritten paper register page against the PGFlow ledger.
+5. **What is slipping through.** The leak calculator as a live meter with a counting number.
+6. **Who sees what.** Owner, manager and resident as three access passes with "can" and "can't" lists that match the product.
+7. **Things PGFlow will never do.** Plain promises with large numerals: never hold your money, never approve a screenshot for you, never message residents without your say, never lock you in, never mix PGs.
+8. **The founder letter.** A paper letter with a hand-drawn signature, set slightly off-axis.
+9. **Founding PGs.** Ten numbered beds for ten founding spots (filled only from the configured spots-left value).
+10. **FAQ** and a **closing WhatsApp composer** that types the demo request and sends it on click.
 
-The generated concept is not a literal screenshot specification. Do not reproduce its fictional PG names, customer data, unsupported security claims, pricing navigation, or invented metrics. Final product surfaces, copy, controls, responsive behavior, and accessibility remain semantic code.
+### Type for the homepage
 
-### Implementation Inventory
+- Geist stays the interface face. **Instrument Serif** (italic) is an editorial accent for a few words per headline. **Caveat** is used only for handwriting inside the paper register and the signature.
 
-- **Homepage structure, navigation, copy, actions, and role sections:** semantic React and CSS.
-- **Workflow film:** Remotion React composition embedded with the Remotion Player.
-- **WhatsApp, secure-link, owner-review, rooms, residents, and ledger surfaces:** code-native UI inside the composition.
-- **Icons:** the existing Lucide icon library.
-- **Photography or generated raster assets:** none required.
-- **Audio:** intentionally omitted; the story remains understandable from visible text.
-- **Reduced-motion experience:** an immediately legible static film frame with playback kept user-controlled.
+### Motion
+
+- Built with `motion/react`. Motion always explains a state change (message arrives, proof checked, record settles) or follows scroll.
+- `prefers-reduced-motion` shows every scene in its final, readable state with no movement.
 
 ## Product Imagery
 
@@ -100,6 +101,6 @@ The generated concept is not a literal screenshot specification. Do not reproduc
 - Text contrast meets WCAG AA.
 - Interactive targets are at least 44px high.
 - Focus states are visible.
-- The Remotion player has an accessible label, controls, captions expressed as visible text, and a meaningful static fallback.
+- Animated scenes have text equivalents, user-controllable steps, and a complete static state for reduced motion.
 - Layout works at 320px without horizontal overflow.
 - The public page remains legible and useful if motion is disabled.

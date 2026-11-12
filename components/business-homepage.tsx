@@ -1,31 +1,19 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { ArrowRight, ArrowUpRight, BedDouble, Check, Mail, MapPin, MessageCircle, Minus, Plus } from "lucide-react";
+import { ClosingComposer } from "./home/closing-composer";
+import { FirstOfMonth } from "./home/first-of-month";
+import { editorialSerif, handwriting } from "./home/fonts";
+import { HeroRelay } from "./home/hero-relay";
+import { HowItWorks } from "./home/how-it-works";
+import { LeakMeter } from "./home/leak-meter";
+import { RegisterCompare } from "./home/register-compare";
+import { Reveal, Signature } from "./home/reveal";
+import "./home/home.css";
 import {
-  ArrowRight,
-  BadgeCheck,
-  Mail,
-  MapPin,
-  PlayCircle,
-  X,
-  BedDouble,
-  Building2,
-  Check,
-  IndianRupee,
-  ClipboardCheck,
-  FileCheck2,
-  Link2,
-  MessageCircle,
-  ReceiptText,
-  ShieldCheck,
-  UserRound,
-  UsersRound,
-  Wrench,
-} from "lucide-react";
-import { HomepageWorkflowPlayer } from "./homepage-workflow-player";
-import { LeakCalculator } from "./leak-calculator";
-import {
+  DEMO_REQUEST_MESSAGE,
   FOUNDER,
-    FOUNDING_REQUEST_MESSAGE,
+  FOUNDING_REQUEST_MESSAGE,
   FOUNDING_TOTAL_SPOTS,
   businessCity,
   contactEmail,
@@ -33,95 +21,48 @@ import {
   formattedWhatsAppNumber,
   foundingSpotsLeft,
   legalBusinessName,
-  publicDemoUrl,
   publicWhatsAppNumber,
 } from "@/lib/marketing";
 
-const relaySteps = [
+const PASSES = [
   {
-    icon: MessageCircle,
-    title: "Start in WhatsApp",
-    description: "Share a reviewed reminder, update, or secure task link without teaching residents a new system.",
+    role: "Owner",
+    line: "Sees everything. Decides what counts as paid.",
+    can: ["Approve or reject every payment", "Set your own UPI and brand colours", "Add managers and switch them off", "Import rooms and residents from Excel"],
+    cannot: [],
   },
   {
-    icon: Link2,
-    title: "Keep the action focused",
-    description: "Residents see only what they need: an invoice, payment instructions, proof upload, or receipt.",
+    role: "Manager",
+    line: "Runs the floor. Can't touch the money rules.",
+    can: ["Record cash with their name on it", "Send payment links on WhatsApp", "Handle complaints and move-outs", "Flag a payment approved by mistake"],
+    cannot: ["Approve UPI payments", "Change your UPI or residents"],
   },
   {
-    icon: ClipboardCheck,
-    title: "Review before recording",
-    description: "Owners and authorized staff verify financial evidence before it becomes a payment record.",
+    role: "Resident",
+    line: "Gets a message. Taps a link. Done.",
+    can: ["Rent reminder on WhatsApp", "Pay your UPI from a secure link", "Receipt on WhatsApp after you approve"],
+    cannot: ["No app to install", "No password to forget"],
   },
-  {
-    icon: ReceiptText,
-    title: "Leave an audit trail",
-    description: "The workspace keeps the room, resident, payment, receipt, and activity history together.",
-  },
-];
+] as const;
 
-const operatingRows = [
-  {
-    icon: BedDouble,
-    title: "Rooms, beds, and occupancy",
-    description: "Set up the property, assign residents, and see what is occupied, vacant, or changing.",
-  },
-  {
-    icon: IndianRupee,
-    title: "Rent and direct payments",
-    description: "Generate rent, support direct UPI and staff-recorded cash, and keep payment review explicit.",
-  },
-  {
-    icon: FileCheck2,
-    title: "Proof, receipts, and reversals",
-    description: "Review evidence, issue receipts after approval, and correct mistakes through audited claims without erasing history.",
-  },
-  {
-    icon: Wrench,
-    title: "Everyday operations",
-    description: "Keep resident onboarding, move-outs, maintenance work, and team follow-up in one workspace.",
-  },
-];
+const PROMISES = [
+  { title: "Hold your money.", body: "Rent goes from the resident's UPI app straight to yours. PGFlow is not a payment gateway and takes no cut of rent." },
+  { title: "Approve a payment for you.", body: "A screenshot is proof to check, not money received. You decide what counts as paid." },
+  { title: "Message residents without your say.", body: "Automatic reminders and receipts stay off until you switch them on for your PG." },
+  { title: "Mix your PG with anyone else's.", body: "Every PG gets its own private workspace and web address. Payment proofs are stored privately, never on public links." },
+  { title: "Erase history.", body: "Mistakes are fixed with a new, visible entry. The original record always stays, so every rupee can be traced." },
+] as const;
 
-const comparisonRows = [
-  { label: "Who has paid this month", register: "Flip pages", excel: "Check sheet and chats", pgflow: "One screen" },
-  { label: "Rent reminders", register: "Calls one by one", excel: "Typed by hand", pgflow: "Reviewed WhatsApp drafts" },
-  { label: "Where the money goes", register: "Owner or staff UPI", excel: "Several UPI numbers", pgflow: "Straight to your own UPI" },
-  { label: "Cash collected by staff", register: "Written later, if at all", excel: "Entered when remembered", pgflow: "Recorded and approved by you" },
-  { label: "Receipts", register: "Paper book", excel: "Screenshots", pgflow: "Issued after approval" },
-  { label: "Changing a past entry", register: "Overwrite", excel: "Edit the cell", pgflow: "Reversal with full history" },
-];
-
-const faqs = [
-  {
-    question: "Does the rent come to my bank account?",
-    answer: "Yes. Residents pay straight to your own UPI ID. PGFlow never holds your money and there is no payment gateway taking a cut.",
-  },
-  {
-    question: "Do residents need to download an app?",
-    answer: "No. Residents get a WhatsApp message with a secure link for one action: see the rent due, pay, share proof, or get the receipt.",
-  },
-  {
-    question: "Can my manager or warden use it?",
-    answer: "Yes. Staff get their own login with limited permissions. They can record cash and follow up with residents, and you approve what counts as paid.",
-  },
-  {
-    question: "Is my data safe?",
-    answer: "Each PG runs in its own private workspace, and only the people you add can see it. Payment proofs are stored privately, not on public links. You can ask for an export of your data at any time.",
-  },
-  {
-    question: "I have everything in a register or Excel. Do I have to type it all in?",
-    answer: "No. For Founding PGs, we set up your rooms, beds, residents and rents for you from your register or Excel sheet, and you check the totals before going live.",
-  },
-  {
-    question: "Do you support Hindi?",
-    answer: "Our team supports you in Hindi or English on WhatsApp and calls. The owner workspace is in English today.",
-  },
-  {
-    question: "What if it doesn't work for my PG?",
-    answer: "Founding PGs get a 30-day money-back guarantee. If PGFlow does not save you time in the first 30 days, we refund the full amount.",
-  },
-];
+const FAQS = [
+  { q: "Does the rent come to my bank account?", a: "Yes. Residents pay straight to your own UPI ID. PGFlow never holds your money and there is no payment gateway taking a cut." },
+  { q: "Do residents need to download an app?", a: "No. Residents get a WhatsApp message with a secure link for one job: see the rent, pay your UPI, share proof, or open the receipt." },
+  { q: "Is there a free trial?", a: "Yes. Every PG gets 15 days free with everything unlocked. If you continue, we switch you to a paid plan on WhatsApp. If you don't, your data stays viewable and nothing new can be added." },
+  { q: "How much does it cost?", a: "We share pricing on a short call, because it depends on the size of your PG. Founding PGs lock their price for 2 years." },
+  { q: "Can my manager or warden use it?", a: "Yes. You add them from Settings. They get their own login, can record cash and follow up with residents, and you approve what counts as paid." },
+  { q: "I have everything in a register or Excel. Do I type it all in?", a: "No. Upload your rooms and residents as a spreadsheet and PGFlow checks every row before saving anything. For Founding PGs, we set it up for you." },
+  { q: "Do you support Hindi?", a: "Resident messages can go out in Hindi or English. We support you in both on WhatsApp and calls. The owner workspace is in English today." },
+  { q: "What if it doesn't work for my PG?", a: "Founding PGs get a 30-day money-back guarantee. If PGFlow does not save you time in the first 30 days, we refund the full amount." },
+] as const;
 
 function ExternalAction({ href, className, children }: { href: string; className: string; children: ReactNode }) {
   if (href.startsWith("https://")) {
@@ -130,273 +71,211 @@ function ExternalAction({ href, className, children }: { href: string; className
   return <Link className={className} href={href}>{children}</Link>;
 }
 
+function Logo() {
+  return (
+    <Link className="ph-logo" href="/" aria-label="PGFlow home">
+      <span aria-hidden="true">P</span>
+      <strong>PGFlow</strong>
+    </Link>
+  );
+}
+
 export function BusinessHomepage() {
   const demoHref = demoBookingHref();
   const foundingHref = demoBookingHref(FOUNDING_REQUEST_MESSAGE);
-  const demoUrl = publicDemoUrl();
   const whatsappDisplay = formattedWhatsAppNumber();
   const whatsappNumber = publicWhatsAppNumber();
   const email = contactEmail();
   const legalName = legalBusinessName();
+  const city = businessCity();
   const spotsLeft = foundingSpotsLeft();
+  const taken = spotsLeft === null ? 0 : FOUNDING_TOTAL_SPOTS - spotsLeft;
   const spotsLine = spotsLeft === null
     ? `Open to the first ${FOUNDING_TOTAL_SPOTS} PGs only`
     : `${spotsLeft} of ${FOUNDING_TOTAL_SPOTS} Founding PG spots left`;
 
   return (
-    <main className="business-home">
-      <header className="home-nav">
-        <Link className="home-logo" href="/" aria-label="PGFlow business homepage">
-          <span aria-hidden="true">P</span>
-          <strong>PGFlow</strong>
-        </Link>
-        <nav aria-label="Main navigation">
-          <a href="#how-it-works">How it works</a>
-          <a href="#founding">Founding PGs</a>
-          <a href="#faq">FAQ</a>
-        </nav>
-        <div className="home-nav-actions">
-          <Link className="home-link-button" href="/login">Open workspace</Link>
-          <ExternalAction className="home-primary-button home-nav-primary" href={demoHref}>
-            Book a demo <ArrowRight size={17} />
-          </ExternalAction>
+    <main className={`ph ${editorialSerif.variable} ${handwriting.variable}`}>
+      <a className="ph-skip" href="#how-it-works">Skip to how it works</a>
+
+      <header className="ph-nav">
+        <div className="ph-container ph-nav-inner">
+          <Logo />
+          <nav aria-label="Main navigation">
+            <a href="#how-it-works">How it works</a>
+            <a href="#promises">Our promises</a>
+            <a href="#founding">Founding PGs</a>
+            <a href="#faq">FAQ</a>
+          </nav>
+          <div className="ph-nav-actions">
+            <Link className="ph-link-btn" href="/login">Open workspace</Link>
+            <ExternalAction className="ph-btn ph-btn-primary ph-btn-sm" href={demoHref}>Book a demo <ArrowRight size={16} /></ExternalAction>
+          </div>
         </div>
       </header>
 
-      <section className="home-hero" aria-labelledby="home-hero-title">
-        <div className="home-hero-copy">
-          <span className="home-kicker"><MessageCircle size={17} /> WhatsApp-first PG operations</span>
-          <h1 id="home-hero-title">Run your PG from WhatsApp.</h1>
-          <p>Every rupee of rent tracked. Every cash payment reviewed. Residents install nothing.</p>
-          <div className="home-hero-actions">
-            <ExternalAction className="home-primary-button" href={demoHref}>
-              <MessageCircle size={18} /> Book a 15-min demo
-            </ExternalAction>
-            {demoUrl ? (
-              <a className="home-secondary-button" href={demoUrl} target="_blank" rel="noopener noreferrer">
-                <PlayCircle size={18} /> See a live demo PG
-              </a>
-            ) : (
-              <a className="home-secondary-button" href="#how-it-works">
-                <PlayCircle size={18} /> See how it works
-              </a>
-            )}
-          </div>
-          <div className="home-trust-line" aria-label="PGFlow operating principles">
-            <span><Check size={16} /> Rent goes straight to your UPI</span>
-            <span><Check size={16} /> Every payment reviewed by you</span>
-            <span><Check size={16} /> Free setup for Founding PGs</span>
-          </div>
-        </div>
-
-        <div className="home-theatre" aria-labelledby="home-film-heading">
-          <div className="home-theatre-head">
-            <div>
-              <span>Resident → WhatsApp → owner</span>
-              <h2 id="home-film-heading">See the whole workflow</h2>
+      <section className="ph-hero" aria-labelledby="hero-title">
+        <div className="ph-container ph-hero-grid">
+          <div className="ph-hero-copy">
+            <p className="ph-stamp"><span aria-hidden="true" /> Built in {city.split(",")[0]} for Indian PGs</p>
+            <h1 id="hero-title" className="ph-h1">
+              Run your PG from WhatsApp. <em><mark>Every rupee</mark> accounted for.</em>
+            </h1>
+            <p className="ph-lead ph-hero-lead">
+              Residents pay straight to your UPI from a WhatsApp link. You check the proof and tap approve. The receipt goes back on its own.
+              No app for residents, no gateway in the middle, no register to tally at night.
+            </p>
+            <div className="ph-hero-actions">
+              <ExternalAction className="ph-btn ph-btn-primary" href={demoHref}><MessageCircle size={18} /> Book a 15-min demo</ExternalAction>
+              <a className="ph-btn ph-btn-quiet" href="#how-it-works">See how it works <ArrowRight size={17} /></a>
             </div>
-            <span className="home-theatre-note"><ShieldCheck size={16} /> Product walkthrough · no audio</span>
+            <ul className="ph-facts">
+              <li><Check size={15} /> Money goes to your UPI, never to us</li>
+              <li><Check size={15} /> You approve every payment</li>
+              <li><Check size={15} /> 15 days free, everything unlocked</li>
+            </ul>
           </div>
-          <HomepageWorkflowPlayer />
-        </div>
-      </section>
-
-      <section className="home-relay-section" id="how-it-works" aria-labelledby="relay-title">
-        <div className="home-section-heading">
-          <span>One conversation. One system of record.</span>
-          <h2 id="relay-title">The familiar front door, backed by disciplined operations.</h2>
-          <p>WhatsApp makes the next action easy. PGFlow keeps the data, permissions, review, and history behind it organized.</p>
-        </div>
-        <ol className="home-relay-list">
-          {relaySteps.map(({ icon: Icon, title, description }, index) => (
-            <li key={title}>
-              <span className="home-relay-index">{index + 1}</span>
-              <span className="home-relay-icon" aria-hidden="true"><Icon size={23} /></span>
-              <div>
-                <h3>{title}</h3>
-                <p>{description}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <section className="home-leak-section" id="leak-calculator" aria-labelledby="leak-title">
-        <div className="home-section-heading">
-          <span>The cost of not knowing</span>
-          <h2 id="leak-title">How much rent could be slipping through?</h2>
-          <p>Most PGs don&apos;t lose money in one big hit. It goes a little at a time: a reminder not sent, a cash entry not written, a deposit adjusted twice. Put in your numbers.</p>
-        </div>
-        <LeakCalculator />
-      </section>
-
-      <section className="home-roles-section" id="for-everyone" aria-labelledby="roles-title">
-        <div className="home-section-heading home-section-heading-light">
-          <span>Built around the people in your PG</span>
-          <h2 id="roles-title">One operating flow, with the right view for every role.</h2>
-        </div>
-        <div className="home-role-layout">
-          <article className="home-role-owner">
-            <div className="home-role-copy">
-              <span className="home-role-icon"><Building2 size={25} /></span>
-              <span className="home-role-label">Owner</span>
-              <h3>See the whole PG without living inside spreadsheets.</h3>
-              <p>Review rent activity, rooms, residents, receipts, move-outs, and what needs attention from one workspace.</p>
-              <ExternalAction className="home-role-link" href={demoHref}>Book a 15-min demo <ArrowRight size={17} /></ExternalAction>
-            </div>
-            <div className="home-owner-surface" aria-label="Illustrative owner workspace summary">
-              <header><span>Owner workspace</span><strong>Today</strong></header>
-              <div className="home-owner-summary">
-                <span><BedDouble size={19} /><small>Rooms</small><strong>Organized</strong></span>
-                <span><UsersRound size={19} /><small>Residents</small><strong>In one register</strong></span>
-                <span><ReceiptText size={19} /><small>Rent</small><strong>Reviewable</strong></span>
-              </div>
-              <div className="home-owner-action">
-                <span><FileCheck2 size={20} /></span>
-                <div><strong>Payment proof ready for review</strong><small>Match the transfer before recording it</small></div>
-                <span>Open</span>
-              </div>
-              <div className="home-owner-action">
-                <span><Wrench size={20} /></span>
-                <div><strong>Maintenance follow-up</strong><small>Keep responsibility and status visible</small></div>
-                <span>Track</span>
-              </div>
-            </div>
-          </article>
-
-          <div className="home-role-secondary">
-            <article>
-              <span className="home-role-icon"><ClipboardCheck size={24} /></span>
-              <span className="home-role-label">Staff</span>
-              <h3>Do the next job with clear permissions.</h3>
-              <p>Record authorized cash, follow up on resident work, and keep the owner’s audit trail intact.</p>
-            </article>
-            <article>
-              <span className="home-role-icon"><UserRound size={24} /></span>
-              <span className="home-role-label">Resident</span>
-              <h3>Use one secure link for one clear action.</h3>
-              <p>View rent details, follow payment instructions, share proof, and keep the receipt, without entering the owner dashboard.</p>
-            </article>
+          <div className="ph-hero-stage">
+            <HeroRelay />
+            <p className="ph-hero-caption">Resident → WhatsApp → owner. Sample data, real product flow.</p>
           </div>
         </div>
       </section>
 
-      <section className="home-compare-section" id="compare" aria-labelledby="compare-title">
-        <div className="home-section-heading">
-          <span>What changes on day one</span>
-          <h2 id="compare-title">Register, Excel, or PGFlow.</h2>
-        </div>
-        <div className="home-compare-scroll">
-          <table className="home-compare-table">
-            <thead>
-              <tr>
-                <th scope="col"><span className="home-sr-only">Task</span></th>
-                <th scope="col">Register</th>
-                <th scope="col">Excel + WhatsApp</th>
-                <th scope="col" className="home-compare-pgflow">PGFlow</th>
-              </tr>
-            </thead>
-            <tbody>
-              {comparisonRows.map((row) => (
-                <tr key={row.label}>
-                  <th scope="row">{row.label}</th>
-                  <td><X size={15} aria-hidden="true" /> {row.register}</td>
-                  <td><X size={15} aria-hidden="true" /> {row.excel}</td>
-                  <td className="home-compare-pgflow"><Check size={15} aria-hidden="true" /> {row.pgflow}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <FirstOfMonth />
+      <HowItWorks />
+      <RegisterCompare />
+
+      <section className="ph-passes" aria-labelledby="passes-title">
+        <div className="ph-container">
+          <Reveal className="ph-section-intro">
+            <p className="ph-overline">Who sees what</p>
+            <h2 id="passes-title" className="ph-h2">One PG, three kinds of access. <em>Nobody sees more than they should.</em></h2>
+          </Reveal>
+          <div className="ph-pass-row">
+            {PASSES.map((pass, index) => (
+              <Reveal key={pass.role} delay={index * 0.08} className={`ph-pass ph-pass-${pass.role.toLowerCase()}`}>
+                <div className="ph-pass-hole" aria-hidden="true" />
+                <span className="ph-pass-role">{pass.role}</span>
+                <p className="ph-pass-line">{pass.line}</p>
+                <ul>
+                  {pass.can.map((item) => <li key={item}><Check size={15} /> {item}</li>)}
+                  {pass.cannot.map((item) => <li key={item} className="is-not"><Minus size={15} /> {item}</li>)}
+                </ul>
+              </Reveal>
+            ))}
+          </div>
         </div>
       </section>
 
-      <section className="home-operations-section" id="operations" aria-labelledby="operations-title">
-        <div className="home-operations-intro">
-          <span>The system behind the conversation</span>
-          <h2 id="operations-title">Everything your PG needs to stay in flow.</h2>
-          <p>PGFlow connects resident-facing actions to the operational records owners and staff actually need.</p>
-        </div>
-        <div className="home-operating-rows">
-          {operatingRows.map(({ icon: Icon, title, description }) => (
-            <article key={title}>
-              <span aria-hidden="true"><Icon size={24} /></span>
-              <h3>{title}</h3>
-              <p>{description}</p>
-              <Check size={20} aria-hidden="true" />
-            </article>
-          ))}
+      <LeakMeter />
+
+      <section className="ph-promises" id="promises" aria-labelledby="promises-title">
+        <div className="ph-container ph-promises-grid">
+          <Reveal className="ph-promises-intro">
+            <p className="ph-overline ph-overline-light">Our promises</p>
+            <h2 id="promises-title" className="ph-h2">Things PGFlow <em>will never</em> do.</h2>
+            <p className="ph-lead">Software that touches your rent has to earn trust. These are the lines we built the product around, and they are enforced in the system, not just written here.</p>
+          </Reveal>
+          <ol className="ph-promise-list">
+            {PROMISES.map((promise, index) => (
+              <Reveal key={promise.title} delay={index * 0.05}>
+                <li>
+                  <span className="ph-promise-n">{String(index + 1).padStart(2, "0")}</span>
+                  <div><h3>Never {promise.title.charAt(0).toLowerCase() + promise.title.slice(1)}</h3><p>{promise.body}</p></div>
+                </li>
+              </Reveal>
+            ))}
+          </ol>
         </div>
       </section>
 
-      <section className="home-starter-section" id="founding" aria-labelledby="founding-title">
-        <div>
-          <span>{spotsLine}</span>
-          <h2 id="founding-title">Become a Founding PG.</h2>
-          <p>We set up your rooms, beds, residents and rents for you, free. You get the founding price locked for 2 years and a 30-day money-back guarantee. In return, we ask for honest feedback and a short review if PGFlow works for you.</p>
-          <ul className="home-founding-points">
-            <li><BadgeCheck size={17} /> Free setup from your register or Excel</li>
-            <li><BadgeCheck size={17} /> Founding price locked for 2 years</li>
-            <li><BadgeCheck size={17} /> 30-day money-back guarantee</li>
-          </ul>
-        </div>
-        <div className="home-starter-actions">
-          <ExternalAction className="home-primary-button" href={foundingHref}>
-            <MessageCircle size={18} /> Apply on WhatsApp
-          </ExternalAction>
-          <Link className="home-secondary-button home-secondary-on-dark" href="/login">
-            I already have a workspace
-          </Link>
+      <section className="ph-letter-section" aria-labelledby="letter-title">
+        <div className="ph-container">
+          <Reveal className="ph-letter">
+            <p className="ph-letter-meta">A note from the founder · {city.split(",")[0]}</p>
+            <h2 id="letter-title">I set up every Founding PG myself.</h2>
+            <p>I spent years selling software to companies whose work happens on the ground and whose money gets tracked on paper. PG owners have the same problem, with less time and more phone calls.</p>
+            <p>I built PGFlow so you can see every rupee from your phone, wherever you are, without changing how your residents pay. If you run a PG in Delhi NCR, I&apos;ll come and set it up with you.</p>
+            <Signature name={FOUNDER.name.split(" ")[0]} />
+            <strong>{FOUNDER.name}</strong>
+            <small>{FOUNDER.role}</small>
+          </Reveal>
         </div>
       </section>
 
-      <section className="home-founder-section" aria-labelledby="founder-title">
-        <span className="home-founder-avatar" aria-hidden="true">AK</span>
-        <div>
-          <span className="home-founder-kicker">A note from the founder</span>
-          <h2 id="founder-title">I set up every Founding PG myself.</h2>
-          <p>I spent years selling software to companies whose work happens on the ground and whose money gets tracked on paper. PG owners have the same problem. I built PGFlow so you can see every rupee from your phone, wherever you are. If you run a PG in Delhi NCR, I&apos;ll come and set it up with you.</p>
-          <strong>{FOUNDER.name}</strong>
-          <small>{FOUNDER.role}</small>
+      <section className="ph-founding" id="founding" aria-labelledby="founding-title">
+        <div className="ph-container ph-founding-grid">
+          <Reveal>
+            <p className="ph-overline">{spotsLine}</p>
+            <h2 id="founding-title" className="ph-h2">Ten beds. <em>Ten Founding PGs.</em></h2>
+            <p className="ph-lead">We are starting small on purpose, so every early PG gets the founder&apos;s attention. Founding PGs get free setup from your register or Excel, the founding price locked for 2 years, and a 30-day money-back guarantee. We ask for honest feedback in return.</p>
+            <div className="ph-hero-actions">
+              <ExternalAction className="ph-btn ph-btn-primary" href={foundingHref}><MessageCircle size={18} /> Apply on WhatsApp</ExternalAction>
+              <Link className="ph-btn ph-btn-quiet" href="/login">I already have a workspace</Link>
+            </div>
+          </Reveal>
+          <div className="ph-beds" aria-label={spotsLeft === null ? `${FOUNDING_TOTAL_SPOTS} Founding PG spots` : spotsLine}>
+            {Array.from({ length: FOUNDING_TOTAL_SPOTS }, (_, index) => (
+              <Reveal key={index} delay={index * 0.04} className={`ph-bed ${index < taken ? "is-taken" : ""}`}>
+                <BedDouble size={26} aria-hidden="true" />
+                <span>#{String(index + 1).padStart(2, "0")}</span>
+                <small>{index < taken ? "Taken" : "Open"}</small>
+              </Reveal>
+            ))}
+          </div>
         </div>
       </section>
 
-      <section className="home-faq-section" id="faq" aria-labelledby="faq-title">
-        <div className="home-section-heading">
-          <span>Questions owners ask</span>
-          <h2 id="faq-title">Before you book a demo.</h2>
-        </div>
-        <div className="home-faq-list">
-          {faqs.map((item) => (
-            <details key={item.question}>
-              <summary>{item.question}</summary>
-              <p>{item.answer}</p>
-            </details>
-          ))}
+      <section className="ph-faq" id="faq" aria-labelledby="faq-title">
+        <div className="ph-container ph-faq-grid">
+          <div>
+            <p className="ph-overline">Questions owners ask</p>
+            <h2 id="faq-title" className="ph-h2">Before you <em>book a demo.</em></h2>
+            <p className="ph-lead">Something else on your mind? Ask on WhatsApp. You will talk to the person who built PGFlow.</p>
+          </div>
+          <div className="ph-faq-list">
+            {FAQS.map((item) => (
+              <details key={item.q}>
+                <summary>{item.q}<span aria-hidden="true"><Plus size={18} /></span></summary>
+                <p>{item.a}</p>
+              </details>
+            ))}
+          </div>
         </div>
       </section>
 
-      <footer className="home-footer">
-        <div className="home-footer-brand">
-          <Link className="home-logo" href="/" aria-label="PGFlow homepage">
-            <span aria-hidden="true">P</span>
-            <strong>PGFlow</strong>
-          </Link>
-          <p>Your PG, beautifully run.</p>
+      <section className="ph-closing" aria-labelledby="closing-title">
+        <div className="ph-container ph-closing-grid">
+          <div>
+            <h2 id="closing-title" className="ph-h2">Fifteen minutes. <em>Your whole PG on one screen.</em></h2>
+            <p className="ph-lead">Tell us your beds and your city. We&apos;ll show you PGFlow running a PG like yours, and set yours up if it fits.</p>
+          </div>
+          <ClosingComposer href={demoHref} message={DEMO_REQUEST_MESSAGE} />
         </div>
-        <address className="home-footer-contact">
-          {whatsappNumber ? (
-            <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer"><MessageCircle size={15} /> WhatsApp {whatsappDisplay}</a>
-          ) : null}
-          <a href={`mailto:${email}`}><Mail size={15} /> {email}</a>
-          <span><MapPin size={15} /> {businessCity()}</span>
-        </address>
-        <div className="home-footer-links">
-          <ExternalAction className="" href={demoHref}>Book a demo</ExternalAction>
-          <Link href="/login">Open workspace</Link>
-          <Link href="/privacy">Privacy Policy</Link>
-          <Link href="/terms">Terms</Link>
+      </section>
+
+      <footer className="ph-footer">
+        <div className="ph-container ph-footer-grid">
+          <div className="ph-footer-brand">
+            <Logo />
+            <p>Your PG, beautifully run.</p>
+          </div>
+          <address className="ph-footer-contact">
+            {whatsappNumber ? (
+              <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer"><MessageCircle size={15} /> WhatsApp {whatsappDisplay}</a>
+            ) : null}
+            <a href={`mailto:${email}`}><Mail size={15} /> {email}</a>
+            <span><MapPin size={15} /> {city}</span>
+          </address>
+          <nav className="ph-footer-links" aria-label="Footer">
+            <ExternalAction className="" href={demoHref}>Book a demo <ArrowUpRight size={14} /></ExternalAction>
+            <Link href="/login">Open workspace</Link>
+            <Link href="/privacy">Privacy Policy</Link>
+            <Link href="/terms">Terms</Link>
+          </nav>
+          <p className="ph-footer-legal">© {new Date().getFullYear()} {legalName || "PGFlow"}. All rights reserved.</p>
         </div>
-        <p className="home-footer-legal">© {new Date().getFullYear()} {legalName || "PGFlow"}. All rights reserved.</p>
       </footer>
     </main>
   );
