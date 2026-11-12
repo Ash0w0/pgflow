@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { consumeAuthenticationLimits } from "@/lib/auth-rate-limit";
 import { isTrustedMutationRequest, jsonError, requireActor } from "@/lib/http";
 import { isStrongOwnerPassword } from "@/lib/passwords";
+import { MUST_CHANGE_PASSWORD_FLAG } from "@/lib/password-change-flag";
 import { isDemoRuntime } from "@/lib/runtime";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { requirePublicSupabaseConfig } from "@/lib/supabase/config";
@@ -48,12 +49,12 @@ export async function POST(request: Request) {
   const mediaType = request.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase();
   if (mediaType !== "application/json") return jsonError("A JSON request is required.", 415);
 
-  const actor = await requireActor(request, ["owner"]);
-  if (!actor) return jsonError("An active PG owner session is required.", 401);
+  const actor = await requireActor(request, ["owner", "manager"], { allowPendingPasswordChange: true });
+  if (!actor) return jsonError("An active PG session is required.", 401);
   const supabase = await getSupabaseServerClient();
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user || user.id !== actor.id || !user.phone) {
-    return jsonError("An active PG owner session is required.", 401);
+    return jsonError("An active PG session is required.", 401);
   }
 
   const declaredLength = Number(request.headers.get("content-length") ?? "0");
@@ -98,7 +99,7 @@ export async function POST(request: Request) {
   }
   if (newPassword !== confirmation) return jsonError("The two new passwords do not match.");
   if (!isStrongOwnerPassword(newPassword)) {
-    return jsonError("Use 12â€“128 characters with uppercase, lowercase, a number, and a symbol.");
+    return jsonError("Use 12–128 characters with uppercase, lowercase, a number, and a symbol.");
   }
   if (newPassword === currentPassword) return jsonError("Choose a new password different from your current password.");
   if (!await verifyExactPassword(user.id, user.phone, currentPassword)) {
@@ -106,7 +107,10 @@ export async function POST(request: Request) {
   }
 
   const admin = getSupabaseAdmin();
-  await admin.auth.admin.updateUserById(user.id, { password: newPassword });
+  await admin.auth.admin.updateUserById(user.id, {
+    password: newPassword,
+    app_metadata: { ...(user.app_metadata ?? {}), [MUST_CHANGE_PASSWORD_FLAG]: false },
+  });
   if (!await verifyNewPasswordAndRevokeSessions(user.id, user.phone, newPassword)) {
     return jsonError("Password change has an uncertain state. Do not retry with a different password; ask the platform operator for help.", 503);
   }

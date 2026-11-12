@@ -52,7 +52,7 @@ export function LoginForm({ demoMode, manualOwnerLogin = false }: { demoMode: bo
 
         const result = await response.json() as { actor?: { role?: string }; redirectTo?: string };
         const role = result.actor?.role;
-        const safeDestinations = new Set(["/", "/tenant", "/operator"]);
+        const safeDestinations = new Set(["/", "/tenant", "/operator", "/account/password"]);
         const roleDestination = role === "platform_operator" ? "/operator" : role === "tenant" ? "/tenant" : "/";
         const destination = result.redirectTo && safeDestinations.has(result.redirectTo)
           ? result.redirectTo
@@ -125,7 +125,7 @@ export function LoginForm({ demoMode, manualOwnerLogin = false }: { demoMode: bo
         return;
       }
 
-      const safeDestinations = new Set(["/", "/tenant", "/operator"]);
+      const safeDestinations = new Set(["/", "/tenant", "/operator", "/account/password"]);
       const redirectTo = typeof result.redirectTo === "string" && safeDestinations.has(result.redirectTo)
         ? result.redirectTo
         : "/";

@@ -5,6 +5,7 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { UpiSettingsCard } from "@/components/upi-settings-card";
 import { BrandingSettingsCard, type BrandThemeSettings } from "@/components/branding-settings-card";
 import { WhatsAppSettingsCard } from "@/components/whatsapp-settings-card";
+import { TeamSettingsCard } from "@/components/team-settings-card";
 import { AppShell } from "@/components/app-shell";
 import { DEFAULT_BRAND_ACCENT, DEFAULT_BRAND_PRIMARY, safeColor } from "@/lib/branding";
 import { Settings2, ShieldCheck } from "lucide-react";
@@ -82,6 +83,7 @@ export default async function Page() {
         <BrandingSettingsCard initial={brand} demoMode={demoMode} />
         <WhatsAppSettingsCard configured={whatsappConfigured} ownerPhone={ownerPhone} demoMode={demoMode} />
         <UpiSettingsCard initial={upi} />
+        <TeamSettingsCard demoMode={demoMode} pgName={authorization.mode === "production" ? authorization.tenant.name : "PGFlow Sample"} />
         <PasswordChangeCard demoMode={demoMode} />
       </div>
     </AppShell>

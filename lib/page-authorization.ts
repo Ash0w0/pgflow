@@ -3,6 +3,7 @@ import "server-only";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { normalizeHostname } from "./branding";
+import { mustChangePassword } from "./password-change-flag";
 import { isDemoRuntime } from "./runtime";
 import { getSupabaseAdmin } from "./supabase/admin";
 import { getSupabaseServerClient } from "./supabase/server";
@@ -69,7 +70,7 @@ async function requestPageHostname() {
  */
 export async function requirePgPage(
   allowedRoles: readonly PgPageRole[],
-  options: { requireActiveTenantProfile?: boolean } = {},
+  options: { requireActiveTenantProfile?: boolean; allowPendingPasswordChange?: boolean } = {},
 ): Promise<PgPageAuthorization> {
   if (isDemoRuntime()) return { mode: "demo" };
 
@@ -80,6 +81,7 @@ export async function requirePgPage(
   const supabase = await getSupabaseServerClient();
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) return denyPageAccess();
+  if (mustChangePassword(user) && !options.allowPendingPasswordChange) redirect("/account/password");
 
   const { data: membership, error: membershipError } = await supabase
     .from("memberships")

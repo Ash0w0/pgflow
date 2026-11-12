@@ -34,5 +34,5 @@ export default async function Page() {
       })),
     noticePeriodCount: residentData.totals.noticeResidents,
   };
-  return <OperationsWorkspace data={data} demoMode={false} canManage />;
+  return <OperationsWorkspace data={data} demoMode={false} canManage role={authorization.actor.role} />;
 }

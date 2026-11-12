@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(12);
+select plan(19);
 
 insert into auth.users (id, aud, role, email)
 values ('e0000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'plan-operator@example.test');
@@ -69,6 +69,43 @@ select is(
   (select pg_catalog.count(*)::integer from public.platform_audit_events where entity_id = 'ee000000-0000-0000-0000-000000000001' and action = 'organization.plan_mark_paid'),
   1,
   'plan changes are audited'
+);
+
+-- Manager accounts --------------------------------------------------------
+insert into auth.users (id, aud, role, email) values
+  ('e0000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'plan-owner@example.test'),
+  ('e0000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', 'plan-manager@example.test'),
+  ('e0000000-0000-0000-0000-000000000004', 'authenticated', 'authenticated', 'plan-stranger@example.test');
+insert into public.memberships (organization_id, property_id, auth_user_id, phone, display_name, role, state)
+values ('ee000000-0000-0000-0000-000000000001', 'ee000000-0000-0000-0000-0000000000a1', 'e0000000-0000-0000-0000-000000000002', '+919000002001', 'Plan Owner', 'owner', 'active');
+update public.organizations set state = 'draft' where id = 'ee000000-0000-0000-0000-000000000001';
+
+select throws_ok(
+  $$select public.add_organization_manager('e0000000-0000-0000-0000-000000000004', 'ee000000-0000-0000-0000-000000000001', 'ee000000-0000-0000-0000-0000000000a1', 'e0000000-0000-0000-0000-000000000003', 'Mallory', '+919000002002')$$,
+  '42501', null, 'only the PG owner can add managers'
+);
+select is(
+  public.add_organization_manager('e0000000-0000-0000-0000-000000000002', 'ee000000-0000-0000-0000-000000000001', 'ee000000-0000-0000-0000-0000000000a1', 'e0000000-0000-0000-0000-000000000003', 'Meera Manager', '+919000002002') ->> 'state',
+  'active', 'the owner can add an active manager'
+);
+select is((select role::text from public.memberships where auth_user_id = 'e0000000-0000-0000-0000-000000000003'), 'manager', 'the membership has the manager role');
+select is((select state::text from public.organizations where id = 'ee000000-0000-0000-0000-000000000001'), 'core_ready', 'adding a manager opens a draft workspace for the team');
+
+select is(
+  public.set_organization_manager_state('e0000000-0000-0000-0000-000000000002', 'ee000000-0000-0000-0000-000000000001',
+    (select id from public.memberships where auth_user_id = 'e0000000-0000-0000-0000-000000000003'), 'disabled') ->> 'state',
+  'disabled', 'the owner can disable a manager'
+);
+update public.organizations set paid_until = null, trial_ends_at = pg_catalog.now() - interval '1 minute' where id = 'ee000000-0000-0000-0000-000000000001';
+select throws_ok(
+  $$select public.set_organization_manager_state('e0000000-0000-0000-0000-000000000002', 'ee000000-0000-0000-0000-000000000001',
+    (select id from public.memberships where auth_user_id = 'e0000000-0000-0000-0000-000000000003'), 'active')$$,
+  'P0001', null, 'an expired PG cannot re-enable managers'
+);
+select ok(
+  not has_function_privilege('authenticated', 'public.add_organization_manager(uuid,uuid,uuid,uuid,text,text)', 'execute')
+  and not has_function_privilege('anon', 'public.set_organization_manager_state(uuid,uuid,uuid,text)', 'execute'),
+  'manager RPCs are server-only'
 );
 
 select * from finish();

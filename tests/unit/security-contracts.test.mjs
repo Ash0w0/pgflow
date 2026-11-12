@@ -341,19 +341,19 @@ test("manual owner recovery is one-time, intent-bound, and server-only", async (
   assert.doesNotMatch(recoveryForm, /localStorage|sessionStorage|document\.cookie/);
 });
 
-test("authenticated owner password changes reauthorize and revoke sessions", async () => {
+test("authenticated owner and manager password changes reauthorize and revoke sessions", async () => {
   const [route, card, settings] = await Promise.all([
     readFile(new URL("app/api/auth/update-password/route.ts", root), "utf8"),
     readFile(new URL("components/password-change-card.tsx", root), "utf8"),
     readFile(new URL("app/settings/page.tsx", root), "utf8"),
   ]);
 
-  assert.match(route, /requireActor\(request, \["owner"\]\)/);
+  assert.match(route, /requireActor\(request, \["owner", "manager"\], \{ allowPendingPasswordChange: true \}\)/);
   assert.match(route, /auth\.getUser\(\)/);
   assert.match(route, /user\.id !== actor\.id/);
   assert.match(route, /consumeAuthenticationLimits/);
   assert.match(route, /verifyExactPassword\(user\.id, user\.phone, currentPassword\)/);
-  assert.match(route, /updateUserById\(user\.id, \{ password: newPassword \}\)/);
+  assert.match(route, /updateUserById\(user\.id, \{\s*password: newPassword,/);
   assert.match(route, /verifyNewPasswordAndRevokeSessions/);
   assert.match(route, /signOut\(\{ scope: "global" \}\)/);
   assert.match(route, /action: "account_password\.changed"/);
