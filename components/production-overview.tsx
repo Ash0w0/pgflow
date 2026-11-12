@@ -209,7 +209,7 @@ export function ProductionOverview({ tenantName, role, data }: ProductionOvervie
           </div>
           <div className="production-readiness-list">
             <Link href="/rooms"><span><Check size={16} /></span><div><strong>Property structure</strong><small>{data.rooms.floors} floors · {data.rooms.rooms} rooms · {data.rooms.beds} beds</small></div><ArrowRight size={15} /></Link>
-            <Link href="/residents"><span><Check size={16} /></span><div><strong>Resident register</strong><small>{data.residents.activeResidents} of {data.residents.residentLimit} resident slots active</small></div><ArrowRight size={15} /></Link>
+            <Link href="/residents"><span><Check size={16} /></span><div><strong>Resident register</strong><small>{data.residents.residentLimit >= 100000 ? `${data.residents.activeResidents} active residents` : `${data.residents.activeResidents} of ${data.residents.residentLimit} resident slots active`}</small></div><ArrowRight size={15} /></Link>
             <Link href="/settings"><span className={data.collections.upiConfigured ? "" : "not-ready"}>{data.collections.upiConfigured ? <Check size={16} /> : <CircleAlert size={16} />}</span><div><strong>Direct UPI settings</strong><small>{data.collections.upiConfigured ? "Configured for payment links" : "Complete UPI setup before sharing payment links"}</small></div><ArrowRight size={15} /></Link>
           </div>
         </article>

@@ -43,8 +43,8 @@ Unlike a generic property dashboard, PGFlow is white-labelled per PG and is buil
 - Existing customers open their organization from `/login` or their PG-specific subdomain.
 - The public product identity is PGFlow. Former fictional property identities must not appear in the production marketing or onboarding journey.
 - New owners should be able to create their own PG from a public signup flow.
-- A new PG may start with up to two tenants. Adding more than two tenants requires an upgrade through PGFlow support on WhatsApp.
-- The two-resident entitlement is enforced at the database boundary, and signup begins through a reviewed WhatsApp handoff. Fully automatic self-service organization creation and in-product paid upgrades are not yet live.
+- Every new PG gets a 15-day free trial with everything unlocked. A platform operator marks the PG as paid until a date after payment is received through PGFlow on WhatsApp; when neither the trial nor the paid period is current, the workspace becomes read-only (records stay visible and pending payments can still be reviewed).
+- The trial and read-only rules are enforced at the database boundary, and signup begins through a reviewed WhatsApp handoff. Fully automatic self-service organization creation and in-product payment collection are not yet live.
 - The public WhatsApp sales number remains an environment-configured deployment value; no personal number should be committed to source.
 - Pricing is yearly and decided, but it is shared only on calls and in demos, never on the public site or in this public repo (founder decision, Nov 2026). Founding PGs: first 10, price locked for 2 years, 30-day money-back.
 - The public homepage is demo-led: the primary action books a demo on WhatsApp; self-serve signup remains available as a fallback.

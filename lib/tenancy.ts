@@ -1,11 +1,13 @@
 import "server-only";
 
 import { normalizeHostname, type PublicBrand } from "./branding";
+import { summarizePlan, type PlanSummary } from "./plan";
 import { isDemoRuntime } from "./runtime";
 import { getSupabaseAdmin } from "./supabase/admin";
 
 export type TenantContext = PublicBrand & {
   state: "demo" | "draft" | "core_ready" | "integrations_pending" | "live" | "suspended";
+  plan?: PlanSummary;
 };
 
 export function isOperationalTenant(context: TenantContext) {
@@ -59,7 +61,7 @@ export async function resolvePublicBrandContextForHostname(rawHostname: string):
   if (!mapping) return null;
 
   const [{ data: organization, error: organizationError }, { data: brand, error: brandError }] = await Promise.all([
-    admin.from("organizations").select("id,name,state,demo_mode").eq("id", mapping.organization_id).maybeSingle(),
+    admin.from("organizations").select("id,name,state,demo_mode,trial_ends_at,paid_until").eq("id", mapping.organization_id).maybeSingle(),
     admin.from("brand_themes").select("app_name,short_name,primary_color,accent_color").eq("organization_id", mapping.organization_id).maybeSingle(),
   ]);
   if (organizationError) throw new Error(`Organization resolution failed: ${organizationError.message}`);
@@ -74,6 +76,7 @@ export async function resolvePublicBrandContextForHostname(rawHostname: string):
     startUrl: "/tenant",
     demoMode: organization.demo_mode,
     state: organization.state,
+    plan: summarizePlan(organization.trial_ends_at, organization.paid_until),
   } as TenantContext;
 }
 

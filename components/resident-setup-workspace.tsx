@@ -246,7 +246,7 @@ export function ResidentSetupWorkspace({ data, demoMode }: { data: ResidentSetup
 
         <div className="setup-safety-strip">
           <ShieldCheck size={17} />
-          <span><strong>One resident, one active bed.</strong> {data.residents.length} of {data.residentLimit} resident slots in use. Records are audited.</span>
+          <span><strong>One resident, one active bed.</strong> {data.residentLimit >= 100000 ? `${data.residents.length} residents.` : `${data.residents.length} of ${data.residentLimit} resident slots in use.`} Records are audited.</span>
         </div>
 
         {residentLimitReached && (

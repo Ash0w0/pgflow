@@ -23,6 +23,7 @@ import {
   X,
 } from "lucide-react";
 import { BrandMark, PoweredBy } from "./brand-mark";
+import { PlanBanner } from "./plan-banner";
 
 const primaryNav = [
   { href: "/", label: "Overview", icon: LayoutDashboard },
@@ -514,7 +515,7 @@ export function AppShell({ children, demoMode }: { children: ReactNode; demoMode
           </div>
         )}
 
-        <main className="app-main">{children}</main>
+        <main className="app-main">{!demoMode && <PlanBanner />}{children}</main>
       </div>
     </div>
   );

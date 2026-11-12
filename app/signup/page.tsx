@@ -31,8 +31,8 @@ export default function SignupPage() {
           <div className="signup-start-limit">
             <UsersRound size={26} />
             <div>
-              <strong>Begin with up to 2 residents</strong>
-              <span>More residents require an upgrade through PGFlow on WhatsApp.</span>
+              <strong>Free for 15 days, everything unlocked</strong>
+              <span>Add all your rooms and residents. Continue on a paid plan through PGFlow on WhatsApp.</span>
             </div>
           </div>
           <ul>

@@ -8,7 +8,7 @@ import { isDemoRuntime } from "@/lib/runtime";
 import { hostnameFromHeaders, resolvePublicBrandContextForHostname } from "@/lib/tenancy";
 import "./globals.css";
 
-export const preferredRegion = "bom1";
+export const preferredRegion = "hnd1";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -71,6 +71,7 @@ const resolveLayoutBrand = cache(async (): Promise<BrandValue> => {
       accent: safeColor(tenant.accent, PLATFORM_BRAND.accent),
       mode: tenant.demoMode ? "demo" : "tenant",
       platformName: "PGFlow",
+      plan: tenant.demoMode ? undefined : tenant.plan,
     };
   } catch {
     return PLATFORM_BRAND;

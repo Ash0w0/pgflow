@@ -20,11 +20,14 @@ import { OwnerInvitationPanel, type OwnerInvitationOrganization } from "./owner-
 import { OwnerRecoveryPanel } from "./owner-recovery-panel";
 import { OperatorPasswordCard } from "./operator-password-card";
 import { StatusPill } from "./status-pill";
+import { PlanChangeDialog, planLabel } from "./plan-change-dialog";
+import type { PlanSummary } from "@/lib/plan";
 
 type RegistryOrganization = OwnerInvitationOrganization & {
   slug: string;
   createdAt: string;
   residentLimit: number;
+  plan: PlanSummary;
   provisioning: {
     jobId: string;
     state: string;
@@ -128,6 +131,9 @@ function isRegistryOrganization(value: unknown): value is RegistryOrganization {
     && (typeof value.hostname === "string" || value.hostname === null)
     && typeof value.createdAt === "string"
     && typeof value.residentLimit === "number"
+    && isRecord(value.plan)
+    && ["trial", "paid", "expired"].includes(String(value.plan.status))
+    && typeof value.plan.daysLeft === "number"
     && validProvisioning
     && validOwnerInvitation
   );
@@ -216,9 +222,7 @@ export function LiveOperatorConsole() {
   const [domainError, setDomainError] = useState<string | null>(null);
 
   // Payment unlock state
-  const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
-  const [unlockingOrganizationId, setUnlockingOrganizationId] = useState<string | null>(null);
-  const [unlockError, setUnlockError] = useState<string | null>(null);
+  const [planTarget, setPlanTarget] = useState<RegistryOrganization | null>(null);
 
   const loadRegistry = useCallback(async (signal?: AbortSignal) => {
     setRegistryLoading(true);
@@ -419,33 +423,7 @@ export function LiveOperatorConsole() {
     }
   }
 
-  async function unlockUnlimitedRooms(organizationId: string) {
-    if (unlockingOrganizationId) return;
-    setUnlockingOrganizationId(organizationId);
-    setUnlockError(null);
-    try {
-      const res = await fetch("/api/organizations/resident-limit", {
-        method: "PATCH",
-        credentials: "same-origin",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ organizationId, residentLimit: 100000 }),
-      });
-      const result: unknown = await res.json().catch(() => null);
-      if (!res.ok || !isRecord(result)) {
-        throw new Error(
-          isRecord(result) && typeof result.error === "string"
-            ? result.error
-            : "Failed to unlock unlimited rooms."
-        );
-      }
-      setUnlockedIds((prev) => new Set(prev).add(organizationId));
-      await loadRegistry();
-    } catch (err) {
-      setUnlockError(err instanceof Error ? err.message : "Failed to unlock unlimited rooms.");
-    } finally {
-      setUnlockingOrganizationId(null);
-    }
-  }
+
 
   return (
     <div className="operator-page page-stack live-operator-page">
@@ -668,7 +646,7 @@ export function LiveOperatorConsole() {
         ) : (
           <div className="table-wrap">
             <table className="data-table organizations-table">
-              <thead><tr><th>Organization</th><th>Hostname</th><th>Owner access</th><th>Provisioning</th><th>Organization state</th><th>Rooms</th><th>Created</th><th>Actions</th></tr></thead>
+              <thead><tr><th>Organization</th><th>Hostname</th><th>Owner access</th><th>Provisioning</th><th>Organization state</th><th>Plan</th><th>Created</th><th>Actions</th></tr></thead>
               <tbody>
                 {organizations.map((organization) => {
                   const provisioningState = organization.provisioning?.state ?? "not_started";
@@ -677,7 +655,6 @@ export function LiveOperatorConsole() {
                   const credentialExpiry = invitationState === "activated"
                     ? null
                     : invitation?.temporaryPasswordExpiresAt ?? invitation?.expiresAt;
-                  const isUnlocked = organization.residentLimit >= 100000;
                   return (
                     <tr key={organization.id}>
                       <td>
@@ -700,29 +677,10 @@ export function LiveOperatorConsole() {
                       <td><StatusPill tone={stateTone(provisioningState)}>{stateLabel(provisioningState)}</StatusPill>{organization.provisioning && <small>{organization.provisioning.jobId}</small>}</td>
                       <td><StatusPill tone={stateTone(organization.state)}>{stateLabel(organization.state)}</StatusPill></td>
                       <td>
-                        <div className="resident-limit-cell">
-                          <div>
-                            <strong>{isUnlocked ? "Unlimited" : organization.residentLimit}</strong>
-                            <small>{isUnlocked ? "Paid" : "Starter limit"}</small>
-                          </div>
-                          {!isUnlocked && (
-                            <button
-                              className="button button-quiet"
-                              type="button"
-                              onClick={() => void unlockUnlimitedRooms(organization.id)}
-                              disabled={unlockingOrganizationId === organization.id || unlockedIds.has(organization.id)}
-                              title="Mark this PG as paid to unlock unlimited rooms"
-                            >
-                              {unlockingOrganizationId === organization.id ? "Unlocking…" : "Mark paid"}
-                            </button>
-                          )}
-                          {unlockedIds.has(organization.id) && (
-                            <StatusPill tone="success"><Check size={14} /></StatusPill>
-                          )}
+                        <div className="plan-cell">
+                          <StatusPill tone={organization.plan.status === "expired" ? "danger" : organization.plan.status === "paid" ? "success" : organization.plan.daysLeft <= 3 ? "warning" : "neutral"}>{planLabel(organization.plan)}</StatusPill>
+                          <button className="button button-quiet" type="button" onClick={() => setPlanTarget(organization)}>Change plan</button>
                         </div>
-                        {unlockError && unlockingOrganizationId === null && !unlockedIds.has(organization.id) && (
-                          <div className="live-operator-feedback feedback-error" role="alert"><AlertCircle size={14} /><span>{unlockError}</span></div>
-                        )}
                       </td>
                       <td><time dateTime={organization.createdAt}>{formatCreatedAt(organization.createdAt)}</time></td>
                       <td>
@@ -746,6 +704,13 @@ export function LiveOperatorConsole() {
         )}
       </section>
 
+      {planTarget && (
+        <PlanChangeDialog
+          organization={planTarget}
+          onClose={() => setPlanTarget(null)}
+          onChanged={() => void loadRegistry()}
+        />
+      )}
       {deleteTarget && (
         <div
           className="modal-backdrop"
