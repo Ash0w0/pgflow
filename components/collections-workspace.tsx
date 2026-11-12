@@ -6,6 +6,7 @@ import { Banknote, CalendarDays, CheckCircle2, CircleAlert, Copy, FileText, Indi
 import { useState, type FormEvent } from "react";
 import type { CollectionsData } from "@/lib/collections-types";
 import { AppShell } from "./app-shell";
+import { PaymentClaimsPanel } from "./payment-claims-panel";
 import { useBrand } from "./brand-provider";
 import { WhatsAppSendModal, type WhatsAppSendTarget } from "./whatsapp-send-modal";
 
@@ -267,6 +268,8 @@ export function CollectionsWorkspace({ data, canGenerate, canReview, role }: { d
           <header className="panel-head"><div><span className="eyebrow">Verification</span><h2>Pending reviews</h2></div><span className="resident-count">{data.pendingPayments.length} pending</span></header>
           {data.pendingPayments.length===0?<div className="collections-empty"><ShieldCheck size={25}/><div><strong>Nothing waiting for review</strong><p>Submitted UPI evidence and approval-required cash will appear here.</p></div></div>:<div className="table-wrap"><table className="data-table"><thead><tr><th>Resident</th><th>Method</th><th>Reference</th><th>Amount</th><th>Actions</th></tr></thead><tbody>{data.pendingPayments.map(payment=><tr key={payment.id}><td><strong>{payment.residentName}</strong></td><td>{payment.method.toUpperCase()}</td><td>{payment.reference}</td><td><strong>{currency.format(payment.amount)}</strong></td><td><div className="payment-review-actions"><select aria-label={`Rejection reason for ${payment.residentName}`} value={rejectionReason} onChange={e=>setRejectionReason(e.target.value)} disabled={!canReview||submitting}><option value="more_information_needed">More information needed</option><option value="amount_not_received">Amount not received</option><option value="incorrect_amount">Incorrect amount</option><option value="duplicate_utr">Duplicate UTR</option><option value="invalid_screenshot">Invalid screenshot</option><option value="wrong_account">Wrong account</option></select><div className="invoice-actions"><button type="button" className="resident-manage-button" disabled={!canReview||submitting} onClick={()=>reviewPayment(payment.id,"approve")}>Approve</button><button type="button" className="resident-manage-button danger" disabled={!canReview||submitting} onClick={()=>reviewPayment(payment.id,"reject")}>Reject</button></div></div></td></tr>)}</tbody></table></div>}
         </section>
+
+        <PaymentClaimsPanel approvedPayments={data.approvedPayments} claims={data.claims} canResolve={role === "owner"} />
       </div>
 
       {whatsappModalOpen && (

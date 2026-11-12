@@ -74,7 +74,7 @@ const operatingRows = [
   {
     icon: FileCheck2,
     title: "Proof, receipts, and reversals",
-    description: "Review evidence, issue receipts after approval, and reverse records without erasing history.",
+    description: "Review evidence, issue receipts after approval, and correct mistakes through audited claims without erasing history.",
   },
   {
     icon: Wrench,

@@ -42,3 +42,19 @@ test("owner-uploaded UPI QR is optional, private, tenant-scoped, and secondary t
   assert.match(settings,/verifyOwnerPassword/);assert.match(settings,/p_qr_object_key/);assert.match(settings,/storage\.from\("upi-qr-assets"\)\.remove/);assert.match(card,/Existing UPI QR/);assert.match(card,/type="file"/);
   assert.match(data,/createSignedUrl/);assert.match(payment,/Recommended .* exact invoice QR/);assert.match(payment,/owner-uploaded UPI QR/);assert.match(payment,/may not prefill the invoice amount/i);
 });
+
+test("mistaken approvals are corrected through claims, never reversed", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const root = new URL("../../", import.meta.url);
+  const [route, migration] = await Promise.all([
+    readFile(new URL("app/api/payments/claims/route.ts", root), "utf8"),
+    readFile(new URL("supabase/migrations/0038_payment_claims.sql", root), "utf8"),
+  ]);
+  await assert.rejects(readFile(new URL("app/api/payments/reverse/route.ts", root), "utf8"));
+  assert.match(route, /requireActor\(request, \["owner", "manager", "accountant"\]\)/);
+  assert.match(route, /requireActor\(request, \["owner"\]\)/);
+  assert.doesNotMatch(migration, /update public\.payments/);
+  assert.doesNotMatch(migration, /delete from public\.(payments|receipts|payment_allocations)/);
+  assert.match(migration, /'CORR-'/);
+  assert.match(migration, /payment_claims_one_upheld_per_payment/);
+});
