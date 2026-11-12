@@ -23,6 +23,7 @@ export interface PaymentReceiptParams {
   billingPeriod: string;
   receiptNumber: string;
   receiptUrl: string;
+  pgName?: string;
   language?: "en" | "hi";
 }
 
@@ -46,12 +47,13 @@ export function buildRentDueReminderPayload(
   params: RentDueReminderParams
 ): SendWhatsAppTemplateOptions {
   const lang = params.language || "en";
-  const templateName = `pgflow_rent_due_${lang}`;
   const formattedAmount = params.amount.toLocaleString("en-IN");
 
+  // Body variables, in order: {{1}} name, {{2}} amount, {{3}} period, {{4}} PG, {{5}} due date, {{6}} payment link.
+  // The link is a body variable because every PG has its own subdomain.
   return {
     recipientPhone: params.recipientPhone,
-    templateName,
+    templateName: `pgflow_rent_due_${lang}`,
     languageCode: lang,
     components: [
       {
@@ -62,13 +64,8 @@ export function buildRentDueReminderPayload(
           { type: "text", text: params.billingPeriod },
           { type: "text", text: params.pgName },
           { type: "text", text: params.dueDate },
+          { type: "text", text: params.paymentUrl },
         ],
-      },
-      {
-        type: "button",
-        sub_type: "url",
-        index: "0",
-        parameters: [{ type: "text", text: params.paymentUrl }],
       },
     ],
   };
@@ -95,12 +92,12 @@ export function buildPaymentReceiptPayload(
   params: PaymentReceiptParams
 ): SendWhatsAppTemplateOptions {
   const lang = params.language || "en";
-  const templateName = `pgflow_payment_receipt_${lang}`;
   const formattedAmount = params.amount.toLocaleString("en-IN");
 
+  // Body variables, in order: {{1}} name, {{2}} amount, {{3}} period, {{4}} receipt number, {{5}} PG, {{6}} receipt link.
   return {
     recipientPhone: params.recipientPhone,
-    templateName,
+    templateName: `pgflow_payment_receipt_${lang}`,
     languageCode: lang,
     components: [
       {
@@ -110,13 +107,9 @@ export function buildPaymentReceiptPayload(
           { type: "text", text: formattedAmount },
           { type: "text", text: params.billingPeriod },
           { type: "text", text: params.receiptNumber },
+          { type: "text", text: params.pgName ?? "your PG" },
+          { type: "text", text: params.receiptUrl },
         ],
-      },
-      {
-        type: "button",
-        sub_type: "url",
-        index: "0",
-        parameters: [{ type: "text", text: params.receiptUrl }],
       },
     ],
   };
@@ -130,10 +123,10 @@ export function getPaymentReceiptPreview(params: PaymentReceiptParams): string {
   const formattedAmount = params.amount.toLocaleString("en-IN");
 
   if (lang === "hi") {
-    return `धन्यवाद ${params.residentName}! ₹${formattedAmount} (${params.billingPeriod}) का भुगतान प्राप्त हो गया है। रसीद संख्या: ${params.receiptNumber}\n\nरसीद देखें: ${params.receiptUrl}`;
+    return `धन्यवाद ${params.residentName}! ₹${formattedAmount} (${params.billingPeriod}) का भुगतान ${params.pgName ?? "आपके PG"} को प्राप्त हो गया है। रसीद संख्या: ${params.receiptNumber}\n\nरसीद देखें: ${params.receiptUrl}`;
   }
 
-  return `Thank you ${params.residentName}! Payment of ₹${formattedAmount} for ${params.billingPeriod} has been received. Official receipt: ${params.receiptNumber}\n\nView receipt: ${params.receiptUrl}`;
+  return `Thank you ${params.residentName}! Payment of ₹${formattedAmount} for ${params.billingPeriod} has been received by ${params.pgName ?? "your PG"}. Official receipt: ${params.receiptNumber}\n\nView receipt: ${params.receiptUrl}`;
 }
 
 /**

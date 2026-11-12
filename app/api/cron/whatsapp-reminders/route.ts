@@ -8,8 +8,6 @@ export async function GET(request: Request) {
     if (unauthorized) return unauthorized;
     const isDemo = process.env.PGFLOW_RUNTIME === "demo";
 
-    const todayIso = new Date().toISOString().split("T")[0];
-
     if (isDemo) {
       // Demo mode simulated reminder dispatch
       const sampleReminders = [
@@ -62,69 +60,21 @@ export async function GET(request: Request) {
       });
     }
 
+    // Production: queue today's reminders (idempotent), then deliver the queue.
     const { getSupabaseAdmin } = await import("../../../../lib/supabase/admin.ts");
-    const admin = getSupabaseAdmin();
-    // Fetch active unpaid invoices for T-3, T-0, T+2 stages
-    const { data: invoices, error } = await admin
-      .from("invoices")
-      .select("*, residents(*), properties(*)")
-      .eq("status", "pending");
-
+    const { processWhatsAppOutbox } = await import("../../../../lib/whatsapp/outbox.ts");
+    const indiaToday = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
+    const { data: queued, error } = await getSupabaseAdmin().rpc("enqueue_rent_reminders", { p_today: indiaToday });
     if (error) {
-      return Response.json(
-        { error: error.message || "Failed to query pending invoices for reminders." },
-        { status: 500 }
-      );
+      return Response.json({ error: "Reminders could not be queued." }, { status: 503 });
     }
-
-    let dispatchedCount = 0;
-    const logResults = [];
-
-    for (const inv of invoices || []) {
-      const resident = inv.residents;
-      const property = inv.properties;
-
-      if (!resident?.phone) continue;
-
-      const idempotencyKey = `reminder:${inv.id}:${todayIso}`;
-
-      const payload = buildRentDueReminderPayload({
-        recipientPhone: resident.phone,
-        residentName: resident.full_name,
-        amount: Number(inv.amount || 0),
-        billingPeriod: inv.billing_period || "Current Month",
-        pgName: property?.name || "PGFlow PG",
-        dueDate: inv.due_date || todayIso,
-        paymentUrl: `https://${property?.slug || "app"}.pgflow.in/pay/${inv.id}`,
-      });
-
-      const dispatch = await sendWhatsAppTemplate(payload);
-
-      if (dispatch.ok) {
-        dispatchedCount++;
-        await admin.rpc("log_whatsapp_message", {
-          p_organization_id: inv.organization_id,
-          p_recipient_phone: resident.phone,
-          p_direction: "outbound",
-          p_template_name: payload.templateName,
-          p_wamid: dispatch.wamid || null,
-          p_delivery_status: "sent",
-          p_idempotency_key: idempotencyKey,
-          p_resident_id: resident.id,
-        });
-      }
-
-      logResults.push({
-        invoiceId: inv.id,
-        resident: resident.full_name,
-        ok: dispatch.ok,
-      });
-    }
-
+    const delivery = await processWhatsAppOutbox({ limit: 100 });
     return Response.json({
       ok: true,
-      processedCount: dispatchedCount,
-      logResults,
+      date: indiaToday,
+      queued: Number(queued ?? 0),
+      delivery,
+      note: delivery.configured ? undefined : "WhatsApp is not connected yet; reminders are queued and will be sent once it is.",
     });
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Internal server error";

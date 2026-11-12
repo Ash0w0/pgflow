@@ -1,3 +1,5 @@
+import { after } from "next/server";
+import { processWhatsAppOutbox } from "@/lib/whatsapp/outbox";
 import { isTrustedMutationRequest, jsonError, requireActor } from "@/lib/http";
 import { isUuid } from "@/lib/owner-invitations";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
@@ -13,5 +15,7 @@ export async function POST(request: Request) {
   if (body.decision === "reject" && !rejectionReasons.has(body.reason)) return jsonError("Choose a supported rejection reason.");
   const { data, error } = await getSupabaseAdmin().rpc("review_payment", { p_actor_user_id: actor.id, p_organization_id: actor.organizationId, p_property_id: actor.propertyId, p_payment_id: body.paymentId, p_decision: body.decision, p_reason: body.reason || null });
   if (error) return jsonError(error.message ?? "Payment review did not complete.", error.code === "42501" ? 403 : 400);
+  // Deliver the resident's receipt right after responding (queued in the same transaction).
+  after(() => processWhatsAppOutbox({ organizationId: actor.organizationId, limit: 5 }).catch(() => undefined));
   return Response.json({ reviewed: true, review: data }, { headers: { "cache-control": "no-store" } });
 }

@@ -6,6 +6,7 @@ import { UpiSettingsCard } from "@/components/upi-settings-card";
 import { BrandingSettingsCard, type BrandThemeSettings } from "@/components/branding-settings-card";
 import { WhatsAppSettingsCard } from "@/components/whatsapp-settings-card";
 import { TeamSettingsCard } from "@/components/team-settings-card";
+import { WhatsAppAutomationCard, type WhatsAppAutomationSettings } from "@/components/whatsapp-automation-card";
 import { AppShell } from "@/components/app-shell";
 import { DEFAULT_BRAND_ACCENT, DEFAULT_BRAND_PRIMARY, safeColor } from "@/lib/branding";
 import { Settings2, ShieldCheck } from "lucide-react";
@@ -15,6 +16,7 @@ export default async function Page() {
   const demoMode = authorization.mode === "demo";
 
   let upi = { upiId: "", payeeName: "", notePrefix: "RENT", hasUploadedQr: false };
+  let automation: WhatsAppAutomationSettings = { autoReminders: false, autoReceipts: false, language: "en" };
   let brand: BrandThemeSettings = { primaryColor: DEFAULT_BRAND_PRIMARY, accentColor: DEFAULT_BRAND_ACCENT };
   let ownerPhone: string | null = null;
 
@@ -24,7 +26,7 @@ export default async function Page() {
     if (authorization.actor.propertyId) {
       const { data, error } = await admin
         .from("properties")
-        .select("upi_id,upi_payee_name,upi_note_prefix,upi_qr_object_key")
+        .select("upi_id,upi_payee_name,upi_note_prefix,upi_qr_object_key,whatsapp_auto_reminders,whatsapp_auto_receipts,whatsapp_language")
         .eq("organization_id", authorization.actor.organizationId)
         .eq("id", authorization.actor.propertyId)
         .single();
@@ -34,6 +36,11 @@ export default async function Page() {
         payeeName: data.upi_payee_name,
         notePrefix: data.upi_note_prefix,
         hasUploadedQr: Boolean(data.upi_qr_object_key),
+      };
+      automation = {
+        autoReminders: data.whatsapp_auto_reminders === true,
+        autoReceipts: data.whatsapp_auto_receipts === true,
+        language: data.whatsapp_language === "hi" ? "hi" : "en",
       };
     }
 
@@ -82,6 +89,7 @@ export default async function Page() {
         )}
         <BrandingSettingsCard initial={brand} demoMode={demoMode} />
         <WhatsAppSettingsCard configured={whatsappConfigured} ownerPhone={ownerPhone} demoMode={demoMode} />
+        <WhatsAppAutomationCard initial={automation} demoMode={demoMode} />
         <UpiSettingsCard initial={upi} />
         <TeamSettingsCard demoMode={demoMode} pgName={authorization.mode === "production" ? authorization.tenant.name : "PGFlow Sample"} />
         <PasswordChangeCard demoMode={demoMode} />
