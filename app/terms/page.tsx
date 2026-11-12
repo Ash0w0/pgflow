@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { LegalPageShell } from "@/components/legal-page-shell";
-import { businessCity, contactEmail, legalBusinessName } from "@/lib/marketing";
+import { businessCity, contactEmail, legalEntityLine } from "@/lib/marketing";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   const email = contactEmail();
-  const operator = legalBusinessName() || "PGFlow";
+  const operator = legalEntityLine();
 
   return (
     <LegalPageShell>
@@ -49,7 +49,7 @@ export default function TermsPage() {
       <p>You remain responsible for checking payments before approving them and for your own accounts and taxes. To the extent the law allows, our total liability for any claim is limited to the fees you paid us in the 12 months before the claim. We are not liable for indirect losses.</p>
 
       <h2>8. Changes and ending the service</h2>
-      <p>We may update these terms and will tell you about material changes in advance. You may stop using PGFlow at any time. These terms are governed by the laws of India, and courts in Uttar Pradesh have jurisdiction.</p>
+      <p>We may update these terms and will tell you about material changes in advance. You may stop using PGFlow at any time. These terms are governed by the laws of India, and courts at Patna, Bihar have jurisdiction.</p>
 
       <h2>9. Contact</h2>
       <p><a href={`mailto:${email}`}>{email}</a>, {businessCity()}.</p>

@@ -27,6 +27,8 @@ import {
   FOUNDER,
     FOUNDING_REQUEST_MESSAGE,
   FOUNDING_TOTAL_SPOTS,
+  SERVICE_AREA,
+  UDYAM_NUMBER,
   businessCity,
   contactEmail,
   demoBookingHref,
@@ -388,7 +390,7 @@ export function BusinessHomepage() {
             <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer"><MessageCircle size={15} /> WhatsApp {whatsappDisplay}</a>
           ) : null}
           <a href={`mailto:${email}`}><Mail size={15} /> {email}</a>
-          <span><MapPin size={15} /> {businessCity()}</span>
+          <span><MapPin size={15} /> {businessCity()} | {SERVICE_AREA}</span>
         </address>
         <div className="home-footer-links">
           <ExternalAction className="" href={demoHref}>Book a demo</ExternalAction>
@@ -396,7 +398,7 @@ export function BusinessHomepage() {
           <Link href="/privacy">Privacy Policy</Link>
           <Link href="/terms">Terms</Link>
         </div>
-        <p className="home-footer-legal">© {new Date().getFullYear()} {legalName || "PGFlow"}. All rights reserved.</p>
+        <p className="home-footer-legal">© {new Date().getFullYear()} {legalName || "PGFlow"}. Udyam Reg. No. {UDYAM_NUMBER}. All rights reserved.</p>
       </footer>
     </main>
   );
