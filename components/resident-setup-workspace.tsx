@@ -15,8 +15,7 @@ import {
   UserPlus,
   Users,
   WalletCards,
-  X,
-} from "lucide-react";
+  X, Upload } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import {
   validateResidentOnboardingInput,
@@ -233,6 +232,10 @@ export function ResidentSetupWorkspace({ data, demoMode }: { data: ResidentSetup
             <h1>Residents</h1>
             <p>Onboard residents, assign beds, and set opening balances.</p>
           </div>
+          <div className="room-heading-actions">
+          <a className="button button-secondary" href="/import">
+            <Upload size={17} /> Bulk import
+          </a>
           <button
             className="button button-primary"
             type="button"
@@ -242,6 +245,7 @@ export function ResidentSetupWorkspace({ data, demoMode }: { data: ResidentSetup
           >
             <UserPlus size={17} /> Add resident
           </button>
+          </div>
         </section>
 
         <div className="setup-safety-strip">

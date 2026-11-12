@@ -12,8 +12,7 @@ import {
   Plus,
   ShieldCheck,
   Sparkles,
-  X,
-} from "lucide-react";
+  X, Upload } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import type { RoomSetupData } from "@/lib/room-setup-types";
 import { AppShell } from "./app-shell";
@@ -149,6 +148,9 @@ export function RoomSetupWorkspace({ data, demoMode }: { data: RoomSetupData; de
             <p>Build the floor-to-bed structure once. Residents, rent and occupancy will connect to it next.</p>
           </div>
           <div className="room-heading-actions">
+            <a className="button button-secondary" href="/import">
+              <Upload size={17} /> Bulk import
+            </a>
             <button className="button button-secondary" type="button" onClick={() => openDialog("floor")}>
               <Layers3 size={17} /> Add floor
             </button>
