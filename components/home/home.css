@@ -20,7 +20,7 @@
   --red-ink: #b8433a;
   --radius: 18px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --serif: var(--ph-serif), "Iowan Old Style", Georgia, serif;
+  --emph: #2d7a62;
   --hand: var(--ph-hand), "Bradley Hand", cursive;
   position: relative;
   min-height: 100vh;
@@ -62,11 +62,9 @@
 }
 .ph-h1 em, .ph-h2 em {
   display: inline;
-  font-family: var(--serif);
-  font-style: italic;
-  font-weight: 400;
-  letter-spacing: -0.02em;
-  color: var(--forest);
+  font-style: normal;
+  font-weight: 500;
+  color: var(--emph);
 }
 .ph-h1 em { display: block; margin-top: 0.08em; }
 .ph-h1 mark {
@@ -255,7 +253,7 @@
 .ph-month .ph-h2 em { color: var(--lime); }
 .ph-month-headings { position: relative; min-height: 260px; }
 .ph-month-headings > * { position: absolute; inset: 0 0 auto 0; }
-.ph-month-sub { display: block; margin-top: 18px; max-width: 420px; color: rgba(255, 255, 255, 0.7); font-family: var(--font-geist-sans), sans-serif; font-style: normal; font-size: 17px; font-weight: 450; line-height: 1.55; letter-spacing: 0; }
+.ph-month-sub { display: block; margin-top: 18px; max-width: 420px; color: rgba(255, 255, 255, 0.7); font-size: 17px; font-weight: 450; line-height: 1.55; letter-spacing: 0; }
 .ph-month-calm em { font-size: 1em; }
 .ph-calendar {
   display: inline-grid; justify-items: center; width: 112px; margin-bottom: 28px; padding: 0 0 12px; overflow: hidden; border-radius: 16px;
@@ -299,8 +297,8 @@
 .ph-how-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(32px, 6vw, 88px); }
 .ph-act { min-height: 66vh; display: flex; flex-direction: column; justify-content: center; padding: 24px 0; }
 .ph-act:first-child { justify-content: flex-start; padding-top: 8px; }
-.ph-act-n { display: flex; align-items: baseline; gap: 14px; color: var(--forest); font-family: var(--serif); font-size: 64px; line-height: 1; }
-.ph-act-n i { font-family: var(--font-geist-sans), sans-serif; font-style: normal; font-size: 14px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+.ph-act-n { display: flex; align-items: baseline; gap: 14px; color: var(--emph); font-size: 60px; font-weight: 300; letter-spacing: -0.05em; line-height: 1; }
+.ph-act-n i { font-style: normal; letter-spacing: 0.08em; font-size: 14px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
 .ph-act h3 { margin: 18px 0 0; max-width: 460px; font-size: clamp(26px, 2.6vw, 36px); font-weight: 700; line-height: 1.1; letter-spacing: -0.035em; }
 .ph-act p { margin: 16px 0 0; max-width: 480px; color: var(--ink-2); font-size: 17px; line-height: 1.65; }
 .ph-act ul { display: grid; gap: 9px; margin: 22px 0 0; padding: 0; list-style: none; font-weight: 600; font-size: 15px; }
@@ -405,7 +403,7 @@
 .ph-pass-owner .ph-pass-role { background: var(--forest); color: var(--lime); }
 .ph-pass-manager .ph-pass-role { background: var(--lime); color: var(--forest); }
 .ph-pass-resident .ph-pass-role { background: var(--paper-warm); color: var(--forest); border: 1px solid var(--line-strong); }
-.ph-pass-line { margin: 16px 0 18px; font-family: var(--serif); font-style: italic; font-size: 25px; line-height: 1.15; color: var(--ink); }
+.ph-pass-line { margin: 16px 0 18px; font-size: 19px; font-weight: 600; line-height: 1.3; letter-spacing: -0.02em; color: var(--ink); }
 .ph-pass ul { display: grid; gap: 10px; margin: 0; padding: 18px 0 0; border-top: 1.5px dashed var(--line-strong); list-style: none; font-size: 14.5px; font-weight: 600; }
 .ph-pass li { display: flex; gap: 9px; align-items: flex-start; }
 .ph-pass li svg { flex: none; margin-top: 2px; color: var(--forest); }
@@ -434,7 +432,7 @@
 .ph-promises-intro { position: sticky; top: 110px; }
 .ph-promise-list { display: grid; margin: 0; padding: 0; list-style: none; }
 .ph-promise-list li { display: grid; grid-template-columns: 72px 1fr; gap: 18px; padding: 26px 0; border-top: 1px solid rgba(255, 255, 255, 0.14); }
-.ph-promise-n { font-family: var(--serif); font-style: italic; font-size: 46px; line-height: 1; color: var(--lime); }
+.ph-promise-n { font-size: 40px; font-weight: 300; letter-spacing: -0.05em; line-height: 1; color: var(--lime); }
 .ph-promise-list h3 { margin: 4px 0 0; font-size: 24px; letter-spacing: -0.03em; }
 .ph-promise-list p { margin: 8px 0 0; color: rgba(255, 255, 255, 0.72); font-size: 16px; line-height: 1.6; }
 
@@ -449,7 +447,7 @@
 }
 .ph-letter::before { content: ""; position: absolute; top: -14px; left: 50%; width: 110px; height: 28px; margin-left: -55px; background: rgba(215, 255, 134, 0.75); transform: rotate(2deg); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08); }
 .ph-letter-meta { margin: 0 0 16px; color: var(--ink-3); font-size: 13px; font-weight: 700; }
-.ph-letter h2 { margin: 0 0 18px; font-family: var(--serif); font-weight: 400; font-size: clamp(32px, 3.6vw, 46px); line-height: 1.05; letter-spacing: -0.02em; }
+.ph-letter h2 { margin: 0 0 18px; font-weight: 700; font-size: clamp(28px, 3vw, 38px); line-height: 1.1; letter-spacing: -0.035em; }
 .ph-letter p { margin: 0 0 32px; color: var(--ink-2); font-size: 17.5px; line-height: 32px; }
 .ph-letter strong { display: block; margin-top: 4px; font-size: 15px; }
 .ph-letter small { color: var(--ink-3); font-size: 13px; }
@@ -500,7 +498,7 @@
 /* Footer --------------------------------------------------------------- */
 .ph-footer { padding: 56px 0 40px; border-top: 1px solid var(--line); }
 .ph-footer-grid { display: grid; grid-template-columns: 1.2fr 1.2fr 1fr; gap: 32px; align-items: start; }
-.ph-footer-brand p { margin: 12px 0 0; font-family: var(--serif); font-style: italic; font-size: 22px; color: var(--forest); }
+.ph-footer-brand p { margin: 12px 0 0; font-size: 17px; font-weight: 500; color: var(--emph); }
 .ph-footer-contact { display: grid; gap: 10px; font-style: normal; color: var(--ink-2); font-size: 14px; }
 .ph-footer-contact a, .ph-footer-contact span { display: inline-flex; align-items: center; gap: 8px; }
 .ph-footer-contact a:hover { color: var(--forest); }

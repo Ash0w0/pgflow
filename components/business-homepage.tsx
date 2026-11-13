@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowRight, ArrowUpRight, BedDouble, Check, Mail, MapPin, MessageCircle, Minus, Plus } from "lucide-react";
 import { ClosingComposer } from "./home/closing-composer";
 import { FirstOfMonth } from "./home/first-of-month";
-import { editorialSerif, handwriting } from "./home/fonts";
+import { handwriting } from "./home/fonts";
 import { HeroRelay } from "./home/hero-relay";
 import { HowItWorks } from "./home/how-it-works";
 import { LeakMeter } from "./home/leak-meter";
@@ -97,7 +97,7 @@ export function BusinessHomepage() {
     : `${spotsLeft} of ${FOUNDING_TOTAL_SPOTS} Founding PG spots left`;
 
   return (
-    <main className={`ph ${editorialSerif.variable} ${handwriting.variable}`}>
+    <main className={`ph ${handwriting.variable}`}>
       <a className="ph-skip" href="#how-it-works">Skip to how it works</a>
 
       <header className="ph-nav">
