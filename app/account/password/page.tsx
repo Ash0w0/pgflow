@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { KeyRound } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { PasswordChangeCard } from "@/components/password-change-card";
+import { ResidentPassword } from "@/components/resident-app/resident-password";
 import { requirePgPage } from "@/lib/page-authorization";
 import { mustChangePassword } from "@/lib/password-change-flag";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
@@ -9,7 +10,7 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 export const metadata: Metadata = { title: "Set your password" };
 
 export default async function AccountPasswordPage() {
-  const authorization = await requirePgPage(["owner", "manager"], { allowPendingPasswordChange: true });
+  const authorization = await requirePgPage(["owner", "manager", "tenant"], { allowPendingPasswordChange: true });
   const demoMode = authorization.mode === "demo";
 
   let firstLogin = false;
@@ -17,6 +18,10 @@ export default async function AccountPasswordPage() {
     const supabase = await getSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();
     firstLogin = mustChangePassword(user);
+  }
+
+  if (authorization.mode === "production" && authorization.actor.role === "tenant") {
+    return <ResidentPassword firstLogin={firstLogin} />;
   }
 
   return (

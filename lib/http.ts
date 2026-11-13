@@ -110,7 +110,7 @@ export async function requireActor(
       .select("id")
       .eq("organization_id", tenantContext.organizationId)
       .eq("membership_id", membership.id)
-      .eq("state", "active")
+      .in("state", ["active", "notice"])
       .maybeSingle();
     if (tenantError || !tenant) return null;
     tenantId = tenant.id;

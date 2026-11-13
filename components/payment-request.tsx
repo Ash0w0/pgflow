@@ -22,7 +22,11 @@ export function PaymentRequest({
   data,
   accessToken = null,
   invalidPublicLink = false,
+  backHref = "/collections",
+  backLabel = "Back to Collections",
 }: {
+  backHref?: string;
+  backLabel?: string;
   data: LivePaymentRequest | null;
   accessToken?: string | null;
   invalidPublicLink?: boolean;
@@ -124,7 +128,7 @@ export function PaymentRequest({
         <span><ShieldCheck size={15} />{accessToken ? "Secure PG payment link" : "Direct to PG UPI"}</span>
       </header>
       <main className="payment-card">
-        {!accessToken && <Link className="back-link" href="/collections"><ArrowLeft size={16} />Back to Collections</Link>}
+        {!accessToken && <Link className="back-link" href={backHref}><ArrowLeft size={16} />{backLabel}</Link>}
         <div className="payment-title">
           <span className="demo-kicker">{data.invoiceNumber} · {data.period}</span>
           <h1>Pay {data.pgName}</h1>

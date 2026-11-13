@@ -15,8 +15,8 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ paymentId: string }> },
 ) {
-  const actor = await requireActor(request, ["owner", "manager", "accountant"]);
-  if (!actor) return jsonError("Staff access is required.", 401);
+  const actor = await requireActor(request, ["owner", "manager", "accountant", "tenant"]);
+  if (!actor) return jsonError("Sign in to view this receipt.", 401);
   const { paymentId } = await params;
 
   if (isDemoRuntime()) {
@@ -46,6 +46,8 @@ export async function GET(
   } catch {
     return jsonError("The receipt could not be loaded.", 503);
   }
+  // A resident may only open receipts issued to them.
+  if (receipt && actor.role === "tenant" && receipt.tenantId !== actor.tenantId) receipt = null;
   if (!receipt) return jsonError("No receipt has been issued for this payment, or it is no longer approved.", 404);
 
   return new Response(generateReceiptHtml(receipt.data), { headers: RECEIPT_HEADERS });

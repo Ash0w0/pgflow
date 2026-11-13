@@ -3,7 +3,7 @@ name: PGFlow CI
 on:
   pull_request:
   push:
-    branches: [master, "codex/**"]
+    branches: [master, "codex/**", "claude/**"]
 
 permissions:
   contents: read
@@ -22,12 +22,12 @@ jobs:
         with:
           node-version: 22.13.0
           cache: npm
-      - run: npm install
+      - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
+      - run: node --experimental-strip-types --test tests/rehearsals/*.test.mjs
       - run: npm run build
-      - run: npm audit fix --omit=dev || true
       - run: npm audit --omit=dev --audit-level=high
 
   database-security:

@@ -106,7 +106,7 @@ export async function requirePgPage(
       .select("id")
       .eq("organization_id", tenant.organizationId)
       .eq("membership_id", membership.id)
-      .eq("state", "active")
+      .in("state", ["active", "notice"])
       .maybeSingle();
 
     if (tenantError || !tenantProfile) return denyPageAccess();

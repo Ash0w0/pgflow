@@ -19,14 +19,17 @@ export async function GET() {
     if (!readPublicSupabaseConfig()) throw new Error("Missing configuration");
     const { error } = await getSupabaseAdmin().from("platform_operators").select("auth_user_id").limit(1);
     if (error) throw error;
+    // A table from a recent migration must exist, or the deployed code is ahead of the database.
+    const outbox = await getSupabaseAdmin().from("whatsapp_outbox").select("id").limit(1);
+    const schemaCurrent = !outbox.error;
 
     return Response.json({
-      status: "ready",
+      status: schemaCurrent ? "ready" : "degraded",
       demoMode: false,
       database: "reachable",
-      migrations: "production-foundation-present",
+      migrations: schemaCurrent ? "current" : "behind-deployed-code",
       checkedAt,
-    }, { headers: { "cache-control": "no-store" } });
+    }, { status: schemaCurrent ? 200 : 503, headers: { "cache-control": "no-store" } });
   } catch {
     return Response.json({
       status: "unavailable",

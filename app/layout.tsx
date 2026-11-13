@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import { BrandProvider, type BrandValue } from "@/components/brand-provider";
+import { ServiceWorkerRegistrar } from "@/components/service-worker-registrar";
 import { normalizeHostname, safeColor } from "@/lib/branding";
 import { isDemoRuntime } from "@/lib/runtime";
 import { hostnameFromHeaders, resolvePublicBrandContextForHostname } from "@/lib/tenancy";
@@ -89,6 +90,8 @@ export async function generateMetadata(): Promise<Metadata> {
     description,
     applicationName: brand.name,
     manifest: "/manifest.webmanifest",
+    // PG workspaces are private tools; only the platform marketing site is indexable.
+    robots: brand.mode === "platform" ? undefined : { index: false, follow: false },
     icons: { icon: iconUrl, shortcut: iconUrl },
     openGraph: {
       title: brand.name,
@@ -134,6 +137,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     >
       <body className="antialiased">
         <BrandProvider brand={brand}>{children}</BrandProvider>
+        <ServiceWorkerRegistrar />
       </body>
     </html>
   );

@@ -28,3 +28,16 @@ export async function getPublicPaymentRequestData(invoiceId: string, token: stri
   if (!context) return null;
   return getPaymentRequestData(context.organizationId, context.propertyId, context.invoiceId);
 }
+
+export async function residentIdForMembership(organizationId: string, membershipId: string): Promise<string | null> {
+  const { data } = await getSupabaseAdmin().from("tenant_profiles").select("id")
+    .eq("organization_id", organizationId).eq("membership_id", membershipId).in("state", ["active", "notice"]).maybeSingle();
+  return data?.id ?? null;
+}
+
+export async function invoiceBelongsToResident(organizationId: string, propertyId: string, invoiceId: string, residentId: string) {
+  if (!/^[0-9a-f-]{36}$/i.test(invoiceId)) return false;
+  const { data } = await getSupabaseAdmin().from("invoices").select("id")
+    .eq("organization_id", organizationId).eq("property_id", propertyId).eq("id", invoiceId).eq("tenant_id", residentId).maybeSingle();
+  return Boolean(data);
+}
