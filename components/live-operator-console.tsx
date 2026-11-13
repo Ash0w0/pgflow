@@ -4,11 +4,9 @@ import {
   AlertCircle,
   Building2,
   Check,
-  Database,
   Eye,
   EyeOff,
   Globe,
-  Layers3,
   Plus,
   RefreshCcw,
   ShieldCheck,
@@ -22,6 +20,10 @@ import { OperatorPasswordCard } from "./operator-password-card";
 import { StatusPill } from "./status-pill";
 import { PlanChangeDialog, planLabel } from "./plan-change-dialog";
 import type { PlanSummary } from "@/lib/plan";
+
+function slugFromName(name: string) {
+  return name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 48).replace(/-+$/g, "");
+}
 
 type RegistryOrganization = OwnerInvitationOrganization & {
   slug: string;
@@ -191,6 +193,19 @@ function formatCreatedAt(value: string) {
   }).format(timestamp);
 }
 
+const OWNER_LOGIN_LABELS: Record<string, string> = {
+  not_prepared: "No login yet",
+  temporary: "Waiting for owner",
+  temporary_password: "Waiting for owner",
+  temporary_password_expired: "One-time password expired",
+  activated: "Owner signed in",
+  password_changed: "Owner signed in",
+};
+
+function ownerAccessLabel(state: string) {
+  return OWNER_LOGIN_LABELS[state] ?? stateLabel(state);
+}
+
 function ownerAccessState(invitation: RegistryOrganization["ownerInvitation"]) {
   if (!invitation) return "not_prepared";
   return invitation.credentialState ?? invitation.state;
@@ -259,7 +274,14 @@ export function LiveOperatorConsole() {
   function updateField(field: keyof ProvisioningForm, value: string) {
     idempotencyKey.current = null;
     setFeedback(null);
-    setForm((current) => ({ ...current, [field]: value }));
+    setForm((current) => {
+      const next = { ...current, [field]: value };
+      // Suggest the web address from the PG name until it is edited by hand.
+      if (field === "name" && (current.slug === "" || current.slug === slugFromName(current.name))) {
+        next.slug = slugFromName(value);
+      }
+      return next;
+    });
   }
 
   async function provisionShell(event: FormEvent<HTMLFormElement>) {
@@ -269,32 +291,41 @@ export function LiveOperatorConsole() {
     const requestKey = idempotencyKey.current ?? crypto.randomUUID();
     idempotencyKey.current = requestKey;
     setSubmitting(true);
-    setFeedback({ tone: "pending", message: "Creating the blank branded PG shell…" });
+    setFeedback({ tone: "pending", message: "Creating the PG…" });
 
     try {
       const response = await fetch("/api/provisioning", {
         method: "POST",
         credentials: "same-origin",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...form, idempotencyKey: requestKey }),
+        body: JSON.stringify({
+          name: form.name,
+          slug: form.slug,
+          propertyName: form.name,
+          primaryColor: form.primaryColor,
+          accentColor: form.accentColor,
+          idempotencyKey: requestKey,
+        }),
       });
-      if (!response.ok) throw new Error("Provisioning request failed");
+      if (!response.ok) {
+        const failure = await response.json().catch(() => null) as { error?: string } | null;
+        throw new Error(failure?.error ?? "The PG could not be created.");
+      }
 
       const result: unknown = await response.json();
       if (!isProvisioningResult(result)) throw new Error("Provisioning response was invalid");
 
-      const replayNote = result.job.idempotentReplay ? " The existing idempotent result was returned." : "";
       setFeedback({
         tone: "success",
-        message: "Blank shell for " + result.job.organization.name + " is persisted at " + result.job.hostname + ". Provisioning state: " + stateLabel(result.job.state) + "." + replayNote,
+        message: result.job.organization.name + " is ready at " + result.job.hostname + ". Next: create the owner's login below.",
       });
       setForm({ ...INITIAL_FORM });
       idempotencyKey.current = null;
       await loadRegistry();
-    } catch {
+    } catch (cause) {
       setFeedback({
         tone: "error",
-        message: "Unable to create the PG shell. No completion is being claimed; review the fields and try again.",
+        message: cause instanceof Error ? cause.message : "The PG could not be created. Check the fields and try again.",
       });
     } finally {
       setSubmitting(false);
@@ -374,7 +405,6 @@ export function LiveOperatorConsole() {
   }
 
   const organizations = registry?.organizations ?? [];
-  const templateVersion = registry?.template.version;
 
   async function initiateCustomDomain(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -429,9 +459,8 @@ export function LiveOperatorConsole() {
     <div className="operator-page page-stack live-operator-page">
       <section className="page-heading">
         <div>
-          <div className="demo-kicker"><ShieldCheck size={14} /> Authorized operator console</div>
-          <h1>Blank-shell provisioning</h1>
-          <p>Create and review persisted PG shells without copying demo residents, rooms, payments, or operational records.</p>
+          <h1>PGFlow console</h1>
+          <p>Your PGs, their owner logins and plans.</p>
         </div>
         <button
           className="button button-secondary"
@@ -440,43 +469,111 @@ export function LiveOperatorConsole() {
           disabled={registryLoading}
         >
           <RefreshCcw className={registryLoading ? "spin" : ""} size={17} />
-          {registryLoading ? "Refreshing…" : "Refresh registry"}
+          {registryLoading ? "Refreshing…" : "Refresh"}
         </button>
       </section>
 
-      <div className="demo-safety-strip live-provisioning-boundary">
-        <AlertCircle aria-hidden="true" size={17} />
-        <span><strong>Blank branded shell only.</strong> Owner activation, room and tenant imports, UPI and operating rules, and integrations remain pending after this step.</span>
-      </div>
+      {organizations.length > 0 && (
+        <div className="console-summary" aria-label="PG summary">
+          <span><strong>{organizations.length}</strong> PGs</span>
+          <span><strong>{organizations.filter((organization) => organization.plan.status === "trial").length}</strong> on trial</span>
+          <span><strong>{organizations.filter((organization) => organization.plan.status === "paid").length}</strong> paid</span>
+          <span className={organizations.some((organization) => organization.plan.status === "expired") ? "is-alert" : ""}>
+            <strong>{organizations.filter((organization) => organization.plan.status === "expired").length}</strong> read-only
+          </span>
+        </div>
+      )}
 
-      <section className="operator-metric-grid" aria-label="Provisioning summary">
-        <article>
-          <span><Layers3 size={19} /></span>
-          <div><small>Current template</small><strong>{templateVersion ? "v" + templateVersion : "—"}</strong><p>Blank template; no demo records</p></div>
-        </article>
-        <article>
-          <span><Building2 size={19} /></span>
-          <div><small>Persisted PGs</small><strong>{registryLoading ? "—" : organizations.length}</strong><p>Loaded from the production registry</p></div>
-        </article>
-        <article>
-          <span><Database size={19} /></span>
-          <div><small>Initial data</small><strong>Blank</strong><p>Property shell and branding only</p></div>
-        </article>
-        <article>
-          <span><ShieldCheck size={19} /></span>
-          <div><small>Persistence</small><strong>Connected</strong><p>Operator authorization required</p></div>
-        </article>
+      <section className="panel organizations-panel live-organizations-panel">
+        <div className="panel-head panel-head-wrap">
+          <div><h2>PGs</h2></div>
+        </div>
+
+        {registryLoading && !registry ? (
+          <div className="live-registry-empty" role="status"><RefreshCcw className="spin" size={18} /> Loading PGs…</div>
+        ) : registryError ? (
+          <div className="live-registry-empty live-registry-error" role="alert">
+            <AlertCircle size={18} />
+            <span>{registryError}</span>
+            <button className="button button-quiet" type="button" onClick={() => void loadRegistry()}>Try again</button>
+          </div>
+        ) : organizations.length === 0 ? (
+          <div className="live-registry-empty">
+            <Building2 size={20} />
+            <span><strong>No PGs yet.</strong> Add your first PG below.</span>
+          </div>
+        ) : (
+          <div className="table-wrap">
+            <table className="data-table organizations-table">
+              <thead><tr><th>PG</th><th>Owner login</th><th>Plan</th><th>Created</th><th><span className="sr-only">Actions</span></th></tr></thead>
+              <tbody>
+                {organizations.map((organization) => {
+                  const invitation = organization.ownerInvitation;
+                  const invitationState = ownerAccessState(invitation);
+                  const credentialExpiry = invitationState === "activated"
+                    ? null
+                    : invitation?.temporaryPasswordExpiresAt ?? invitation?.expiresAt;
+                  return (
+                    <tr key={organization.id}>
+                      <td>
+                        <div className="property-cell">
+                          <span>{organization.name.slice(0, 2).toUpperCase()}</span>
+                          <div>
+                            <strong>{organization.name}</strong>
+                            {organization.hostname
+                              ? <a href={`https://${organization.hostname}`} target="_blank" rel="noopener noreferrer"><small>{organization.hostname}</small></a>
+                              : <small>No web address yet</small>}
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <StatusPill tone={stateTone(invitationState)}>{ownerAccessLabel(invitationState)}</StatusPill>
+                        {invitation && <small>{invitation.displayName} · {invitation.maskedPhone}</small>}
+                        {credentialExpiry && (
+                          <small>
+                            {invitationState === "temporary_password_expired" ? "Expired " : "Expires "}
+                            {formatCreatedAt(credentialExpiry)}
+                          </small>
+                        )}
+                      </td>
+                      <td>
+                        <div className="plan-cell">
+                          <StatusPill tone={organization.plan.status === "expired" ? "danger" : organization.plan.status === "paid" ? "success" : organization.plan.daysLeft <= 3 ? "warning" : "neutral"}>{planLabel(organization.plan)}</StatusPill>
+                          <button className="button button-quiet" type="button" onClick={() => setPlanTarget(organization)}>Change plan</button>
+                        </div>
+                      </td>
+                      <td><time dateTime={organization.createdAt}>{formatCreatedAt(organization.createdAt)}</time></td>
+                      <td>
+                        {organization.state === "draft" ? (
+                          <button
+                            className="button button-danger-quiet organization-delete-button"
+                            type="button"
+                            onClick={() => openDeleteDialog(organization)}
+                          >
+                            <Trash2 aria-hidden="true" size={15} />
+                            Delete draft
+                          </button>
+                        ) : null}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
 
-      <section className="operator-grid live-operator-grid">
+      <section className="console-add">
         <article className="panel live-provision-panel">
           <div className="panel-head">
-            <div><span className="eyebrow">New organization</span><h2>Create a branded PG shell</h2><p>The hostname and empty property record are created through the protected provisioning API.</p></div>
+            <div><h2>Add a PG</h2><p>Creates an empty workspace with its own web address. Rooms and residents come next.</p></div>
           </div>
 
           <form className="modal-form live-provision-form" onSubmit={provisionShell} aria-busy={submitting}>
+            <div className="form-row">
             <label htmlFor="provision-name">
-              Organization name
+              PG name
               <input
                 id="provision-name"
                 name="name"
@@ -488,9 +585,8 @@ export function LiveOperatorConsole() {
                 disabled={submitting}
               />
             </label>
-            <div className="form-row">
               <label htmlFor="provision-slug">
-                Workspace slug
+                Web address
                 <input
                   id="provision-slug"
                   name="slug"
@@ -503,21 +599,11 @@ export function LiveOperatorConsole() {
                   required
                   disabled={submitting}
                 />
-              </label>
-              <label htmlFor="provision-property-name">
-                Property name
-                <input
-                  id="provision-property-name"
-                  name="propertyName"
-                  value={form.propertyName}
-                  onChange={(event) => updateField("propertyName", event.target.value)}
-                  minLength={2}
-                  maxLength={120}
-                  required
-                  disabled={submitting}
-                />
+                <small>{form.slug ? `${form.slug}.${process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || "pgflow.co"}` : "Letters, numbers and hyphens"}</small>
               </label>
             </div>
+            <details className="console-colours">
+              <summary>Brand colours (optional)</summary>
             <div className="form-row live-color-row">
               <label htmlFor="provision-primary-color">
                 Primary color
@@ -550,6 +636,7 @@ export function LiveOperatorConsole() {
                 </span>
               </label>
             </div>
+            </details>
 
             {feedback && (
               <div
@@ -564,39 +651,27 @@ export function LiveOperatorConsole() {
 
             <button className="button button-primary button-full" type="submit" disabled={submitting}>
               <Plus size={17} />
-              {submitting ? "Creating blank shell…" : "Create blank PG shell"}
+              {submitting ? "Creating…" : "Add PG"}
             </button>
           </form>
         </article>
 
-        <article className="panel live-readiness-panel">
-          <div className="panel-head"><div><span className="eyebrow">Handoff boundary</span><h2>What this step does</h2></div></div>
-          <div className="blueprint-checks live-boundary-list">
-            <span><Check size={15} /> Creates one persisted organization</span>
-            <span><Check size={15} /> Creates its initial property shell</span>
-            <span><Check size={15} /> Applies the selected brand colors</span>
-            <span><Check size={15} /> Reserves its platform hostname</span>
-          </div>
-          <div className="health-list">
-            <div><span className="health-icon"><AlertCircle size={17} /></span><span><strong>Owner access</strong><small>Activation remains pending</small></span><StatusPill tone="warning">Pending</StatusPill></div>
-            <div><span className="health-icon"><Building2 size={17} /></span><span><strong>Rooms and tenants</strong><small>Validated imports remain pending</small></span><StatusPill tone="warning">Pending</StatusPill></div>
-            <div><span className="health-icon"><Database size={17} /></span><span><strong>Rules and integrations</strong><small>UPI, operations, and providers remain pending</small></span><StatusPill tone="warning">Pending</StatusPill></div>
-          </div>
-        </article>
       </section>
 
       <OwnerInvitationPanel organizations={organizations} onPrepared={() => loadRegistry()} />
-      <OperatorPasswordCard />
       <OwnerRecoveryPanel organizations={organizations} />
 
+      <details className="console-more">
+        <summary>More tools: custom domain, change your password</summary>
+
       <section className="panel live-domain-panel">
-        <div className="panel-head"><div><span className="eyebrow">Custom domains</span><h2>Domain verification</h2></div></div>
+        <div className="panel-head"><div><h2>Custom domain</h2><p>Connect a PG&apos;s own domain, like yourpghostel.com, instead of its pgflow.co address.</p></div></div>
         <form className="modal-form" onSubmit={initiateCustomDomain} aria-busy={domainSubmitting}>
           <div className="form-row">
             <label htmlFor="domain-org-id">
-              Organization
+              PG
               <select id="domain-org-id" value={domainOrgId} onChange={(e) => { setDomainOrgId(e.target.value); setDomainChallenge(null); setDomainVerified(null); setDomainError(null); }} disabled={domainSubmitting} required>
-                <option value="">Select organization</option>
+                <option value="">Choose a PG</option>
                 {organizations.map((org) => <option key={org.id} value={org.id}>{org.name} ({org.slug})</option>)}
               </select>
             </label>
@@ -623,86 +698,9 @@ export function LiveOperatorConsole() {
         )}
         {domainError && <div className="live-operator-feedback feedback-error" role="alert"><AlertCircle size={17} /><span>{domainError}</span></div>}
       </section>
+      <OperatorPasswordCard />
+      </details>
 
-      <section className="panel organizations-panel live-organizations-panel">
-        <div className="panel-head panel-head-wrap">
-          <div><span className="eyebrow">Persisted organizations</span><h2>Provisioning registry</h2><p>Only records returned by the protected provisioning API appear here.</p></div>
-          {templateVersion && <StatusPill tone="info">Template v{templateVersion}</StatusPill>}
-        </div>
-
-        {registryLoading && !registry ? (
-          <div className="live-registry-empty" role="status"><RefreshCcw className="spin" size={18} /> Loading persisted PGs…</div>
-        ) : registryError ? (
-          <div className="live-registry-empty live-registry-error" role="alert">
-            <AlertCircle size={18} />
-            <span>{registryError}</span>
-            <button className="button button-quiet" type="button" onClick={() => void loadRegistry()}>Try again</button>
-          </div>
-        ) : organizations.length === 0 ? (
-          <div className="live-registry-empty">
-            <Building2 size={20} />
-            <span><strong>No PG shells yet.</strong> Create the first blank organization with the form above.</span>
-          </div>
-        ) : (
-          <div className="table-wrap">
-            <table className="data-table organizations-table">
-              <thead><tr><th>Organization</th><th>Hostname</th><th>Owner access</th><th>Provisioning</th><th>Organization state</th><th>Plan</th><th>Created</th><th>Actions</th></tr></thead>
-              <tbody>
-                {organizations.map((organization) => {
-                  const provisioningState = organization.provisioning?.state ?? "not_started";
-                  const invitation = organization.ownerInvitation;
-                  const invitationState = ownerAccessState(invitation);
-                  const credentialExpiry = invitationState === "activated"
-                    ? null
-                    : invitation?.temporaryPasswordExpiresAt ?? invitation?.expiresAt;
-                  return (
-                    <tr key={organization.id}>
-                      <td>
-                        <div className="property-cell">
-                          <span>{organization.name.slice(0, 2).toUpperCase()}</span>
-                          <div><strong>{organization.name}</strong><small>{organization.slug}</small></div>
-                        </div>
-                      </td>
-                      <td><strong>{organization.hostname ?? "Not assigned"}</strong><small>{organization.hostname ? "Platform hostname" : "Hostname pending"}</small></td>
-                      <td>
-                        <StatusPill tone={stateTone(invitationState)}>{stateLabel(invitationState)}</StatusPill>
-                        {invitation && <small>{invitation.displayName} · {invitation.maskedPhone}</small>}
-                        {credentialExpiry && (
-                          <small>
-                            {invitationState === "temporary_password_expired" ? "Expired " : "Expires "}
-                            {formatCreatedAt(credentialExpiry)}
-                          </small>
-                        )}
-                      </td>
-                      <td><StatusPill tone={stateTone(provisioningState)}>{stateLabel(provisioningState)}</StatusPill>{organization.provisioning && <small>{organization.provisioning.jobId}</small>}</td>
-                      <td><StatusPill tone={stateTone(organization.state)}>{stateLabel(organization.state)}</StatusPill></td>
-                      <td>
-                        <div className="plan-cell">
-                          <StatusPill tone={organization.plan.status === "expired" ? "danger" : organization.plan.status === "paid" ? "success" : organization.plan.daysLeft <= 3 ? "warning" : "neutral"}>{planLabel(organization.plan)}</StatusPill>
-                          <button className="button button-quiet" type="button" onClick={() => setPlanTarget(organization)}>Change plan</button>
-                        </div>
-                      </td>
-                      <td><time dateTime={organization.createdAt}>{formatCreatedAt(organization.createdAt)}</time></td>
-                      <td>
-                        {organization.state === "draft" ? (
-                          <button
-                            className="button button-danger-quiet organization-delete-button"
-                            type="button"
-                            onClick={() => openDeleteDialog(organization)}
-                          >
-                            <Trash2 aria-hidden="true" size={15} />
-                            Delete draft
-                          </button>
-                        ) : <span className="organization-action-unavailable">Not deletable</span>}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
 
       {planTarget && (
         <PlanChangeDialog

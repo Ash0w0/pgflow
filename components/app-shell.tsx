@@ -23,6 +23,7 @@ import {
   X,
 } from "lucide-react";
 import { BrandMark, PoweredBy } from "./brand-mark";
+import { useBrand } from "./brand-provider";
 import { PlanBanner } from "./plan-banner";
 
 const primaryNav = [
@@ -33,6 +34,18 @@ const primaryNav = [
   { href: "/operations", label: "Operations", icon: Wrench, roles: ["owner", "manager"] },
   { href: "/reports", label: "Reports", icon: FileBarChart, roles: ["owner", "accountant"] },
 ];
+
+const operatorNav = [
+  { href: "/operator", label: "Console", icon: Building2, roles: ["platform_operator"] },
+];
+
+const ROLE_LABELS: Record<string, string> = {
+  owner: "Owner",
+  manager: "Manager",
+  accountant: "Accountant",
+  tenant: "Resident",
+  platform_operator: "Operator",
+};
 
 /**
  * Sample records for the guided demo only. These never render in a live workspace —
@@ -65,8 +78,15 @@ function isTypingTarget(target: EventTarget | null) {
 
 export function AppShell({ children, demoMode, role }: { children: ReactNode; demoMode: boolean; role?: string }) {
   // Pages pass the signed-in role so staff only see sections they can open; owners and the demo see everything.
-  const visibleNav = role && role !== "owner" ? primaryNav.filter((item) => item.roles.includes(role)) : primaryNav;
+  const isOperator = role === "platform_operator";
+  const visibleNav = isOperator
+    ? operatorNav
+    : role && role !== "owner" ? primaryNav.filter((item) => item.roles.includes(role)) : primaryNav;
   const showSettings = !role || role === "owner";
+  const brand = useBrand();
+  const profileName = demoMode ? "Aarav Shah" : isOperator ? "PGFlow operator" : brand.name;
+  const profileRole = demoMode ? "Owner" : role ? ROLE_LABELS[role] ?? "" : "";
+  const profileInitials = profileName.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join("").toUpperCase() || "P";
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -206,7 +226,7 @@ export function AppShell({ children, demoMode, role }: { children: ReactNode; de
         </div>
 
         <nav className="sidebar-nav" aria-label="Property navigation">
-          <span className="nav-kicker">Property</span>
+          <span className="nav-kicker">{isOperator ? "PGFlow" : "Property"}</span>
           {visibleNav.map((item) => {
             const Icon = item.icon;
             const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
@@ -226,7 +246,7 @@ export function AppShell({ children, demoMode, role }: { children: ReactNode; de
         </nav>
 
         <div className="sidebar-foot">
-          {showSettings ? (
+          {isOperator ? null : showSettings ? (
             <Link className={`nav-item ${pathname.startsWith("/settings") ? "active" : ""}`} href="/settings" aria-current={pathname.startsWith("/settings") ? "page" : undefined}>
               <Settings size={18} />
               <span>Settings</span>
@@ -321,10 +341,10 @@ export function AppShell({ children, demoMode, role }: { children: ReactNode; de
               aria-label="Open profile menu"
               aria-expanded={profileOpen}
             >
-              <span className="avatar avatar-olive">AS</span>
+              <span className="avatar avatar-olive">{profileInitials}</span>
               <span className="profile-copy">
-                <strong>Aarav Shah</strong>
-                <small>Owner</small>
+                <strong>{profileName}</strong>
+                {profileRole && <small>{profileRole}</small>}
               </span>
               <ChevronDown size={15} />
             </button>
@@ -363,6 +383,7 @@ export function AppShell({ children, demoMode, role }: { children: ReactNode; de
 
             {profileOpen && (
               <div className="absolute right-0 top-14 z-50 w-56 rounded-2xl bg-white p-2 shadow-2xl border border-slate-200 dark:bg-slate-900 dark:border-slate-800">
+                {!isOperator && (<>
                 <Link
                   href={showSettings ? "/settings" : "/account/password"}
                   onClick={() => setProfileOpen(false)}
@@ -379,6 +400,7 @@ export function AppShell({ children, demoMode, role }: { children: ReactNode; de
                   <CreditCard size={16} />
                   <span>Collections</span>
                 </Link>
+                </>)}
                 {demoMode ? (
                   <Link
                     href="/login"

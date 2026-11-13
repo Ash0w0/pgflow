@@ -7,7 +7,6 @@ import {
   KeyRound,
   MessageCircle,
   RefreshCcw,
-  ShieldCheck,
   UserRoundCheck,
 } from "lucide-react";
 import { useState, type FormEvent } from "react";
@@ -282,16 +281,10 @@ export function OwnerInvitationPanel({
     <article className="panel owner-invitation-panel">
       <div className="panel-head">
         <div>
-          <span className="eyebrow">Next provisioning step</span>
-          <h2>Create the owner&apos;s first login</h2>
-          <p>Create a phone-and-temporary-password account. The owner must choose a private password at first sign-in.</p>
+          <h2>Owner login</h2>
+          <p>Create a one-time password for the PG owner. They choose their own password the first time they sign in.</p>
         </div>
         <span className="owner-invite-icon"><KeyRound aria-hidden="true" size={19} /></span>
-      </div>
-
-      <div className="owner-invite-boundary owner-manual-boundary">
-        <ShieldCheck aria-hidden="true" size={17} />
-        <span><strong>No OTP or paid messaging service.</strong> This uses no SMS provider or WhatsApp API, so there is no messaging API cost. WhatsApp opens a normal draft that you review and send yourself.</span>
       </div>
 
       {eligible.length === 0 ? (

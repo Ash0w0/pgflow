@@ -1655,3 +1655,20 @@ a { color: inherit; text-decoration: none; }
 .automation-toggle { display: grid !important; grid-template-columns: 18px minmax(0, 1fr); gap: 10px; align-items: start; font-size: 11px; line-height: 1.5; }
 .automation-toggle input { margin-top: 2px; }
 .automation-toggle strong { display: block; font-size: 12px; }
+
+/* Operator console: summary line and collapsible sections */
+.console-summary { display: flex; flex-wrap: wrap; gap: 10px; }
+.console-summary span { display: inline-flex; align-items: baseline; gap: 6px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: var(--ink-faint); font-size: 12px; font-weight: 650; }
+.console-summary strong { color: var(--ink); font-size: 15px; }
+.console-summary .is-alert { border-color: #f1a8a0; background: #fff0ee; color: #8a2d24; }
+.console-colours summary, .console-more > summary { cursor: pointer; color: var(--brand); font-size: 12px; font-weight: 700; list-style: none; }
+.console-colours summary::-webkit-details-marker, .console-more > summary::-webkit-details-marker { display: none; }
+.console-colours summary::before, .console-more > summary::before { content: "+ "; }
+.console-colours[open] summary::before, .console-more[open] > summary::before { content: "− "; }
+.console-colours[open] summary { margin-bottom: 12px; }
+.console-more { display: grid; gap: 18px; }
+.console-more > summary { padding: 14px 18px; border: 1px dashed var(--line); border-radius: 14px; background: #fff; }
+.organizations-table .property-cell a small { color: var(--brand); text-decoration: underline; text-underline-offset: 2px; }
+.console-add > .panel { width: 100%; }
+.live-provision-form label small { color: var(--ink-faint); font-size: 11px; font-weight: 600; }
+.owner-recovery-none { margin: 0; color: var(--ink-faint); font-size: 12px; }

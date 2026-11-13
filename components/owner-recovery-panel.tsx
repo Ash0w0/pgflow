@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Check, Clipboard, KeyRound, MessageCircle, RefreshCcw, ShieldCheck } from "lucide-react";
+import { AlertCircle, Check, Clipboard, KeyRound, MessageCircle, RefreshCcw } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import type { OwnerInvitationOrganization } from "./owner-invitation-panel";
 
@@ -122,20 +122,14 @@ export function OwnerRecoveryPanel({ organizations }: { organizations: OwnerInvi
     <article className="panel owner-invitation-panel owner-recovery-panel">
       <div className="panel-head">
         <div>
-          <span className="eyebrow">Manual account recovery</span>
-          <h2>Help an owner who forgot their password</h2>
+          <h2>Owner forgot their password</h2>
           <p>After confirming the owner yourself, create a one-time recovery credential that can be shared manually on WhatsApp.</p>
         </div>
         <span className="owner-invite-icon"><KeyRound aria-hidden="true" size={19} /></span>
       </div>
 
-      <div className="owner-invite-boundary owner-manual-boundary">
-        <ShieldCheck aria-hidden="true" size={17} />
-        <span><strong>No OTP and no automatic reset.</strong> Your password and manual identity confirmation are required before a recovery credential is issued.</span>
-      </div>
-
       {eligible.length === 0 ? (
-        <div className="live-registry-empty">No active PG owner account is available for password recovery yet.</div>
+        <p className="owner-recovery-none">Available once an owner has signed in and set their own password.</p>
       ) : (
         <form className="modal-form owner-reset-form" onSubmit={submit} aria-busy={submitting}>
           <label htmlFor="recovery-organization">
