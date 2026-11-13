@@ -44,7 +44,16 @@ export function contactEmail() {
 }
 
 export function businessCity() {
-  return (process.env.NEXT_PUBLIC_PGFLOW_CITY ?? "").trim() || "Greater Noida, Uttar Pradesh, India";
+  return (process.env.NEXT_PUBLIC_PGFLOW_CITY ?? "").trim() || "Patna, Bihar, India";
+}
+
+/** Public business registration details. Udyam numbers are public and verifiable on udyamregistration.gov.in. */
+export const UDYAM_NUMBER = "UDYAM-BR-26-0259441";
+export const SERVICE_AREA = "Serving Delhi NCR";
+
+/** The legal entity behind PGFlow, as named in contracts and legal pages. */
+export function legalEntityLine() {
+  return `PGFlow, a sole proprietorship owned by ${FOUNDER.name} (Udyam Registration No. ${UDYAM_NUMBER})`;
 }
 
 export function legalBusinessName() {
