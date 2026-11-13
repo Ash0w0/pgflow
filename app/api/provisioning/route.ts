@@ -1,4 +1,5 @@
 import { consumeAuthenticationLimits } from "@/lib/auth-rate-limit";
+import { summarizePlan } from "@/lib/plan";
 import { normalizeHostname } from "@/lib/branding";
 import { isValidPropertySlug } from "@/lib/domain";
 import { jsonError, requireOperator, requireOperatorActor } from "@/lib/http";
@@ -133,7 +134,7 @@ export async function GET(request: Request) {
       .maybeSingle(),
     admin
       .from("organizations")
-      .select("id,name,slug,state,created_at,resident_limit")
+      .select("id,name,slug,state,created_at,resident_limit,trial_ends_at,paid_until")
       .eq("demo_mode", false)
       .order("created_at", { ascending: false }),
     admin
@@ -244,6 +245,9 @@ export async function GET(request: Request) {
       hostname: hostnameByOrganization.get(organization.id) ?? null,
       createdAt: organization.created_at,
       residentLimit: typeof organization.resident_limit === "number" ? organization.resident_limit : 2,
+      plan: summarizePlan(organization.trial_ends_at, organization.paid_until),
+      trialEndsAt: organization.trial_ends_at ?? null,
+      paidUntil: organization.paid_until ?? null,
       provisioning: jobByOrganization.get(organization.id) ?? null,
       ownerInvitation: invitationByOrganization.get(organization.id) ?? null,
     })),

@@ -62,15 +62,32 @@ test("generates 8:00 PM daily owner digest preview", () => {
 });
 
 test("dispatches demo mode mock WhatsApp templates cleanly", async () => {
+  const previous = process.env.PGFLOW_RUNTIME;
+  process.env.PGFLOW_RUNTIME = "demo";
   const result = await sendWhatsAppTemplate({
     recipientPhone: "9876543210",
     templateName: "pgflow_rent_due_en",
     languageCode: "en",
   });
 
+  if (previous === undefined) delete process.env.PGFLOW_RUNTIME; else process.env.PGFLOW_RUNTIME = previous;
   assert.equal(result.ok, true);
   assert.match(result.wamid, /^wamid\./);
   assert.equal(result.demo, true);
+});
+
+test("a live workspace without Meta credentials never reports a fake send", async () => {
+  const saved = { runtime: process.env.PGFLOW_RUNTIME, token: process.env.WHATSAPP_TOKEN, id: process.env.WHATSAPP_PHONE_NUMBER_ID };
+  process.env.PGFLOW_RUNTIME = "supabase";
+  delete process.env.WHATSAPP_TOKEN;
+  delete process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const result = await sendWhatsAppTemplate({ recipientPhone: "9876543210", templateName: "pgflow_rent_due_en" });
+  for (const [key, value] of [["PGFLOW_RUNTIME", saved.runtime], ["WHATSAPP_TOKEN", saved.token], ["WHATSAPP_PHONE_NUMBER_ID", saved.id]]) {
+    if (value === undefined) delete process.env[key]; else process.env[key] = value;
+  }
+  assert.equal(result.ok, false);
+  assert.equal(result.wamid, undefined);
+  assert.match(result.error, /not connected/);
 });
 
 test("verifies 0028 whatsapp message logs migration security contract", async () => {

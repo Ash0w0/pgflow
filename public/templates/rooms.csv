@@ -1,0 +1,4 @@
+floor,room,capacity,room_type,monthly_rent,initial_state
+Ground,G-101,3,Triple sharing,7500,vacant
+Ground,G-102,2,Double sharing,8500,vacant
+First,F-201,1,Single,12000,vacant

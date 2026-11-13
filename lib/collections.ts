@@ -79,6 +79,7 @@ export async function getCollectionsData(organizationId: string, propertyId: str
       if (!tenant || !payment.invoice_id) return [];
       return [{ id: payment.id, invoiceId: payment.invoice_id, residentName: tenant.full_name, method: payment.method as "upi" | "cash", amount: Number(payment.amount), reference: payment.reference ?? "—", paidAt: payment.paid_at }];
     }),
+    ...await loadApprovedPaymentsAndClaims(organizationId, propertyId, tenants, new Map((invoicesResult.data ?? []).map((invoice) => [invoice.id, invoice.number]))),
     totals: {
       invoiceCount: collectible.length,
       totalBilled: collectible.reduce((sum, invoice) => sum + invoice.totalAmount, 0),
@@ -88,5 +89,54 @@ export async function getCollectionsData(organizationId: string, propertyId: str
       readyToGenerateCount: ready.length,
       readyToGenerateTotal: ready.reduce((sum, row) => sum + row.rent, 0),
     },
+  };
+}
+
+/** Recent approved payments (with receipts) and mistaken-approval claims for the collections register. */
+async function loadApprovedPaymentsAndClaims(
+  organizationId: string,
+  propertyId: string,
+  tenants: Map<string, { full_name: string }>,
+  invoiceNumbers: Map<string, string>,
+): Promise<Pick<CollectionsData, "approvedPayments" | "claims">> {
+  const admin = getSupabaseAdmin();
+  const [paymentsResult, receiptsResult, claimsResult] = await Promise.all([
+    admin.from("payments").select("id,tenant_id,method,amount,reference,approved_at").eq("organization_id", organizationId).eq("property_id", propertyId).eq("state", "approved").order("approved_at", { ascending: false }).limit(50),
+    admin.from("receipts").select("payment_id,number").eq("organization_id", organizationId).eq("property_id", propertyId).order("issued_at", { ascending: false }).limit(200),
+    admin.from("payment_claims").select("id,payment_id,tenant_id,amount,reason,state,raised_at,resolution_note,correction_invoice_id").eq("organization_id", organizationId).eq("property_id", propertyId).order("raised_at", { ascending: false }).limit(100),
+  ]);
+  for (const [label, result] of [["approved payments", paymentsResult], ["receipts", receiptsResult], ["claims", claimsResult]] as const) {
+    if (result.error) throw new Error(`Collection ${label} could not be loaded: ${result.error.message}`);
+  }
+
+  const receipts = new Map((receiptsResult.data ?? []).map((receipt) => [receipt.payment_id, receipt.number]));
+  const claimStateByPayment = new Map<string, "open" | "upheld" | "dismissed">();
+  for (const claim of claimsResult.data ?? []) {
+    const state = claim.state as "open" | "upheld" | "dismissed";
+    if (state !== "dismissed" || !claimStateByPayment.has(claim.payment_id)) claimStateByPayment.set(claim.payment_id, state);
+  }
+
+  return {
+    approvedPayments: (paymentsResult.data ?? []).map((payment) => ({
+      id: payment.id,
+      residentName: tenants.get(payment.tenant_id)?.full_name ?? "Resident",
+      method: payment.method as "upi" | "cash",
+      amount: Number(payment.amount),
+      reference: payment.reference ?? "—",
+      approvedAt: payment.approved_at ?? "",
+      receiptNumber: receipts.get(payment.id) ?? null,
+      claimState: claimStateByPayment.get(payment.id) ?? null,
+    })),
+    claims: (claimsResult.data ?? []).map((claim) => ({
+      id: claim.id,
+      paymentId: claim.payment_id,
+      residentName: tenants.get(claim.tenant_id)?.full_name ?? "Resident",
+      amount: Number(claim.amount),
+      reason: claim.reason,
+      state: claim.state as "open" | "upheld" | "dismissed",
+      raisedAt: claim.raised_at,
+      resolutionNote: claim.resolution_note,
+      correctionInvoiceNumber: claim.correction_invoice_id ? invoiceNumbers.get(claim.correction_invoice_id) ?? null : null,
+    })),
   };
 }

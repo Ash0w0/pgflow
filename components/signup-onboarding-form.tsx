@@ -25,7 +25,7 @@ export function SignupOnboardingForm({ whatsappNumber }: SignupOnboardingFormPro
     `PG name: ${cleanLine(pgName) || "Not provided"}`,
     `City: ${cleanLine(city) || "Not provided"}`,
     `My WhatsApp number: ${cleanLine(phone) || "Not provided"}`,
-    "I want to start with up to 2 residents.",
+    "I want to start the 15-day free trial.",
   ].join("\n"), [city, ownerName, pgName, phone]);
 
   function submit(event: FormEvent<HTMLFormElement>) {

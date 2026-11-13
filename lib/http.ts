@@ -7,6 +7,7 @@ import {
   resolvePublicBrandContext,
 } from "./tenancy";
 import { normalizeHostname } from "./branding";
+import { mustChangePassword } from "./password-change-flag";
 
 export function jsonError(message: string, status = 400, details?: Record<string, unknown>) {
   return Response.json({ error: message, ...details }, { status, headers: { "cache-control": "no-store" } });
@@ -70,7 +71,11 @@ export function isTrustedMutationRequest(request: Request) {
   }
 }
 
-export async function requireActor(request: Request, allowedRoles: AppRole[]): Promise<AppActor | null> {
+export async function requireActor(
+  request: Request,
+  allowedRoles: AppRole[],
+  options: { allowPendingPasswordChange?: boolean } = {},
+): Promise<AppActor | null> {
   if (!isTrustedMutationRequest(request)) return null;
   const supplied = bearerToken(request);
   const tenantContext = await resolvePublicBrandContext(request);
@@ -84,6 +89,8 @@ export async function requireActor(request: Request, allowedRoles: AppRole[]): P
   const supabase = await getSupabaseServerClient();
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) return null;
+  // Accounts holding a one-time password may only change that password.
+  if (mustChangePassword(user) && !options.allowPendingPasswordChange) return null;
 
   const { data: membership, error: membershipError } = await supabase
     .from("memberships")

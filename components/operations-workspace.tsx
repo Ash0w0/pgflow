@@ -51,10 +51,12 @@ export function OperationsWorkspace({
   data,
   demoMode,
   canManage,
+  role,
 }: {
   data: OperationsData;
   demoMode: boolean;
   canManage: boolean;
+  role?: string;
 }) {
   const router = useRouter();
   const [filterStatus, setFilterStatus] = useState<TicketStatus | "all">("all");
@@ -97,7 +99,7 @@ export function OperationsWorkspace({
   }
 
   return (
-    <AppShell demoMode={demoMode}>
+    <AppShell demoMode={demoMode} role={role}>
       <div className="page-stack operations-page">
         <section className="page-heading">
           <div>

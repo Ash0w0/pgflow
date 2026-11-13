@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, type ReactNode } from "react";
+import type { PlanSummary } from "@/lib/plan";
 
 export type BrandValue = {
   name: string;
@@ -9,6 +10,8 @@ export type BrandValue = {
   accent: string;
   mode: "demo" | "tenant" | "platform";
   platformName: string;
+  /** Trial/paid status of the PG workspace; absent on the platform and demo. */
+  plan?: PlanSummary;
 };
 
 const DEFAULT_BRAND: BrandValue = {

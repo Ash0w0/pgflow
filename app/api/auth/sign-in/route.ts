@@ -1,4 +1,5 @@
 import { isTrustedMutationRequest, jsonError } from "@/lib/http";
+import { mustChangePassword } from "@/lib/password-change-flag";
 import { normalizeHostname } from "@/lib/branding";
 import { isDemoRuntime } from "@/lib/runtime";
 import { verifyPendingManualOwnerCredential } from "@/lib/manual-owner-activation";
@@ -184,9 +185,11 @@ export async function POST(request: Request) {
     return jsonError("The phone number or password is incorrect.", 401);
   }
 
+  const passwordChangeRequired = mustChangePassword(data.user);
   return Response.json({
     authenticated: true,
     role: membership.role,
-    redirectTo: membership.role === "tenant" ? "/tenant" : "/",
+    requiresPasswordChange: passwordChangeRequired,
+    redirectTo: passwordChangeRequired ? "/account/password" : membership.role === "tenant" ? "/tenant" : "/",
   }, { headers: { "cache-control": "no-store" } });
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireActor } from "@/lib/http";
-import { sendWhatsAppTemplate } from "@/lib/whatsapp/client";
+import { NOT_CONFIGURED, sendWhatsAppTemplate } from "@/lib/whatsapp/client";
 import {
   buildRentDueReminderPayload,
   buildPaymentReceiptPayload,
@@ -110,9 +110,10 @@ export async function POST(request: Request) {
 
     const dispatchResult = await sendWhatsAppTemplate(templateOptions);
     if (!dispatchResult.ok) {
+      const notConnected = dispatchResult.error === NOT_CONFIGURED;
       return NextResponse.json(
-        { error: dispatchResult.error || "Failed to dispatch WhatsApp message." },
-        { status: 500 }
+        { error: notConnected ? "WhatsApp is not connected for PGFlow yet. Nothing was sent." : dispatchResult.error || "Failed to dispatch WhatsApp message." },
+        { status: notConnected ? 503 : 502 }
       );
     }
 

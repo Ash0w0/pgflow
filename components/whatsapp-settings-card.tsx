@@ -79,7 +79,7 @@ export function WhatsAppSettingsCard({
                   WhatsApp messaging not configured
                 </strong>
                 <span className="text-xs text-slate-600 dark:text-slate-400">
-                  Outbound reminders and receipts are disabled until credentials are set.
+                  Reminders and receipts are queued, and sending starts once PGFlow connects WhatsApp.
                 </span>
               </div>
             </div>
@@ -91,7 +91,7 @@ export function WhatsAppSettingsCard({
           <div className="p-3.5 rounded-xl border border-slate-200 bg-white dark:bg-slate-900 dark:border-slate-800">
             <span className="block text-xs font-semibold text-slate-400 uppercase">Supported templates</span>
             <strong className="block text-sm font-bold text-slate-800 dark:text-slate-200 mt-0.5">
-              Rent due, payment receipts, daily digest
+              Rent reminders and payment receipts
             </strong>
           </div>
           <div className="p-3.5 rounded-xl border border-slate-200 bg-white dark:bg-slate-900 dark:border-slate-800">
@@ -105,8 +105,8 @@ export function WhatsAppSettingsCard({
         <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-500/10 text-amber-900 dark:text-amber-300 border border-amber-500/20 text-xs">
           <AlertCircle size={17} className="shrink-0 mt-0.5" />
           <span>
-            Messages are sent using Meta-approved templates. Set <code>WHATSAPP_TOKEN</code> and{" "}
-            <code>WHATSAPP_PHONE_NUMBER_ID</code> in your environment to enable live dispatch.
+            Messages are sent from the PGFlow WhatsApp Business number using Meta-approved templates.
+            {configured ? "" : " PGFlow is still connecting the number; nothing is sent until then, and queued messages wait safely."}
           </span>
         </div>
 

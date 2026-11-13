@@ -1609,3 +1609,49 @@ a { color: inherit; text-decoration: none; }
 .legal-article p, .legal-article li { color: var(--ink-soft); font-size: 15px; line-height: 1.7; }
 .legal-article ul { padding-left: 20px; }
 .legal-article a { color: var(--brand); font-weight: 680; text-decoration: underline; }
+
+.plan-banner { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 12px; margin-bottom: 18px; padding: 12px 16px; border: 1px solid #b9d17d; border-radius: 12px; color: #315f4d; background: #f0f8df; font-size: 11px; line-height: 1.5; }
+.plan-banner strong { display: block; color: var(--ink); font-size: 12px; }
+.plan-banner > svg { color: var(--brand); }
+.plan-banner > a { display: inline-flex; align-items: center; gap: 6px; color: var(--brand); font-weight: 730; white-space: nowrap; }
+.plan-banner-urgent { border-color: #f0c36d; color: #7a5410; background: #fff6e2; }
+.plan-banner-expired { border-color: #f1a8a0; color: #8a2d24; background: #fff0ee; }
+.plan-banner-expired > svg { color: #b4372b; }
+@media (max-width: 640px) { .plan-banner { grid-template-columns: 22px minmax(0, 1fr); } .plan-banner > a { grid-column: 2; } }
+.plan-action-options { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; font-size: 11px; }
+.plan-action-options legend { margin-bottom: 6px; font-weight: 700; }
+.plan-action-options label { display: flex; align-items: center; gap: 8px; font-weight: 550; }
+.plan-cell { display: grid; gap: 6px; justify-items: start; }
+.team-list { display: grid; gap: 10px; margin: 0 0 18px; padding: 0; list-style: none; }
+.team-list > li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; }
+.team-list strong { display: block; font-size: 12px; }
+.team-list small { color: var(--ink-faint); font-size: 10px; }
+.team-actions { display: flex; gap: 6px; }
+.team-confirm { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: end; gap: 8px; font-size: 11px; }
+.team-confirm label { display: grid; gap: 4px; flex: 1 1 220px; }
+.team-empty { color: var(--ink-faint); font-size: 11px; }
+.team-add-form h3 { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; }
+.team-credential { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 12px; margin-bottom: 16px; padding: 14px; border: 1px solid #b9d17d; border-radius: 12px; background: #f0f8df; font-size: 11px; }
+.team-credential code { display: block; margin: 8px 0; padding: 8px 10px; border-radius: 8px; background: #fff; font-size: 14px; letter-spacing: .04em; user-select: all; }
+.team-credential-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 640px) { .team-list > li { grid-template-columns: minmax(0, 1fr) auto; } .team-actions { grid-column: 1 / -1; } }
+.claims-open { display: grid; gap: 10px; margin-bottom: 16px; padding: 14px; border: 1px solid #f0c36d; border-radius: 12px; background: #fff9ec; }
+.claims-open h3 { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 12px; }
+.claim-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.claim-row strong { display: block; font-size: 12px; }
+.claim-row small { color: var(--ink-faint); font-size: 10px; }
+.claim-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.claim-actions input { min-width: 160px; }
+.claims-history { margin-top: 14px; font-size: 11px; }
+.claims-history ul { display: grid; gap: 6px; margin: 10px 0 0; padding: 0; list-style: none; }
+.claims-history li { display: flex; gap: 8px; align-items: center; }
+@media (max-width: 720px) { .claim-row { grid-template-columns: 1fr; } }
+.import-templates { display: flex; flex-wrap: wrap; gap: 10px; }
+.import-files { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.import-drop { position: relative; display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: center; padding: 16px; border: 1px dashed var(--line); border-radius: 12px; cursor: pointer; font-size: 11px; color: var(--ink-faint); }
+.import-drop strong { display: block; color: var(--ink); font-size: 12px; }
+.import-drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.import-summary { display: grid; gap: 6px; margin: 0 0 16px; padding: 0; list-style: none; font-size: 12px; }
+.automation-toggle { display: grid !important; grid-template-columns: 18px minmax(0, 1fr); gap: 10px; align-items: start; font-size: 11px; line-height: 1.5; }
+.automation-toggle input { margin-top: 2px; }
+.automation-toggle strong { display: block; font-size: 12px; }

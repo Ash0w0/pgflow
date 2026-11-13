@@ -10,5 +10,5 @@ export default async function Page() {
   }
   if (!authorization.actor.propertyId) throw new Error("The staff member is not assigned to a property.");
   const data = await getCollectionsData(authorization.actor.organizationId, authorization.actor.propertyId);
-  return <CollectionsWorkspace data={data} canGenerate={authorization.actor.role === "owner"} canReview={["owner", "accountant"].includes(authorization.actor.role)} />;
+  return <CollectionsWorkspace data={data} canGenerate={authorization.actor.role === "owner"} canReview={["owner", "accountant"].includes(authorization.actor.role)} role={authorization.actor.role} />;
 }

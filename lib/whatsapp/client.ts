@@ -51,8 +51,15 @@ export function normalizeWhatsAppPhone(phone: string): string {
   return cleaned;
 }
 
+export const NOT_CONFIGURED = "WhatsApp is not connected yet: WHATSAPP_TOKEN and WHATSAPP_PHONE_NUMBER_ID are not set.";
+
+/** True when the PGFlow WhatsApp Business number is connected for live sending. */
+export function isWhatsAppConfigured() {
+  return Boolean(process.env.WHATSAPP_TOKEN?.trim() && process.env.WHATSAPP_PHONE_NUMBER_ID?.trim());
+}
+
 /**
- * Dispatches a WhatsApp Template message via Meta Graph API v18.0 or demo mock.
+ * Dispatches a WhatsApp Template message via the Meta Graph API, or a mock in the fictional demo.
  */
 export async function sendWhatsAppTemplate(
   options: SendWhatsAppTemplateOptions
@@ -60,12 +67,7 @@ export async function sendWhatsAppTemplate(
   const normalizedPhone = normalizeWhatsAppPhone(options.recipientPhone);
   const languageCode = options.languageCode || "en";
 
-  const isDemo =
-    process.env.PGFLOW_RUNTIME === "demo" ||
-    !process.env.WHATSAPP_TOKEN ||
-    !process.env.WHATSAPP_PHONE_NUMBER_ID;
-
-  if (isDemo) {
+  if (process.env.PGFLOW_RUNTIME === "demo") {
     const mockWamid = `wamid.HBgL${Math.random().toString(36).substring(2, 12).toUpperCase()}`;
     return {
       ok: true,
@@ -74,9 +76,16 @@ export async function sendWhatsAppTemplate(
     };
   }
 
+  // A live workspace never pretends a message was sent.
+  if (!isWhatsAppConfigured()) {
+    return { ok: false, error: NOT_CONFIGURED };
+  }
+
   const token = process.env.WHATSAPP_TOKEN;
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  const graphUrl = `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`;
+  // Server-only override (e.g. a newer Graph API version or a local test double).
+  const graphBase = (process.env.WHATSAPP_GRAPH_BASE_URL?.trim() || "https://graph.facebook.com/v18.0").replace(/\/$/, "");
+  const graphUrl = `${graphBase}/${phoneNumberId}/messages`;
 
   const payload = {
     messaging_product: "whatsapp",

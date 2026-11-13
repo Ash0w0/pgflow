@@ -23,14 +23,15 @@ import {
   X,
 } from "lucide-react";
 import { BrandMark, PoweredBy } from "./brand-mark";
+import { PlanBanner } from "./plan-banner";
 
 const primaryNav = [
-  { href: "/", label: "Overview", icon: LayoutDashboard },
-  { href: "/collections", label: "Collections", icon: CreditCard },
-  { href: "/residents", label: "Residents", icon: Users },
-  { href: "/rooms", label: "Rooms & beds", icon: Building2 },
-  { href: "/operations", label: "Operations", icon: Wrench },
-  { href: "/reports", label: "Reports", icon: FileBarChart },
+  { href: "/", label: "Overview", icon: LayoutDashboard, roles: ["owner", "manager", "accountant"] },
+  { href: "/collections", label: "Collections", icon: CreditCard, roles: ["owner", "manager", "accountant"] },
+  { href: "/residents", label: "Residents", icon: Users, roles: ["owner"] },
+  { href: "/rooms", label: "Rooms & beds", icon: Building2, roles: ["owner"] },
+  { href: "/operations", label: "Operations", icon: Wrench, roles: ["owner", "manager"] },
+  { href: "/reports", label: "Reports", icon: FileBarChart, roles: ["owner", "accountant"] },
 ];
 
 /**
@@ -62,7 +63,10 @@ function isTypingTarget(target: EventTarget | null) {
   );
 }
 
-export function AppShell({ children, demoMode }: { children: ReactNode; demoMode: boolean }) {
+export function AppShell({ children, demoMode, role }: { children: ReactNode; demoMode: boolean; role?: string }) {
+  // Pages pass the signed-in role so staff only see sections they can open; owners and the demo see everything.
+  const visibleNav = role && role !== "owner" ? primaryNav.filter((item) => item.roles.includes(role)) : primaryNav;
+  const showSettings = !role || role === "owner";
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -203,7 +207,7 @@ export function AppShell({ children, demoMode }: { children: ReactNode; demoMode
 
         <nav className="sidebar-nav" aria-label="Property navigation">
           <span className="nav-kicker">Property</span>
-          {primaryNav.map((item) => {
+          {visibleNav.map((item) => {
             const Icon = item.icon;
             const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
             return (
@@ -222,10 +226,17 @@ export function AppShell({ children, demoMode }: { children: ReactNode; demoMode
         </nav>
 
         <div className="sidebar-foot">
-          <Link className={`nav-item ${pathname.startsWith("/settings") ? "active" : ""}`} href="/settings" aria-current={pathname.startsWith("/settings") ? "page" : undefined}>
-            <Settings size={18} />
-            <span>Settings</span>
-          </Link>
+          {showSettings ? (
+            <Link className={`nav-item ${pathname.startsWith("/settings") ? "active" : ""}`} href="/settings" aria-current={pathname.startsWith("/settings") ? "page" : undefined}>
+              <Settings size={18} />
+              <span>Settings</span>
+            </Link>
+          ) : (
+            <Link className={`nav-item ${pathname.startsWith("/account") ? "active" : ""}`} href="/account/password">
+              <Settings size={18} />
+              <span>My password</span>
+            </Link>
+          )}
           {demoMode ? (
             <Link className="nav-item" href="/login">
               <LogOut size={18} />
@@ -353,12 +364,12 @@ export function AppShell({ children, demoMode }: { children: ReactNode; demoMode
             {profileOpen && (
               <div className="absolute right-0 top-14 z-50 w-56 rounded-2xl bg-white p-2 shadow-2xl border border-slate-200 dark:bg-slate-900 dark:border-slate-800">
                 <Link
-                  href="/settings"
+                  href={showSettings ? "/settings" : "/account/password"}
                   onClick={() => setProfileOpen(false)}
                   className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
                   <Settings size={16} />
-                  <span>Property settings</span>
+                  <span>{showSettings ? "Property settings" : "My password"}</span>
                 </Link>
                 <Link
                   href="/collections"
@@ -514,7 +525,7 @@ export function AppShell({ children, demoMode }: { children: ReactNode; demoMode
           </div>
         )}
 
-        <main className="app-main">{children}</main>
+        <main className="app-main">{!demoMode && <PlanBanner />}{children}</main>
       </div>
     </div>
   );

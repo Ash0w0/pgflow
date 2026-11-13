@@ -62,7 +62,7 @@ export default async function Home() {
   const propertyId = authorization.actor.propertyId;
   if (!propertyId) {
     return (
-      <AppShell demoMode={false}>
+      <AppShell demoMode={false} role={authorization.mode === "production" ? authorization.actor.role : undefined}>
         <ProductionOverview tenantName={authorization.tenant.name} role={staffRole} data={null} />
       </AppShell>
     );
@@ -75,7 +75,7 @@ export default async function Home() {
   ]);
 
   return (
-    <AppShell demoMode={false}>
+    <AppShell demoMode={false} role={authorization.mode === "production" ? authorization.actor.role : undefined}>
       <ProductionOverview
         tenantName={authorization.tenant.name}
         role={staffRole}
