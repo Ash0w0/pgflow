@@ -11,6 +11,7 @@ import {
   Plus,
   ShieldCheck,
   SlidersHorizontal,
+  Smartphone,
   Sparkles,
   UserPlus,
   Users,
@@ -24,6 +25,7 @@ import {
 } from "@/lib/resident-onboarding-validation";
 import type { ResidentRegisterRow, ResidentSetupData } from "@/lib/resident-setup-types";
 import { AppShell } from "./app-shell";
+import { ResidentAppAccessDialog } from "./resident-app-access-dialog";
 import { ResidentManagementDialog } from "./resident-management-dialog";
 
 const currency = new Intl.NumberFormat("en-IN", {
@@ -67,6 +69,7 @@ export function ResidentSetupWorkspace({ data, demoMode }: { data: ResidentSetup
   const [openingDue, setOpeningDue] = useState("0");
   const [confirmed, setConfirmed] = useState(false);
   const [managedResident, setManagedResident] = useState<ResidentRegisterRow | null>(null);
+  const [accessResident, setAccessResident] = useState<ResidentRegisterRow | null>(null);
   const residentLimitReached = data.residents.length >= data.residentLimit;
   const upgradeNumber = (process.env.NEXT_PUBLIC_PGFLOW_WHATSAPP_NUMBER ?? "").replace(/\D/g, "");
   const upgradeHref = /^\d{10,15}$/.test(upgradeNumber)
@@ -296,7 +299,7 @@ export function ResidentSetupWorkspace({ data, demoMode }: { data: ResidentSetup
                     <td><strong>{currency.format(resident.monthlyRent)}</strong><small>Deposit {currency.format(resident.depositPromised)}</small></td>
                     <td><strong className={resident.outstanding > 0 ? "amount-due" : "amount-clear"}>{currency.format(resident.outstanding)}</strong></td>
                     <td><span className={`resident-state ${resident.state}`}>{resident.state === "notice" ? "Notice period" : "Active"}</span></td>
-                    <td><button className="resident-manage-button" type="button" onClick={() => { setSuccess(null); setManagedResident(resident); }}><SlidersHorizontal size={14} /> Manage</button></td>
+                    <td><div className="resident-row-actions"><button className={`resident-manage-button app-access ${resident.appAccess}`} type="button" onClick={() => { setSuccess(null); setAccessResident(resident); }}><Smartphone size={14} /> {resident.appAccess === "active" ? "App on" : resident.appAccess === "disabled" ? "App off" : "Give app"}</button><button className="resident-manage-button" type="button" onClick={() => { setSuccess(null); setManagedResident(resident); }}><SlidersHorizontal size={14} /> Manage</button></div></td>
                   </tr>
                 ))}</tbody>
               </table>
@@ -355,6 +358,12 @@ export function ResidentSetupWorkspace({ data, demoMode }: { data: ResidentSetup
             </form>
           </section>
         </div>
+      )}
+      {accessResident && (
+        <ResidentAppAccessDialog
+          resident={accessResident}
+          onClose={() => { setAccessResident(null); router.refresh(); }}
+        />
       )}
       {managedResident && (
         <ResidentManagementDialog

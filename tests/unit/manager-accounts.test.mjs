@@ -32,7 +32,7 @@ test("accounts with a one-time password are confined to the password change", as
   ]);
   assert.match(http, /mustChangePassword\(user\) && !options\.allowPendingPasswordChange\) return null/);
   assert.match(pages, /mustChangePassword\(user\) && !options\.allowPendingPasswordChange\) redirect\("\/account\/password"\)/);
-  assert.match(update, /requireActor\(request, \["owner", "manager"\], \{ allowPendingPasswordChange: true \}\)/);
+  assert.match(update, /requireActor\(request, \["owner", "manager", "tenant"\], \{ allowPendingPasswordChange: true \}\)/);
   assert.match(update, /\[MUST_CHANGE_PASSWORD_FLAG\]: false/);
   assert.match(signIn, /redirectTo: passwordChangeRequired \? "\/account\/password"/);
 });

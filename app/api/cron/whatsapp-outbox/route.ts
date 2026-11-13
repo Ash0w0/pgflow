@@ -1,4 +1,5 @@
 import { authorizeCronRequest } from "../../../../lib/cron-auth.ts";
+import { logEvent } from "../../../../lib/log.ts";
 
 /** Retries queued WhatsApp messages (receipts and reminders) that are due. */
 export async function GET(request: Request) {
@@ -10,8 +11,10 @@ export async function GET(request: Request) {
   try {
     const { processWhatsAppOutbox } = await import("../../../../lib/whatsapp/outbox.ts");
     const delivery = await processWhatsAppOutbox({ limit: 100 });
+    logEvent(delivery.failed > 0 ? "warn" : "info", "cron.whatsapp_outbox.completed", delivery);
     return Response.json({ ok: true, delivery });
-  } catch {
+  } catch (error) {
+    logEvent("error", "cron.whatsapp_outbox.failed", { error });
     return Response.json({ error: "The WhatsApp queue could not be processed." }, { status: 503 });
   }
 }

@@ -47,6 +47,6 @@ test("the sender waits until WhatsApp is connected and links are stored as hashe
   assert.match(outbox, /token_hash: tokenHash/);
   assert.match(receiptRoute, /link\.organization_id !== tenant\.organizationId/);
   const schedule = JSON.parse(crons).crons.map((cron) => cron.path);
-  assert.deepEqual(schedule.sort(), ["/api/cron/whatsapp-outbox", "/api/cron/whatsapp-reminders"]);
+  assert.deepEqual(schedule.sort(), ["/api/cron/maintenance", "/api/cron/whatsapp-outbox", "/api/cron/whatsapp-reminders"]);
   assert.ok(!schedule.includes("/api/cron/daily-digest"), "the digest with placeholder figures is never scheduled");
 });

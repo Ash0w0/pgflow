@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createPaymentLinkSecret } from "../payment-links";
+import { logEvent } from "../log";
 import { loadReceipt } from "../receipt-data";
 import { getSupabaseAdmin } from "../supabase/admin";
 import { isWhatsAppConfigured, normalizeWhatsAppPhone, sendWhatsAppTemplate } from "./client";
@@ -223,7 +224,10 @@ export async function processWhatsAppOutbox(options: { organizationId?: string; 
       }).eq("id", row.id);
     } else {
       const finalState = outcome.state === "skipped" ? "skipped" : "failed";
-      if (finalState === "skipped") result.skipped += 1; else result.failed += 1;
+      if (finalState === "skipped") result.skipped += 1; else {
+        result.failed += 1;
+        logEvent("warn", "whatsapp.outbox.delivery_failed", { outboxId: row.id, organizationId: row.organization_id, kind: row.kind, attempts: row.attempts, reason: outcome.error });
+      }
       await admin.from("whatsapp_outbox").update({ state: finalState, last_error: outcome.error, updated_at: now.toISOString() }).eq("id", row.id);
     }
   }

@@ -3,17 +3,18 @@ import "server-only";
 import { billingPeriodEnd, billingPeriodLabel, currentIndiaBillingPeriod } from "./billing-period";
 import type { CollectionsData, CollectionInvoiceRow } from "./collections-types";
 import { getSupabaseAdmin } from "./supabase/admin";
+import { selectAll } from "./supabase/select-all";
 
 export async function getCollectionsData(organizationId: string, propertyId: string): Promise<CollectionsData> {
   const admin = getSupabaseAdmin();
   const period = currentIndiaBillingPeriod();
   const [propertyResult, tenantsResult, occupanciesResult, bedsResult, roomsResult, invoicesResult, paymentsResult] = await Promise.all([
     admin.from("properties").select("rent_due_day,upi_id,upi_payee_name").eq("organization_id", organizationId).eq("id", propertyId).single(),
-    admin.from("tenant_profiles").select("id,full_name,phone,state").eq("organization_id", organizationId).eq("property_id", propertyId).limit(250),
-    admin.from("occupancies").select("tenant_id,bed_id,move_in_date,monthly_rent,state").eq("organization_id", organizationId).eq("property_id", propertyId).in("state", ["active", "notice"]).limit(250),
-    admin.from("beds").select("id,room_id,label").eq("organization_id", organizationId).eq("property_id", propertyId).limit(500),
-    admin.from("rooms").select("id,code").eq("organization_id", organizationId).eq("property_id", propertyId).limit(250),
-    admin.from("invoices").select("id,tenant_id,period,number,due_date,total_amount,paid_amount,state").eq("organization_id", organizationId).eq("property_id", propertyId).order("due_date", { ascending: false }).limit(1000),
+    selectAll((from, to) => admin.from("tenant_profiles").select("id,full_name,phone,state").eq("organization_id", organizationId).eq("property_id", propertyId).order("id").range(from, to)),
+    selectAll((from, to) => admin.from("occupancies").select("tenant_id,bed_id,move_in_date,monthly_rent,state").eq("organization_id", organizationId).eq("property_id", propertyId).in("state", ["active", "notice"]).order("id").range(from, to)),
+    selectAll((from, to) => admin.from("beds").select("id,room_id,label").eq("organization_id", organizationId).eq("property_id", propertyId).order("id").range(from, to)),
+    selectAll((from, to) => admin.from("rooms").select("id,code").eq("organization_id", organizationId).eq("property_id", propertyId).order("id").range(from, to)),
+    selectAll((from, to) => admin.from("invoices").select("id,tenant_id,period,number,due_date,total_amount,paid_amount,state").eq("organization_id", organizationId).eq("property_id", propertyId).order("due_date", { ascending: false }).order("id").range(from, to)),
     admin.from("payments").select("id,tenant_id,invoice_id,method,amount,reference,paid_at,state").eq("organization_id", organizationId).eq("property_id", propertyId).eq("state", "pending_review").order("created_at", { ascending: true }).limit(250),
   ]);
 
@@ -28,6 +29,8 @@ export async function getCollectionsData(organizationId: string, propertyId: str
   const tenants = new Map((tenantsResult.data ?? []).map((tenant) => [tenant.id, tenant]));
   const beds = new Map((bedsResult.data ?? []).map((bed) => [bed.id, bed]));
   const rooms = new Map((roomsResult.data ?? []).map((room) => [room.id, room]));
+  // The database only marks an invoice overdue when it is generated late, so age it here.
+  const indiaToday = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
   const currentInvoiceTenants = new Set((invoicesResult.data ?? []).filter((invoice) => invoice.period === period).map((invoice) => invoice.tenant_id));
   const roomByTenant = new Map<string, string>();
   const periodEnd = billingPeriodEnd(period);
@@ -61,7 +64,9 @@ export async function getCollectionsData(organizationId: string, propertyId: str
       dueDate: invoice.due_date,
       totalAmount: Number(invoice.total_amount),
       paidAmount: Number(invoice.paid_amount),
-      state: invoice.state as CollectionInvoiceRow["state"],
+      state: (["issued", "partially_paid"].includes(invoice.state) && invoice.due_date < indiaToday
+        ? "overdue"
+        : invoice.state) as CollectionInvoiceRow["state"],
     }];
   });
 

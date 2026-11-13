@@ -1,4 +1,5 @@
 import { authorizeCronRequest } from "../../../../lib/cron-auth.ts";
+import { logEvent } from "../../../../lib/log.ts";
 import { sendWhatsAppTemplate } from "../../../../lib/whatsapp/client.ts";
 import { buildRentDueReminderPayload } from "../../../../lib/whatsapp/templates.ts";
 
@@ -66,9 +67,11 @@ export async function GET(request: Request) {
     const indiaToday = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
     const { data: queued, error } = await getSupabaseAdmin().rpc("enqueue_rent_reminders", { p_today: indiaToday });
     if (error) {
+      logEvent("error", "cron.whatsapp_reminders.enqueue_failed", { code: error.code ?? null });
       return Response.json({ error: "Reminders could not be queued." }, { status: 503 });
     }
     const delivery = await processWhatsAppOutbox({ limit: 100 });
+    logEvent(delivery.failed > 0 ? "warn" : "info", "cron.whatsapp_reminders.completed", { date: indiaToday, queued: Number(queued ?? 0), ...delivery });
     return Response.json({
       ok: true,
       date: indiaToday,
@@ -77,7 +80,7 @@ export async function GET(request: Request) {
       note: delivery.configured ? undefined : "WhatsApp is not connected yet; reminders are queued and will be sent once it is.",
     });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Internal server error";
-    return Response.json({ error: errorMsg }, { status: 500 });
+    logEvent("error", "cron.whatsapp_reminders.failed", { error: err });
+    return Response.json({ error: "Reminders could not be processed." }, { status: 500 });
   }
 }
