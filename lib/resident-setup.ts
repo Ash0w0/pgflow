@@ -1,18 +1,19 @@
 import "server-only";
 
 import { getSupabaseAdmin } from "./supabase/admin";
+import { selectAll } from "./supabase/select-all";
 import type { AvailableResidentBed, ResidentRegisterRow, ResidentSetupData } from "./resident-setup-types";
 
 export async function getResidentSetupData(organizationId: string, propertyId: string): Promise<ResidentSetupData> {
   const admin = getSupabaseAdmin();
   const [organizationResult, floorsResult, roomsResult, bedsResult, tenantsResult, occupanciesResult, invoicesResult] = await Promise.all([
     admin.from("organizations").select("resident_limit").eq("id", organizationId).single(),
-    admin.from("floors").select("id,name,state").eq("organization_id", organizationId).eq("property_id", propertyId).limit(250),
-    admin.from("rooms").select("id,floor_id,code,default_rent,state").eq("organization_id", organizationId).eq("property_id", propertyId).limit(250),
-    admin.from("beds").select("id,room_id,label,state").eq("organization_id", organizationId).eq("property_id", propertyId).limit(500),
-    admin.from("tenant_profiles").select("id,full_name,phone,alternate_phone,emergency_name,emergency_phone,address,state").eq("organization_id", organizationId).eq("property_id", propertyId).limit(250),
-    admin.from("occupancies").select("id,tenant_id,bed_id,move_in_date,monthly_rent,deposit_promised,state").eq("organization_id", organizationId).eq("property_id", propertyId).in("state", ["active", "notice"]).limit(250),
-    admin.from("invoices").select("tenant_id,total_amount,paid_amount,state").eq("organization_id", organizationId).eq("property_id", propertyId).in("state", ["issued", "partially_paid", "overdue"]).limit(1000),
+    selectAll((from, to) => admin.from("floors").select("id,name,state").eq("organization_id", organizationId).eq("property_id", propertyId).order("id").range(from, to)),
+    selectAll((from, to) => admin.from("rooms").select("id,floor_id,code,default_rent,state").eq("organization_id", organizationId).eq("property_id", propertyId).order("id").range(from, to)),
+    selectAll((from, to) => admin.from("beds").select("id,room_id,label,state").eq("organization_id", organizationId).eq("property_id", propertyId).order("id").range(from, to)),
+    selectAll((from, to) => admin.from("tenant_profiles").select("id,full_name,phone,alternate_phone,emergency_name,emergency_phone,address,state").eq("organization_id", organizationId).eq("property_id", propertyId).order("id").range(from, to)),
+    selectAll((from, to) => admin.from("occupancies").select("id,tenant_id,bed_id,move_in_date,monthly_rent,deposit_promised,state").eq("organization_id", organizationId).eq("property_id", propertyId).in("state", ["active", "notice"]).order("id").range(from, to)),
+    selectAll((from, to) => admin.from("invoices").select("tenant_id,total_amount,paid_amount,state").eq("organization_id", organizationId).eq("property_id", propertyId).in("state", ["issued", "partially_paid", "overdue"]).order("id").range(from, to)),
   ]);
 
   for (const [label, result] of [

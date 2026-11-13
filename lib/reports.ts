@@ -4,6 +4,7 @@ import { getCollectionsData } from "./collections";
 import type { ReportsData } from "./reports-types";
 import { getRoomSetupData } from "./room-setup";
 import { getSupabaseAdmin } from "./supabase/admin";
+import { selectAll } from "./supabase/select-all";
 
 /**
  * Composes the owner reporting view from the same loaders the Collections and Rooms
@@ -16,20 +17,22 @@ export async function getReportsData(organizationId: string, propertyId: string)
     getCollectionsData(organizationId, propertyId),
     getRoomSetupData(organizationId, propertyId),
     // 'approved' is the only payment_state that represents money actually collected.
-    admin
+    selectAll((from, to) => admin
       .from("payments")
       .select("method,amount")
       .eq("organization_id", organizationId)
       .eq("property_id", propertyId)
       .eq("state", "approved")
-      .limit(5000),
-    admin
+      .order("id")
+      .range(from, to)),
+    selectAll((from, to) => admin
       .from("occupancies")
       .select("deposit_promised")
       .eq("organization_id", organizationId)
       .eq("property_id", propertyId)
       .in("state", ["active", "notice"])
-      .limit(1000),
+      .order("id")
+      .range(from, to)),
   ]);
 
   if (approvedPayments.error) {

@@ -56,3 +56,10 @@ Every incident starts by recording organization, actor, purpose, timestamps, aff
 3. Run representative owner, accountant, manager, and tenant journeys.
 4. Record recovery point and recovery time achieved.
 5. Never reconnect restored staging data to live WhatsApp or UPI configuration.
+
+## Logs, health, and housekeeping
+
+- Server jobs write one-line JSON logs (`lib/log.ts`). In Vercel → Logs, filter on `"level":"error"` or an event name such as `cron.whatsapp_reminders.failed`, `cron.whatsapp_outbox.failed`, `whatsapp.outbox.delivery_failed`, or `cron.maintenance.failed`.
+- `GET /api/health` returns 503 with `migrations: "behind-deployed-code"` when the app was deployed before its database migrations were applied. Point an uptime monitor at it.
+- `/api/cron/maintenance` runs daily and calls `prune_expired_operational_data()` (migration 0041). It deletes reset rate-limit buckets, expired receipt links, and finished WhatsApp queue rows older than 90 days. Invoices, payments, receipts, message logs, and audit events are never deleted.
+- A page that crashes shows a support code (the Next.js error digest). Search Vercel logs for that digest to find the server error.
