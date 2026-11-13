@@ -14,7 +14,7 @@ export default async function OperatorPage() {
   }
 
   return (
-    <AppShell demoMode={false}>
+    <AppShell demoMode={false} role="platform_operator">
       <LiveOperatorConsole />
     </AppShell>
   );
