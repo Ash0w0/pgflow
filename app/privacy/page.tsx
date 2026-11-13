@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { LegalPageShell } from "@/components/legal-page-shell";
-import { businessCity, contactEmail, legalBusinessName } from "@/lib/marketing";
+import { businessCity, contactEmail, legalEntityLine } from "@/lib/marketing";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   const email = contactEmail();
-  const operator = legalBusinessName() || "PGFlow";
+  const operator = legalEntityLine();
 
   return (
     <LegalPageShell>

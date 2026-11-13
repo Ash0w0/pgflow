@@ -61,6 +61,9 @@ test("privacy policy and terms pages exist and name a grievance contact", async 
   assert.match(privacy, /Grievance contact/);
   assert.match(terms, /not a bank, payment gateway or payment aggregator/);
   assert.match(terms, /30 days/);
+  assert.match(terms, /Patna, Bihar/);
+  const marketing = await read("lib/marketing.ts");
+  assert.match(marketing, /UDYAM-BR-26-0259441/);
 });
 
 test("animated homepage scenes respect reduced motion without hydration mismatches", async () => {
