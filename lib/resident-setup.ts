@@ -11,7 +11,7 @@ export async function getResidentSetupData(organizationId: string, propertyId: s
     selectAll((from, to) => admin.from("floors").select("id,name,state").eq("organization_id", organizationId).eq("property_id", propertyId).order("id").range(from, to)),
     selectAll((from, to) => admin.from("rooms").select("id,floor_id,code,default_rent,state").eq("organization_id", organizationId).eq("property_id", propertyId).order("id").range(from, to)),
     selectAll((from, to) => admin.from("beds").select("id,room_id,label,state").eq("organization_id", organizationId).eq("property_id", propertyId).order("id").range(from, to)),
-    selectAll((from, to) => admin.from("tenant_profiles").select("id,full_name,phone,alternate_phone,emergency_name,emergency_phone,address,state").eq("organization_id", organizationId).eq("property_id", propertyId).order("id").range(from, to)),
+    selectAll((from, to) => admin.from("tenant_profiles").select("id,full_name,phone,alternate_phone,emergency_name,emergency_phone,address,state,membership_id").eq("organization_id", organizationId).eq("property_id", propertyId).order("id").range(from, to)),
     selectAll((from, to) => admin.from("occupancies").select("id,tenant_id,bed_id,move_in_date,monthly_rent,deposit_promised,state").eq("organization_id", organizationId).eq("property_id", propertyId).in("state", ["active", "notice"]).order("id").range(from, to)),
     selectAll((from, to) => admin.from("invoices").select("tenant_id,total_amount,paid_amount,state").eq("organization_id", organizationId).eq("property_id", propertyId).in("state", ["issued", "partially_paid", "overdue"]).order("id").range(from, to)),
   ]);
@@ -28,6 +28,9 @@ export async function getResidentSetupData(organizationId: string, propertyId: s
   const rooms = new Map((roomsResult.data ?? []).map((room) => [room.id, room]));
   const beds = new Map((bedsResult.data ?? []).map((bed) => [bed.id, bed]));
   const tenants = new Map((tenantsResult.data ?? []).map((tenant) => [tenant.id, tenant]));
+  const accessResult = await selectAll((from, to) => admin.from("memberships").select("id,state").eq("organization_id", organizationId).eq("property_id", propertyId).eq("role", "tenant").order("id").range(from, to));
+  if (accessResult.error) throw new Error(`Resident app access could not be loaded: ${accessResult.error.message}`);
+  const accessByMembership = new Map((accessResult.data ?? []).map((membership) => [membership.id, membership.state === "active" ? "active" as const : "disabled" as const]));
   const outstandingByTenant = new Map<string, number>();
   for (const invoice of invoicesResult.data ?? []) {
     outstandingByTenant.set(
@@ -76,6 +79,7 @@ export async function getResidentSetupData(organizationId: string, propertyId: s
       depositPromised: Number(occupancy.deposit_promised),
       outstanding: outstandingByTenant.get(tenant.id) ?? 0,
       state: tenant.state,
+      appAccess: tenant.membership_id ? accessByMembership.get(tenant.membership_id) ?? "none" : "none",
     });
   }
   residents.sort((left, right) => left.fullName.localeCompare(right.fullName));

@@ -38,6 +38,8 @@
 - Live room/floor/bed setup, resident onboarding and correction, monthly rent generation, invoice registers, and opening-balance handling are organization-qualified and database-backed.
 - Direct UPI configuration, optional owner-uploaded private QR, staff-recorded cash, payment-proof uploads, manual review, immutable allocations, numbered receipts, and audited reversals are database-backed. No payment evidence is auto-approved.
 - Staff can create a seven-day, invoice-scoped payment link and open a prefilled WhatsApp draft for the resident. Only the SHA-256 token hash is stored; older active links are revoked, used links close after proof submission, and the public page exposes only its bound invoice.
+- Resident app (migration 0042): the owner gives a resident an app login from the Residents register (one-time password, shared on WhatsApp, changed at first sign-in). The resident sees only their own bills, payment history, receipts and problem reports at `/tenant`, in English or Hindi, pays through the existing UPI proof flow, and reports problems. Access turns off automatically at move-out.
+- Register and report queries page through every row, unpaid invoices age to overdue at read time, scheduled jobs write structured logs, and a daily maintenance job prunes expired operational rows (migration 0041).
 
 ## Scaffolded but not live
 
@@ -45,7 +47,6 @@
 - Existing-account linking is deferred: a phone already present in Supabase Auth cannot yet be attached to another PG or reused from the platform-operator identity.
 - Prefilled WhatsApp sharing is convenient but places the temporary credential in a `wa.me` URL; replace it with Web Share or controlled copy/paste before a public rollout if browser-history exposure is unacceptable.
 - Deposit collection/refund settlement and downloadable receipt documents.
-- Tenant account provisioning and the complete live tenant PWA beyond secure invoice payment links.
 - Import staging/validation, job advancement/retry, and complete resumable provisioning beyond the blank-shell and manual-owner-activation transactions.
 - Uploaded logo/PWA assets, receipts, and custom-domain operations beyond the working hostname-branding boundary.
 - WhatsApp number connection, durable webhook ingestion, templates, reminders, and owner digests.

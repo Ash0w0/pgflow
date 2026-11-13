@@ -6,7 +6,7 @@ const baseUrl = process.env.TEST_BASE_URL ?? "http://localhost:3000";
 test("renders every principal product surface", async () => {
   const routes = new Map([
     ["/", /Good morning, Aarav/],
-    ["/tenant", /Hi, Mira/],
+    ["/tenant", /Mira/],
     ["/operator", /Fictional operator UI preview/],
     ["/presentation", /Run your PG from WhatsApp/],
     ["/collections", /Sample register/],

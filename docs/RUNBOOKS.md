@@ -63,3 +63,12 @@ Every incident starts by recording organization, actor, purpose, timestamps, aff
 - `GET /api/health` returns 503 with `migrations: "behind-deployed-code"` when the app was deployed before its database migrations were applied. Point an uptime monitor at it.
 - `/api/cron/maintenance` runs daily and calls `prune_expired_operational_data()` (migration 0041). It deletes reset rate-limit buckets, expired receipt links, and finished WhatsApp queue rows older than 90 days. Invoices, payments, receipts, message logs, and audit events are never deleted.
 - A page that crashes shows a support code (the Next.js error digest). Search Vercel logs for that digest to find the server error.
+
+## Resident app access
+
+- **Give access:** Residents → "Give app" on the resident's row → "Create app login" → send the one-time password on WhatsApp. It is shown once. The resident signs in at the PG's own address with their phone number and must choose a private password.
+- **Forgot password:** the same dialog → "Issue a new one". The old password stops working immediately.
+- **Lost or shared phone:** "Turn off". This blocks sign-in and ends open sessions. "Turn on" restores it.
+- **"This phone number already has a PGFlow login":** the number is already used by staff at this PG or by an account at another PGFlow PG. Linking one phone to two PGs is not supported yet; the resident can keep paying through WhatsApp links.
+- **Move-out:** access turns off automatically. Nothing to do.
+- Residents can never see another resident's data: every resident query is filtered by their own resident record on the server.

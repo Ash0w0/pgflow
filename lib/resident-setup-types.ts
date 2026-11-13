@@ -23,6 +23,8 @@ export type ResidentRegisterRow = {
   depositPromised: number;
   outstanding: number;
   state: "active" | "notice" | "moved_out" | "archived";
+  /** Whether this resident can sign in to the resident app. */
+  appAccess: "none" | "active" | "disabled";
 };
 
 export type ResidentSetupData = {

@@ -23,7 +23,7 @@ test("payment demo emits no UPI scheme while live UPI comes from authorized serv
   assert.match(source, /if\s*\(!data\)\s*\{[\s\S]*?return\s*\(/);
   assert.match(source, /fictional demo never emits a real UPI destination/i);
   assert.match(source, /QRCode\.toDataURL\(data\.upiUri/);
-  assert.match(page, /requireStaffPage\(\["owner","manager","accountant"\]\)/);
+  assert.match(page, /requirePgPage\(\["owner", "manager", "accountant", "tenant"\]\)/);
   assert.match(data, /createUpiUri/);
 });
 
@@ -348,7 +348,7 @@ test("authenticated owner and manager password changes reauthorize and revoke se
     readFile(new URL("app/settings/page.tsx", root), "utf8"),
   ]);
 
-  assert.match(route, /requireActor\(request, \["owner", "manager"\], \{ allowPendingPasswordChange: true \}\)/);
+  assert.match(route, /requireActor\(request, \["owner", "manager", "tenant"\], \{ allowPendingPasswordChange: true \}\)/);
   assert.match(route, /auth\.getUser\(\)/);
   assert.match(route, /user\.id !== actor\.id/);
   assert.match(route, /consumeAuthenticationLimits/);

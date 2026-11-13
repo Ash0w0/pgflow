@@ -143,7 +143,14 @@ export async function DELETE(request: Request, context: RouteContext) {
     return jsonError("Your current password is incorrect.", 401);
   }
 
-  const { data, error } = await getSupabaseAdmin().rpc("undo_empty_resident_onboarding", {
+  const admin = getSupabaseAdmin();
+  const { data: linked } = await admin.from("tenant_profiles").select("membership_id")
+    .eq("organization_id", authorized.actor.organizationId).eq("id", authorized.residentId).maybeSingle();
+  const { data: linkedMembership } = linked?.membership_id
+    ? await admin.from("memberships").select("auth_user_id").eq("organization_id", authorized.actor.organizationId).eq("id", linked.membership_id).eq("role", "tenant").maybeSingle()
+    : { data: null };
+
+  const { data, error } = await admin.rpc("undo_empty_resident_onboarding", {
     p_actor_user_id: authorized.actor.id,
     p_organization_id: authorized.actor.organizationId,
     p_property_id: authorized.actor.propertyId,
@@ -151,6 +158,8 @@ export async function DELETE(request: Request, context: RouteContext) {
     p_confirmation_name: body.confirmationName,
   });
   if (error) return mutationError(error);
+  // The resident no longer exists, so their app login is removed as well.
+  if (linkedMembership?.auth_user_id) await admin.auth.admin.deleteUser(linkedMembership.auth_user_id).catch(() => undefined);
 
   return Response.json({ undone: true, resident: data }, {
     headers: { "cache-control": "no-store" },
