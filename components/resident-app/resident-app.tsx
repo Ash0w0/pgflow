@@ -29,7 +29,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore, type FormEvent } from "react";
 import { useBrand } from "@/components/brand-provider";
-import { editorialSerif } from "@/components/home/fonts";
 import type { ResidentAppData, ResidentBill, ResidentTicket, ResidentTicketCategory } from "@/lib/resident-app-types";
 import { COPY, SUGGESTIONS, type Copy, type Language } from "./copy";
 import "./resident-app.css";
@@ -155,7 +154,7 @@ export function ResidentApp({ data }: { data: ResidentAppData }) {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className={`ra-shell ${editorialSerif.variable}`}>
+      <div className="ra-shell">
         <header className="ra-top">
           <div className="ra-brand">
             <span className="ra-brand-symbol" aria-hidden="true">{Array.from(brand.shortName.trim())[0]?.toUpperCase() ?? "P"}</span>

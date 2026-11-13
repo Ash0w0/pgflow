@@ -67,7 +67,7 @@ The previous Remotion film and generic section stack were retired. The page foll
 
 ### Type for the homepage
 
-- Geist stays the interface face. **Instrument Serif** (italic) is an editorial accent for a few words per headline. **Caveat** is used only for handwriting inside the paper register and the signature.
+- Geist is the only typeface for text, including headlines. Emphasis within a headline uses a medium weight in mid forest green (`#2d7a62`), or lime on dark sections, never a second font. **Caveat** is used only for handwriting inside the paper register and the signature. (Instrument Serif was tried and retired in Nov 2026 for readability.)
 
 ### Motion
 
