@@ -21,6 +21,8 @@
   --radius: 18px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --emph: #2d7a62;
+  /* One rhythm for every section. Neighbours on the same background share it instead of doubling it. */
+  --sec: clamp(56px, 6.5vw, 96px);
   --hand: var(--ph-hand), "Bradley Hand", cursive;
   position: relative;
   min-height: 100vh;
@@ -85,7 +87,7 @@
 .ph-overline-light { color: var(--lime); }
 .ph-overline-light::before { background: var(--lime); }
 .ph-mono { font-family: var(--font-geist-mono), ui-monospace, monospace; }
-.ph-section-intro { max-width: 760px; margin-bottom: clamp(36px, 5vw, 64px); }
+.ph-section-intro { max-width: 760px; margin-bottom: clamp(28px, 3.5vw, 48px); }
 
 /* Buttons -------------------------------------------------------------- */
 .ph-btn {
@@ -126,7 +128,7 @@
 .ph-logo strong { font-size: 19px; letter-spacing: -0.03em; }
 
 /* Hero ----------------------------------------------------------------- */
-.ph-hero { position: relative; padding: clamp(32px, 5vw, 64px) 0 clamp(56px, 7vw, 96px); }
+.ph-hero { position: relative; padding: clamp(32px, 5vw, 64px) 0 var(--sec); }
 .ph-hero::before {
   /* Register ruling fading out under the headline. */
   content: ""; position: absolute; inset: 0; pointer-events: none;
@@ -240,7 +242,7 @@
 .ph-play { display: grid; place-items: center; width: 44px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--forest); cursor: pointer; }
 
 /* 1st of the month ----------------------------------------------------- */
-.ph-month { position: relative; height: 280vh; background: var(--forest-deep); color: #fff; }
+.ph-month { position: relative; height: 230vh; background: var(--forest-deep); color: #fff; }
 .ph-month-sticky { position: sticky; top: 0; height: 100vh; display: flex; align-items: center; overflow: hidden; padding-top: 72px; }
 .ph-month-sticky::before {
   content: ""; position: absolute; inset: 0; pointer-events: none;
@@ -285,7 +287,7 @@
 .ph-board-review svg { color: var(--amber); }
 .ph-board-due svg { color: var(--ink-3); }
 .ph-board p { margin: 14px 0 0; font-family: var(--hand); font-size: 22px; color: var(--forest); text-align: center; }
-.ph-month-static { height: auto; padding: 96px 0; }
+.ph-month-static { height: auto; padding: var(--sec) 0; }
 .ph-month-static .ph-board { position: relative; left: auto; top: auto; translate: none; }
 .ph-month-static-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
 .ph-month-list { display: grid; gap: 8px; margin: 28px 0 0; padding: 0; list-style: none; }
@@ -293,9 +295,9 @@
 .ph-month-list small { display: block; color: var(--lime); font-size: 11px; font-weight: 800; }
 
 /* How it works ---------------------------------------------------------- */
-.ph-how { padding: clamp(80px, 10vw, 140px) 0; }
+.ph-how { padding: var(--sec) 0; }
 .ph-how-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(32px, 6vw, 88px); }
-.ph-act { min-height: 66vh; display: flex; flex-direction: column; justify-content: center; padding: 24px 0; }
+.ph-act { min-height: 54vh; display: flex; flex-direction: column; justify-content: center; padding: 24px 0; }
 .ph-act:first-child { justify-content: flex-start; padding-top: 8px; }
 .ph-act-n { display: flex; align-items: baseline; gap: 14px; color: var(--emph); font-size: 60px; font-weight: 300; letter-spacing: -0.05em; line-height: 1; }
 .ph-act-n i { font-style: normal; letter-spacing: 0.08em; font-size: 14px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
@@ -347,7 +349,7 @@
 .ph-claim { display: flex; gap: 8px; align-items: center; margin-top: auto; padding: 11px 12px; border-radius: 12px; background: var(--amber-bg); color: #6f4a0e; font-size: 12.5px; font-weight: 650; }
 
 /* Register before/after ------------------------------------------------- */
-.ph-register { padding: clamp(80px, 9vw, 130px) 0; background: linear-gradient(180deg, transparent, var(--mist)); }
+.ph-register { padding: var(--sec) 0; background: linear-gradient(180deg, transparent, var(--mist)); }
 .ph-register-grid { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: clamp(32px, 5vw, 72px); align-items: center; }
 .ph-register-hint { display: inline-flex; align-items: center; gap: 8px; margin-top: 26px; padding: 8px 12px; border-radius: 10px; background: var(--surface); color: var(--forest); font-size: 14px; font-weight: 700; }
 .ph-compare { position: relative; height: 440px; border-radius: 24px; overflow: hidden; box-shadow: 0 40px 80px -48px rgba(10, 39, 32, 0.55); isolation: isolate; }
@@ -387,7 +389,7 @@
 .ph-compare:focus-within { outline: 3px solid var(--forest); outline-offset: 4px; }
 
 /* Access passes -------------------------------------------------------- */
-.ph-passes { padding: clamp(80px, 9vw, 130px) 0; background: var(--mist); }
+.ph-passes { padding: var(--sec) 0; background: var(--mist); }
 .ph-pass-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: start; }
 .ph-pass {
   position: relative; padding: 46px 24px 26px; border-radius: 22px; background: var(--surface);
@@ -411,7 +413,7 @@
 .ph-pass li.is-not svg { color: var(--ink-3); }
 
 /* Leak meter ------------------------------------------------------------ */
-.ph-leak { padding: clamp(80px, 9vw, 130px) 0; }
+.ph-leak { padding: var(--sec) 0; background: linear-gradient(180deg, var(--mist), transparent 60%); }
 .ph-leak-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(32px, 5vw, 72px); align-items: center; }
 .ph-leak-card { display: grid; gap: 22px; padding: 28px; border-radius: 26px; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 40px 80px -50px rgba(10, 39, 32, 0.5); }
 .ph-slider { display: grid; gap: 10px; }
@@ -424,7 +426,7 @@
 .ph-leak-result p { margin: 0; color: rgba(255, 255, 255, 0.78); font-size: 14px; line-height: 1.55; }
 
 /* Promises ------------------------------------------------------------- */
-.ph-promises { padding: clamp(80px, 9vw, 130px) 0; background: var(--forest); color: #fff; }
+.ph-promises { padding: var(--sec) 0; background: var(--forest); color: #fff; }
 .ph-promises .ph-h2 { color: #fff; }
 .ph-promises .ph-h2 em { color: var(--lime); }
 .ph-promises .ph-lead { color: rgba(255, 255, 255, 0.72); }
@@ -437,7 +439,7 @@
 .ph-promise-list p { margin: 8px 0 0; color: rgba(255, 255, 255, 0.72); font-size: 16px; line-height: 1.6; }
 
 /* Founder letter ------------------------------------------------------- */
-.ph-letter-section { padding: clamp(80px, 9vw, 130px) 0; }
+.ph-letter-section { padding: var(--sec) 0; }
 .ph-letter {
   position: relative; max-width: 720px; margin: 0 auto; padding: clamp(32px, 5vw, 56px);
   background-color: #fffdf6;
@@ -456,7 +458,7 @@
 .ph-signature path { fill: none; stroke: var(--forest); stroke-width: 2.4; stroke-linecap: round; }
 
 /* Founding beds -------------------------------------------------------- */
-.ph-founding { padding: clamp(80px, 9vw, 130px) 0; background: linear-gradient(180deg, var(--paper), var(--mist)); }
+.ph-founding { padding: var(--sec) 0; background: linear-gradient(180deg, transparent, var(--mist)); }
 .ph-founding-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(32px, 5vw, 72px); align-items: center; }
 .ph-beds { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
 .ph-bed { display: grid; justify-items: center; gap: 4px; padding: 18px 8px 14px; border: 1.5px dashed var(--line-strong); border-radius: 18px; background: var(--surface); color: var(--forest); transition: transform 0.3s var(--ease), background 0.3s; }
@@ -467,7 +469,7 @@
 .ph-bed.is-taken small { color: rgba(255, 255, 255, 0.7); }
 
 /* FAQ ------------------------------------------------------------------ */
-.ph-faq { padding: clamp(80px, 9vw, 130px) 0; }
+.ph-faq { padding: var(--sec) 0; background: linear-gradient(180deg, var(--mist), transparent 60%); }
 .ph-faq-grid { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: clamp(32px, 5vw, 72px); align-items: start; }
 .ph-faq-list details { border-bottom: 1px solid var(--line-strong); }
 .ph-faq-list details:first-child { border-top: 1px solid var(--line-strong); }
@@ -478,7 +480,7 @@
 .ph-faq-list details p { margin: 0 0 20px; max-width: 620px; color: var(--ink-2); font-size: 16.5px; line-height: 1.65; }
 
 /* Closing -------------------------------------------------------------- */
-.ph-closing { padding: clamp(80px, 9vw, 120px) 0; background: var(--forest-deep); color: #fff; }
+.ph-closing { padding: var(--sec) 0; background: var(--forest-deep); color: #fff; }
 .ph-closing .ph-h2 { color: #fff; }
 .ph-closing .ph-h2 em { color: var(--lime); }
 .ph-closing .ph-lead { color: rgba(255, 255, 255, 0.72); }
@@ -496,7 +498,7 @@
 .ph-composer-send:hover { transform: translateY(-2px); box-shadow: 0 14px 30px -14px rgba(215, 255, 134, 0.9); }
 
 /* Footer --------------------------------------------------------------- */
-.ph-footer { padding: 56px 0 40px; border-top: 1px solid var(--line); }
+.ph-footer { padding: 48px 0 36px; border-top: 1px solid var(--line); }
 .ph-footer-grid { display: grid; grid-template-columns: 1.2fr 1.2fr 1fr; gap: 32px; align-items: start; }
 .ph-footer-brand p { margin: 12px 0 0; font-size: 17px; font-weight: 500; color: var(--emph); }
 .ph-footer-contact { display: grid; gap: 10px; font-style: normal; color: var(--ink-2); font-size: 14px; }
@@ -506,6 +508,13 @@
 .ph-footer-links a { display: inline-flex; align-items: center; gap: 4px; min-height: 28px; }
 .ph-footer-links a:hover { color: var(--forest); }
 .ph-footer-legal { grid-column: 1 / -1; margin: 12px 0 0; padding-top: 20px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 13px; }
+
+/* Neighbours with a continuous background flow straight on. */
+.ph-how + .ph-register,
+.ph-register + .ph-passes,
+.ph-passes + .ph-leak,
+.ph-letter-section + .ph-founding,
+.ph-founding + .ph-faq { padding-top: 0; }
 
 /* Responsive ----------------------------------------------------------- */
 @media (max-width: 1080px) {
@@ -519,9 +528,9 @@
 @media (max-width: 860px) {
   .ph-how-grid { grid-template-columns: 1fr; }
   .ph-how-panel { display: none; }
-  .ph-act { min-height: auto; padding: 32px 0; border-top: 1px solid var(--line); }
+  .ph-act { min-height: auto; padding: 28px 0; border-top: 1px solid var(--line); }
   .ph-act-inline { display: block; margin-top: 24px; }
-  .ph-month { height: 240vh; }
+  .ph-month { height: 210vh; }
   .ph-month-stage { grid-template-columns: 1fr; gap: 8px; align-content: center; }
   .ph-calendar { width: 84px; margin-bottom: 14px; }
   .ph-calendar strong { font-size: 42px; }
