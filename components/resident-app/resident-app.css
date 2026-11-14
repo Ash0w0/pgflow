@@ -35,7 +35,7 @@
 /* Greeting */
 .ra-hello { padding: 18px 0 16px; }
 .ra-hello p { margin: 0; font-size: 15px; color: var(--ra-soft); }
-.ra-hello h1 { margin: 0; font-family: var(--ph-serif), Georgia, serif; font-style: italic; font-weight: 400; font-size: clamp(44px, 14vw, 58px); line-height: 1; letter-spacing: -0.02em; }
+.ra-hello h1 { margin: 2px 0 0; font-weight: 720; font-size: clamp(38px, 12vw, 50px); line-height: 1.02; letter-spacing: -0.045em; overflow-wrap: anywhere; }
 .ra-room { display: inline-flex; margin-top: 12px; padding: 5px 11px; border-radius: 999px; font-size: 11.5px; font-weight: 650; color: var(--brand); background: var(--brand-soft); }
 .ra-banner { margin: 0 0 12px; padding: 10px 13px; border-radius: 12px; font-size: 12px; line-height: 1.45; color: var(--ra-soft); background: var(--surface-muted); }
 .ra-banner-warn { color: #8a5417; background: #fdf0da; }
@@ -208,7 +208,7 @@
 
 /* First sign-in and password change */
 .ra-auth { display: grid; align-content: start; gap: 14px; padding: 8px 20px 40px; }
-.ra-auth h1 { margin: 18px 0 0; font-family: var(--ph-serif), Georgia, serif; font-style: italic; font-weight: 400; font-size: 40px; line-height: 1.05; letter-spacing: -0.02em; }
+.ra-auth h1 { margin: 18px 0 0; font-weight: 720; font-size: 34px; line-height: 1.08; letter-spacing: -0.04em; }
 .ra-auth > p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-soft); }
 .ra-auth form { display: grid; gap: 14px; margin-top: 6px; padding: 18px; border: 1px solid var(--line); border-radius: 22px; background: var(--surface); }
 .ra-auth label { display: grid; gap: 7px; font-size: 12.5px; font-weight: 640; color: var(--ink-soft); }

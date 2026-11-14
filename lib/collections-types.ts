@@ -49,7 +49,7 @@ export type CollectionsData = {
   preview: BillingPreviewRow[];
   invoices: CollectionInvoiceRow[];
   upiConfigured: boolean;
-  pendingPayments: Array<{ id: string; invoiceId: string; residentName: string; method: "upi" | "cash"; amount: number; reference: string; paidAt: string }>;
+  pendingPayments: Array<{ id: string; invoiceId: string; residentName: string; method: "upi" | "cash"; amount: number; reference: string; paidAt: string; note: string; evidenceUrl: string | null }>;
   approvedPayments: ApprovedPaymentRow[];
   claims: PaymentClaimRow[];
   totals: {

@@ -11,6 +11,8 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null) as Record<string, unknown> | null;
   if (!body || Object.keys(body).length !== 4 || typeof body.invoiceId !== "string" || !isUuid(body.invoiceId) || !Number.isInteger(body.amount) || typeof body.collectedAt !== "string" || typeof body.note !== "string") return jsonError("Invoice, amount, collection time and note are required.");
   if (Number(body.amount) <= 0 || Number(body.amount) > 10_000_000 || Number.isNaN(Date.parse(body.collectedAt))) return jsonError("Cash details are invalid.");
+  // Allow a small clock difference, but never cash "collected" in the future.
+  if (Date.parse(body.collectedAt) > Date.now() + 10 * 60 * 1000) return jsonError("The collection time cannot be in the future.");
   const { data, error } = await getSupabaseAdmin().rpc("record_cash_payment", { p_actor_user_id: actor.id, p_organization_id: actor.organizationId, p_property_id: actor.propertyId, p_invoice_id: body.invoiceId, p_amount: body.amount, p_collected_at: body.collectedAt, p_note: body.note.slice(0, 500) });
   if (error) return jsonError(error.message ?? "Cash could not be recorded.", error.code === "42501" ? 403 : 400);
   // Deliver the resident's receipt right after responding (queued in the same transaction).

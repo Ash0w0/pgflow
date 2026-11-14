@@ -92,9 +92,10 @@ export async function requirePgPage(
     .maybeSingle();
 
   const role = membership?.role as PgPageRole | undefined;
-  if (membershipError || !membership || !role || !allowedRoles.includes(role)) {
-    return denyPageAccess();
-  }
+  if (membershipError || !membership || !role) return denyPageAccess();
+  // A signed-in member who opens a page their role cannot use goes to their own
+  // home, not to the login screen (which looks like being signed out).
+  if (!allowedRoles.includes(role)) redirect(role === "tenant" ? "/tenant" : "/");
   if (!canAccessTenantWorkspace(tenant, role)) return denyPageAccess();
 
   let tenantId: string | undefined;

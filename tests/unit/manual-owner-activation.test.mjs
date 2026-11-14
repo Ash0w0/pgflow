@@ -119,7 +119,7 @@ test("manual owner activation never creates a temporary Auth session or browser-
     loginForm,
     /sessionStorage|localStorage|document\.cookie|router\.replace\("\/change-password"\)|href="\/change-password"/,
   );
-  assert.match(loginForm, /This PG workspace is still being prepared, so no dashboard is opened yet/);
+  assert.match(loginForm, /Sign in with your phone number and the password you just chose/);
   assert.doesNotMatch(session, /temporary|invitation|change-password/);
   assert.match(pageAuthorization, /eq\("state", "active"\)/);
 });

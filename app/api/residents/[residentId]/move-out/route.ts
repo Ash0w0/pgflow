@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireActor } from "@/lib/http";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { safeDbMessage } from "@/lib/safe-db-error";
 
 export async function POST(
   request: Request,
@@ -21,9 +22,18 @@ export async function POST(
     const unpaidRentDeductions = typeof body.unpaidRentDeductions === "number" ? body.unpaidRentDeductions : 0;
     const remarks = typeof body.remarks === "string" ? body.remarks : "";
 
-    if (!exitDate || typeof exitDate !== "string") {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(exitDate) || Number.isNaN(Date.parse(exitDate))) {
       return NextResponse.json(
         { error: "Valid exit date is required." },
+        { status: 400 }
+      );
+    }
+    // A move-out settles the stay and frees the bed immediately, so it can only
+    // be recorded on or after the day the resident actually leaves (India time).
+    const todayInIndia = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
+    if (exitDate > todayInIndia) {
+      return NextResponse.json(
+        { error: "The exit date cannot be in the future. Record the move-out on the day the resident leaves." },
         { status: 400 }
       );
     }
@@ -75,14 +85,15 @@ export async function POST(
 
     if (error) {
       return NextResponse.json(
-        { error: error.message || "Failed to process resident move-out." },
+        { error: safeDbMessage(error, "The move-out could not be saved. Please try again.") },
         { status: 400 }
       );
     }
 
     return NextResponse.json({ ok: true, data });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Internal server error";
+    console.error(err);
+    const errorMsg = "Something went wrong. Please try again.";
     return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }

@@ -592,7 +592,7 @@ export function LiveOperatorConsole() {
                   name="slug"
                   value={form.slug}
                   onChange={(event) => updateField("slug", event.target.value.toLowerCase())}
-                  pattern="[a-z0-9](?:[a-z0-9-]{1,46}[a-z0-9])?"
+                  pattern="[a-z0-9](?:[a-z0-9\-]{1,46}[a-z0-9])?"
                   title="Use lowercase letters, numbers, and internal hyphens."
                   autoCapitalize="none"
                   spellCheck={false}

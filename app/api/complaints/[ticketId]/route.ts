@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireActor } from "@/lib/http";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { safeDbMessage } from "@/lib/safe-db-error";
 
 export async function PATCH(
   request: Request,
@@ -47,14 +48,15 @@ export async function PATCH(
 
     if (error) {
       return NextResponse.json(
-        { error: error.message || "Failed to update ticket status." },
+        { error: safeDbMessage(error, "The ticket could not be updated. Please try again.") },
         { status: 400 }
       );
     }
 
     return NextResponse.json({ ok: true, data });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Internal server error";
+    console.error(err);
+    const errorMsg = "Something went wrong. Please try again.";
     return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }

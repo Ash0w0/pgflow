@@ -35,24 +35,9 @@ export default async function RecoverPage() {
             <div className="operator-recovery-info" style={{ width: "100%" }}>
               <span className="eyebrow">Platform Operator Recovery</span>
               <h2>Operator Password Reset</h2>
-              <p style={{ marginTop: "12px", color: "var(--ink-soft)", fontSize: "13px", lineHeight: "1.6" }}>
-                Platform operators can reset their password securely via Supabase SQL Editor or using the server CLI utility:
+              <p style={{ marginTop: "12px", marginBottom: "20px", color: "var(--ink-soft)", fontSize: "13px", lineHeight: "1.6" }}>
+                Operator passwords are not reset from this page. Use the documented server procedure, which needs database access.
               </p>
-              <div style={{ margin: "16px 0", padding: "14px", background: "var(--surface-soft)", borderRadius: "10px", border: "1px solid var(--line)" }}>
-                <code style={{ fontSize: "11px", wordBreak: "break-all" }}>
-                  node scripts/reset-operator-password.mjs &quot;YourNewPassword123!&quot;
-                </code>
-              </div>
-              <p style={{ color: "var(--ink-soft)", fontSize: "12px", marginBottom: "8px" }}>
-                Or execute the SQL statement in your Supabase SQL Editor:
-              </p>
-              <div style={{ margin: "8px 0 20px", padding: "12px", background: "var(--surface-soft)", borderRadius: "10px", border: "1px solid var(--line)" }}>
-                <pre style={{ fontSize: "11px", whiteSpace: "pre-wrap", margin: 0, fontFamily: "monospace" }}>
-{`UPDATE auth.users
-SET encrypted_password = crypt('YourNewPassword123!', gen_salt('bf'))
-WHERE id IN (SELECT auth_user_id FROM public.platform_operators);`}
-                </pre>
-              </div>
               <a href="/login" className="button button-primary button-full" style={{ textAlign: "center" }}>
                 Back to sign in
               </a>
@@ -63,6 +48,9 @@ WHERE id IN (SELECT auth_user_id FROM public.platform_operators);`}
               <h2>Choose a new private password</h2>
               <p>The recovery credential is not an OTP and cannot be used as a normal login password.</p>
               <RecoveryForm />
+              <p style={{ marginTop: "16px", color: "var(--ink-faint)", fontSize: "12px", lineHeight: "1.5" }}>
+                Manager or resident? Ask your PG owner. They can give you a new one-time password from their Settings or Residents page.
+              </p>
             </>
           )}
           <PoweredBy />

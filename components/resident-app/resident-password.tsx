@@ -4,7 +4,6 @@ import { ArrowLeft, Check } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { editorialSerif } from "@/components/home/fonts";
 import { isAcceptableResidentPassword, RESIDENT_PASSWORD_MIN_LENGTH } from "@/lib/passwords";
 import "./resident-app.css";
 
@@ -47,7 +46,7 @@ export function ResidentPassword({ firstLogin }: { firstLogin: boolean }) {
   }
 
   return (
-    <div className={`ra-shell ${editorialSerif.variable}`}>
+    <div className="ra-shell">
       <main className="ra-auth">
         {!firstLogin && <Link className="ra-back" href="/tenant"><ArrowLeft size={15} />Back</Link>}
         <h1>{done ? "All set." : firstLogin ? "Welcome. Make it yours." : "New password"}</h1>

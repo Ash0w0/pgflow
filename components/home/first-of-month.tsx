@@ -70,7 +70,7 @@ export function FirstOfMonth() {
       <section className="ph-month ph-month-static" aria-labelledby="month-title">
         <div className="ph-container ph-month-static-grid">
           <div>
-            <p className="ph-overline">The 1st of the month</p>
+            <p className="ph-overline ph-overline-light">The 1st of the month</p>
             <h2 id="month-title" className="ph-h2">You know this day. <em>PGFlow makes it quiet.</em></h2>
             <ul className="ph-month-list">
               {MESSAGES.map((message) => <li key={message.text}><small>{message.from}</small>{message.text}</li>)}

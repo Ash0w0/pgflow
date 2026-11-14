@@ -113,6 +113,7 @@ export function MoveOutModal({
               </label>
               <input
                 type="date"
+                max={new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date())}
                 value={exitDate}
                 onChange={(e) => setExitDate(e.target.value)}
                 required

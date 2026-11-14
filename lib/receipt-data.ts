@@ -100,7 +100,7 @@ export async function loadReceipt(
       residentName: resident.data.full_name,
       roomNumber: roomCode || "Not assigned",
       bedNumber: bedLabel.replace(/^Bed\s+/i, "") || undefined,
-      paymentDate: indiaDate(payment.data.paid_at ?? receipt.issued_at),
+      paymentDate: new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric" }).format(new Date(payment.data.paid_at ?? receipt.issued_at)),
       billingPeriod: `${periodLabel} (${invoice.data.number})`,
       paymentMethod: payment.data.method === "cash" ? "Cash" : "UPI",
       referenceNumber: payment.data.reference || (payment.data.method === "cash" ? "Cash collected" : "Not provided"),
