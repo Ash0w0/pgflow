@@ -6,13 +6,8 @@ import { getResidentSetupData } from "@/lib/resident-setup";
 export default async function Page() {
   const authorization = await requireStaffPage(["owner", "manager"]);
   if (authorization.mode === "demo") {
-    const { getDemoMaintenanceTickets } = await import("@/demo/maintenance-ticket-data");
-    const data: OperationsData = {
-      tickets: getDemoMaintenanceTickets(),
-      residents: [],
-      noticePeriodCount: 1,
-    };
-    return <OperationsWorkspace data={data} demoMode canManage={false} />;
+    const { DemoOperations } = await import("@/demo/live/screens");
+    return <DemoOperations />;
   }
 
   const { organizationId, propertyId } = authorization.actor;

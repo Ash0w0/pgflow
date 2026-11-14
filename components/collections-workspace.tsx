@@ -30,7 +30,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-export function CollectionsWorkspace({ data, canGenerate, canReview, role }: { data: CollectionsData; canGenerate: boolean; canReview: boolean; role?: string }) {
+export function CollectionsWorkspace({ data, canGenerate, canReview, role, demoMode = false }: { data: CollectionsData; canGenerate: boolean; canReview: boolean; role?: string; demoMode?: boolean }) {
   const router = useRouter();
   const brand = useBrand();
   const [confirmed, setConfirmed] = useState(false);
@@ -161,7 +161,7 @@ export function CollectionsWorkspace({ data, canGenerate, canReview, role }: { d
     : "";
 
   return (
-    <AppShell demoMode={false} role={role}>
+    <AppShell demoMode={demoMode} role={role}>
       <div className="page-stack collections-page">
         <section className="page-heading collections-heading">
           <div>

@@ -15,28 +15,31 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ paymentId: string }> },
 ) {
-  const actor = await requireActor(request, ["owner", "manager", "accountant", "tenant"]);
-  if (!actor) return jsonError("Sign in to view this receipt.", 401);
   const { paymentId } = await params;
 
+  // The public demo has no accounts: it always shows the same sample receipt.
   if (isDemoRuntime()) {
-    const today = new Date().toISOString().split("T")[0];
+    const now = new Date();
+    const india = (options: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", ...options }).format(now);
     return new Response(generateReceiptHtml({
-      receiptNumber: formatReceiptNumber(paymentId, today),
+      receiptNumber: formatReceiptNumber(paymentId, now.toISOString().split("T")[0]),
       pgName: "PGFlow Sample",
-      pgAddress: "14/2 Indiranagar, 10th Main, Bengaluru 560038",
-      pgContact: "+91 98765 43210",
-      residentName: "Mira Kapoor",
-      roomNumber: "A-204",
-      bedNumber: "2",
-      paymentDate: today,
-      billingPeriod: "July 2026",
+      pgAddress: "Sample receipt from the PGFlow demo",
+      pgContact: "",
+      residentName: "Sample Resident",
+      roomNumber: "G-101",
+      bedNumber: "1",
+      paymentDate: india({ day: "2-digit", month: "short", year: "numeric" }),
+      billingPeriod: india({ month: "long", year: "numeric" }),
       paymentMethod: "UPI",
       referenceNumber: "DEMO48291073",
-      amountPaid: 8500,
-      issuedBy: "Front Desk Manager",
+      amountPaid: 7500,
+      issuedBy: "Demo owner",
     }), { headers: RECEIPT_HEADERS });
   }
+
+  const actor = await requireActor(request, ["owner", "manager", "accountant", "tenant"]);
+  if (!actor) return jsonError("Sign in to view this receipt.", 401);
 
   if (!isUuid(paymentId)) return jsonError("Receipt not found.", 404);
 

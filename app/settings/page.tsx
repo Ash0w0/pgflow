@@ -67,6 +67,9 @@ export default async function Page() {
   // A live WhatsApp dispatch needs Meta credentials; without them the card must not claim readiness.
   const whatsappConfigured = demoMode || Boolean(process.env.WHATSAPP_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID);
 
+  // In the demo these two cards read what the visitor last saved in their own tab.
+  const DemoPaymentSettings = demoMode ? (await import("@/demo/live/screens")).DemoPaymentSettings : null;
+
   return (
     <AppShell demoMode={demoMode}>
       <div className="page-stack live-settings-page">
@@ -89,8 +92,12 @@ export default async function Page() {
         )}
         <BrandingSettingsCard initial={brand} demoMode={demoMode} />
         <WhatsAppSettingsCard configured={whatsappConfigured} ownerPhone={ownerPhone} demoMode={demoMode} />
-        <WhatsAppAutomationCard initial={automation} demoMode={demoMode} />
-        <UpiSettingsCard initial={upi} />
+        {DemoPaymentSettings ? <DemoPaymentSettings /> : (
+          <>
+            <WhatsAppAutomationCard initial={automation} demoMode={demoMode} />
+            <UpiSettingsCard initial={upi} />
+          </>
+        )}
         <TeamSettingsCard demoMode={demoMode} pgName={authorization.mode === "production" ? authorization.tenant.name : "PGFlow Sample"} />
         <PasswordChangeCard demoMode={demoMode} />
       </div>

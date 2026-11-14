@@ -24,7 +24,10 @@ export function PaymentRequest({
   invalidPublicLink = false,
   backHref = "/collections",
   backLabel = "Back to Collections",
+  demoMode = false,
 }: {
+  /** The public demo shows the page without a scannable QR or a UPI app link. */
+  demoMode?: boolean;
   backHref?: string;
   backLabel?: string;
   data: LivePaymentRequest | null;
@@ -42,7 +45,7 @@ export function PaymentRequest({
   const [complete, setComplete] = useState(false);
 
   useEffect(() => {
-    if (!data) return;
+    if (!data || demoMode || !data.upiUri) return;
     let active = true;
     QRCode.toDataURL(data.upiUri, {
       width: 360,
@@ -50,7 +53,7 @@ export function PaymentRequest({
       color: { dark: "#123d32", light: "#ffffff" },
     }).then((value) => active && setQr(value)).catch(() => active && setQr(""));
     return () => { active = false; };
-  }, [data]);
+  }, [data, demoMode]);
 
   if (!data) {
     return (
@@ -141,9 +144,11 @@ export function PaymentRequest({
         </section>
         <section className="qr-section">
           <div className="qr-frame">
-            {qr
-              ? <Image unoptimized width={360} height={360} src={qr} alt={`Invoice-specific UPI QR to pay ${data.payeeName}`} />
-              : <span className="qr-loading">Generating secure QR…</span>}
+            {demoMode
+              ? <span className="qr-loading">Demo: a real PG shows the resident a QR for the exact amount here.</span>
+              : qr
+                ? <Image unoptimized width={360} height={360} src={qr} alt={`Invoice-specific UPI QR to pay ${data.payeeName}`} />
+                : <span className="qr-loading">Generating secure QR…</span>}
           </div>
           <div>
             <span className="eyebrow">Recommended · exact invoice QR</span>
@@ -176,7 +181,14 @@ export function PaymentRequest({
             </div>
           </section>
         )}
-        <a className="button button-primary button-full" href={data.upiUri}>Open a UPI app <ExternalLink size={17} /></a>
+        {demoMode ? (
+          <div className="demo-warning">
+            <Info size={17} />
+            <span>The fictional demo never emits a real UPI destination, so no money can move. Send the proof below to see what the owner gets.</span>
+          </div>
+        ) : (
+          <a className="button button-primary button-full" href={data.upiUri}>Open a UPI app <ExternalLink size={17} /></a>
+        )}
         <div className="demo-warning">
           <Info size={17} />
           <span><strong>Payment is not automatically verified.</strong> After paying, submit the bank UTR and screenshot below. Staff must check the PG bank account.</span>

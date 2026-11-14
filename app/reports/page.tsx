@@ -5,8 +5,8 @@ import { getReportsData } from "@/lib/reports";
 export default async function Page() {
   const authorization = await requireStaffPage(["owner", "accountant"]);
   if (authorization.mode === "demo") {
-    const { getDemoReportsData } = await import("@/demo/reports");
-    return <ReportsWorkspace data={getDemoReportsData()} demoMode />;
+    const { DemoReports } = await import("@/demo/live/screens");
+    return <DemoReports />;
   }
   const { organizationId, propertyId } = authorization.actor;
   if (!propertyId) throw new Error("The staff member is not assigned to a property.");

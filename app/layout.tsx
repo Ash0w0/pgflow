@@ -6,6 +6,7 @@ import { BrandProvider, type BrandValue } from "@/components/brand-provider";
 import { ServiceWorkerRegistrar } from "@/components/service-worker-registrar";
 import { normalizeHostname, safeColor } from "@/lib/branding";
 import { isDemoRuntime } from "@/lib/runtime";
+import { DemoRuntime } from "@/demo/live/runtime";
 import { hostnameFromHeaders, resolvePublicBrandContextForHostname } from "@/lib/tenancy";
 import "./globals.css";
 
@@ -136,7 +137,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       style={brandStyle}
     >
       <body className="antialiased">
-        <BrandProvider brand={brand}>{children}</BrandProvider>
+        <BrandProvider brand={brand}>{isDemoRuntime() && <DemoRuntime />}{children}</BrandProvider>
         <ServiceWorkerRegistrar />
       </body>
     </html>

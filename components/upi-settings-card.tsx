@@ -5,11 +5,11 @@ import { useState, type FormEvent } from "react";
 
 function isRecord(value: unknown): value is Record<string, unknown> { return value !== null && typeof value === "object" && !Array.isArray(value); }
 
-export function UpiSettingsCard({ initial }: { initial: { upiId: string; payeeName: string; notePrefix: string; hasUploadedQr: boolean } }) {
+export function UpiSettingsCard({ initial, demoMode = false }: { initial: { upiId: string; payeeName: string; notePrefix: string; hasUploadedQr: boolean }; demoMode?: boolean }) {
   const [upiId, setUpiId] = useState(initial.upiId);
   const [payeeName, setPayeeName] = useState(initial.payeeName);
   const [notePrefix, setNotePrefix] = useState(initial.notePrefix || "RENT");
-  const [password, setPassword] = useState("");
+  const [password, setPassword] = useState(demoMode ? "demo-password" : "");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +23,7 @@ export function UpiSettingsCard({ initial }: { initial: { upiId: string; payeeNa
       const response = await fetch("/api/settings/upi", { method: "PUT", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ upiId, payeeName, notePrefix, currentPassword: password, qrObjectKey }) });
       const result: unknown = await response.json().catch(() => null);
       if (!response.ok) throw new Error(isRecord(result) && typeof result.error === "string" ? result.error : "UPI details could not be saved.");
-      setPassword("");setQrFile(null); setSaved(true);
+      setPassword(demoMode ? "demo-password" : "");setQrFile(null); setSaved(true);
     } catch (caught) { setError(caught instanceof Error ? caught.message : "UPI details could not be saved."); setPassword(""); }
     finally { setSubmitting(false); }
   }

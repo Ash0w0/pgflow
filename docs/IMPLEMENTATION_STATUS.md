@@ -10,6 +10,13 @@
 - D1 preview schema, Supabase production migration track, API request validation, Meta signature verification, security headers, and outbox data model.
 - Standard onboarding CSV package and automated domain/render/security tests.
 
+## Public demo (`PGFLOW_RUNTIME=demo`)
+
+- The demo runs the real owner screens (Overview, Collections, Residents, Rooms, Operations, Reports, Settings, Import and the resident payment page) on one sample PG held in the visitor's browser tab (`demo/live/`).
+- No login is needed and every action works: add floors and rooms, onboard and edit residents, import CSVs, generate rent, record cash, send and review payment proof, raise and resolve claims, tickets, move-outs, managers, UPI and WhatsApp settings.
+- Nothing is sent to a server. `demo/live/runtime.tsx` answers `/api/*` calls from the in-memory store, and a page refresh restores the sample.
+- Safety rules kept: the demo never shows a scannable UPI QR or a UPI app link, passwords cannot be changed, and the receipt is a fixed sample.
+
 ## Production foundation implemented
 
 - Canonical Next.js/Vercel scripts, with the Vinext/Sites demonstration isolated behind explicit `demo:*` scripts.

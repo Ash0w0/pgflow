@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Bell,
   Building2,
+  FlaskConical,
   ChevronDown,
   CircleHelp,
   CreditCard,
@@ -547,7 +548,20 @@ export function AppShell({ children, demoMode, role }: { children: ReactNode; de
           </div>
         )}
 
-        <main className="app-main">{!demoMode && <PlanBanner />}{children}</main>
+        <main className="app-main">
+          {!demoMode && <PlanBanner />}
+          {demoMode && !isOperator && pathname !== "/operator" && (
+            <div className="plan-banner demo-notice" role="note">
+              <FlaskConical size={18} aria-hidden="true" />
+              <div>
+                <strong>You are in the demo PG. Try anything.</strong>
+                Add rooms and residents, generate rent, approve payments. Nothing is saved, and refreshing the page brings the sample back.
+              </div>
+              <button className="text-button" type="button" onClick={() => window.location.reload()}>Start over</button>
+            </div>
+          )}
+          {children}
+        </main>
       </div>
     </div>
   );
