@@ -15,7 +15,7 @@ export async function getCollectionsData(organizationId: string, propertyId: str
     selectAll((from, to) => admin.from("beds").select("id,room_id,label").eq("organization_id", organizationId).eq("property_id", propertyId).order("id").range(from, to)),
     selectAll((from, to) => admin.from("rooms").select("id,code").eq("organization_id", organizationId).eq("property_id", propertyId).order("id").range(from, to)),
     selectAll((from, to) => admin.from("invoices").select("id,tenant_id,period,number,due_date,total_amount,paid_amount,state").eq("organization_id", organizationId).eq("property_id", propertyId).order("due_date", { ascending: false }).order("id").range(from, to)),
-    admin.from("payments").select("id,tenant_id,invoice_id,method,amount,reference,paid_at,state").eq("organization_id", organizationId).eq("property_id", propertyId).eq("state", "pending_review").order("created_at", { ascending: true }).limit(250),
+    admin.from("payments").select("id,tenant_id,invoice_id,method,amount,reference,paid_at,state,note").eq("organization_id", organizationId).eq("property_id", propertyId).eq("state", "pending_review").order("created_at", { ascending: true }).limit(250),
   ]);
 
   for (const [label, result] of [
@@ -72,6 +72,24 @@ export async function getCollectionsData(organizationId: string, propertyId: str
 
   const collectible = invoices.filter((invoice) => invoice.state !== "void" && invoice.state !== "draft");
   const ready = preview.filter((row) => !row.alreadyIssued);
+  // Staff must be able to open the screenshot a resident sent. The bucket is
+  // private, so each pending proof gets a short-lived signed link (10 minutes).
+  const pendingIds = (paymentsResult.data ?? []).map((payment) => payment.id);
+  const evidenceUrlByPayment = new Map<string, string>();
+  if (pendingIds.length > 0) {
+    const { data: evidenceRows } = await admin.from("payment_evidence")
+      .select("payment_id,object_key")
+      .eq("organization_id", organizationId)
+      .in("payment_id", pendingIds);
+    const rows = (evidenceRows ?? []).filter((row) => row.object_key.startsWith(`organizations/${organizationId}/`));
+    if (rows.length > 0) {
+      const { data: signed } = await admin.storage.from("payment-evidence").createSignedUrls(rows.map((row) => row.object_key), 600);
+      (signed ?? []).forEach((entry, index) => {
+        if (entry.signedUrl && !entry.error) evidenceUrlByPayment.set(rows[index].payment_id, entry.signedUrl);
+      });
+    }
+  }
+
   return {
     period,
     periodLabel: billingPeriodLabel(period),
@@ -82,7 +100,7 @@ export async function getCollectionsData(organizationId: string, propertyId: str
     pendingPayments: (paymentsResult.data ?? []).flatMap((payment) => {
       const tenant = tenants.get(payment.tenant_id);
       if (!tenant || !payment.invoice_id) return [];
-      return [{ id: payment.id, invoiceId: payment.invoice_id, residentName: tenant.full_name, method: payment.method as "upi" | "cash", amount: Number(payment.amount), reference: payment.reference ?? "—", paidAt: payment.paid_at }];
+      return [{ id: payment.id, invoiceId: payment.invoice_id, residentName: tenant.full_name, method: payment.method as "upi" | "cash", amount: Number(payment.amount), reference: payment.reference ?? "—", paidAt: payment.paid_at, note: typeof payment.note === "string" ? payment.note : "", evidenceUrl: evidenceUrlByPayment.get(payment.id) ?? null }];
     }),
     ...await loadApprovedPaymentsAndClaims(organizationId, propertyId, tenants, new Map((invoicesResult.data ?? []).map((invoice) => [invoice.id, invoice.number]))),
     totals: {

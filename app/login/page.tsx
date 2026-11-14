@@ -62,7 +62,7 @@ export default async function LoginPage() {
         <div>
           <span className="demo-kicker">{demoMode ? "Fictional demonstration" : "PG operations workspace"}</span>
           <h1>Your PG,<br /><em>beautifully run.</em></h1>
-          <p>Rent, rooms and resident operations—kept in flow through one branded workspace and WhatsApp.</p>
+          <p>Rent, rooms and resident operations, kept in flow through one branded workspace and WhatsApp.</p>
         </div>
         <div className="login-proof">
           <ShieldCheck size={20} />

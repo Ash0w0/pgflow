@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireActor } from "@/lib/http";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { safeDbMessage } from "@/lib/safe-db-error";
+
+const TICKET_CATEGORIES = new Set(["wifi", "plumbing", "electrical", "cleaning", "food", "other"]);
+const TICKET_PRIORITIES = new Set(["low", "medium", "high", "urgent"]);
 
 export async function POST(request: Request) {
   try {
@@ -23,6 +27,13 @@ export async function POST(request: Request) {
         { error: "Room number, category, and title are required." },
         { status: 400 }
       );
+    }
+
+    if (!TICKET_CATEGORIES.has(category) || !TICKET_PRIORITIES.has(priority)) {
+      return NextResponse.json({ error: "Choose a valid category and priority." }, { status: 400 });
+    }
+    if (title.length > 160 || description.length > 2000 || roomNumber.length > 40) {
+      return NextResponse.json({ error: "Keep the title under 160 characters and the details under 2,000." }, { status: 400 });
     }
 
     const isDemo = process.env.PGFLOW_RUNTIME === "demo";
@@ -60,14 +71,15 @@ export async function POST(request: Request) {
 
     if (error) {
       return NextResponse.json(
-        { error: error.message || "Failed to create maintenance ticket." },
+        { error: safeDbMessage(error, "The ticket could not be created. Please try again.") },
         { status: 400 }
       );
     }
 
     return NextResponse.json({ ok: true, data });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Internal server error";
+    console.error(err);
+    const errorMsg = "Something went wrong. Please try again.";
     return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }
@@ -117,14 +129,15 @@ export async function GET(request: Request) {
 
     if (error) {
       return NextResponse.json(
-        { error: error.message || "Failed to fetch maintenance tickets." },
+        { error: safeDbMessage(error, "Tickets could not be loaded. Please try again.") },
         { status: 400 }
       );
     }
 
     return NextResponse.json({ ok: true, tickets: data });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Internal server error";
+    console.error(err);
+    const errorMsg = "Something went wrong. Please try again.";
     return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }

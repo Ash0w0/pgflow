@@ -1,4 +1,5 @@
 import { isTrustedMutationRequest, jsonError, requireActor } from "@/lib/http";
+import { matchesImageSignature } from "@/lib/image-signature";
 import { isUuid } from "@/lib/owner-invitations";
 import { resolvePaymentLink } from "@/lib/payment-links";
 import { readPublicSupabaseConfig } from "@/lib/supabase/config";
@@ -42,6 +43,9 @@ export async function POST(request: Request) {
   }
 
   const bytes = await upload.arrayBuffer();
+  if (!matchesImageSignature(new Uint8Array(bytes), upload.type)) {
+    return jsonError("That file is not a valid JPEG, PNG, or WebP image. Please upload the payment screenshot.");
+  }
   const digest = await crypto.subtle.digest("SHA-256", bytes);
   const hash = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
   const extension = upload.type === "image/png" ? "png" : upload.type === "image/webp" ? "webp" : "jpg";

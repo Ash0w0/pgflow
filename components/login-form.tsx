@@ -194,10 +194,13 @@ export function LoginForm({ demoMode, manualOwnerLogin = false }: { demoMode: bo
       <div className="password-change-success" role="status">
         <span className="workspace-setup-icon"><CheckCircle2 aria-hidden="true" size={24} /></span>
         <h3>Your private password is active</h3>
-        <p>Your temporary password can no longer be used. This PG workspace is still being prepared, so no dashboard is opened yet.</p>
+        <p>Your temporary password can no longer be used. Sign in with your phone number and the password you just chose to open your PG workspace.</p>
+        <button className="button button-primary button-full" type="button" onClick={() => window.location.reload()}>
+          Sign in to your workspace
+        </button>
         <div className="password-security-note">
           <ShieldCheck aria-hidden="true" size={17} />
-          <span>You can safely close this page. The platform operator will tell you when the workspace is ready.</span>
+          <span>Only you know this password. PGFlow staff will never ask for it.</span>
         </div>
       </div>
     );

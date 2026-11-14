@@ -177,13 +177,13 @@ export function OperationsWorkspace({
         </section>
 
         <section className="panel">
-          <header className="panel-head flex items-center justify-between">
+          <header className="panel-head flex flex-wrap items-center justify-between gap-3">
             <div>
               <span className="eyebrow">Maintenance register</span>
               <h2>Work orders</h2>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-semibold">
+            <div className="flex max-w-full items-center gap-1.5 overflow-x-auto bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-semibold">
               {STATUS_FILTERS.map((option) => (
                 <button
                   key={option.value}

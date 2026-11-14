@@ -59,6 +59,8 @@ function roleLabel(role: ProductionOverviewProps["role"]) {
 }
 
 export function ProductionOverview({ tenantName, role, data }: ProductionOverviewProps) {
+  // Rooms, residents and settings are owner-only pages; other staff stay on pages they can open.
+  const canOpen = (href: string) => role === "owner" || !["/rooms", "/residents", "/settings"].includes(href);
   if (!data) {
     return (
       <div className="page-stack production-overview">
@@ -151,14 +153,14 @@ export function ProductionOverview({ tenantName, role, data }: ProductionOvervie
           <p>Live property records for {data.collections.periodLabel}.</p>
         </div>
         <div className="heading-actions">
-          <Link className="button button-secondary" href="/residents"><UserRoundPlus size={16} /> Add resident</Link>
+          {role === "owner" && <Link className="button button-secondary" href="/residents"><UserRoundPlus size={16} /> Add resident</Link>}
           <Link className="button button-primary" href="/collections"><IndianRupee size={16} /> Open collections</Link>
         </div>
       </section>
 
       <section className="metric-grid" aria-label="Live property metrics">
         {metrics.map(({ icon: Icon, label, value, detail, href }) => (
-          <Link className="metric-card production-metric" href={href} key={label}>
+          <Link className="metric-card production-metric" href={canOpen(href) ? href : "/collections"} key={label}>
             <div className="metric-head">
               <span>{label}</span>
               <span className="metric-icon"><Icon size={18} /></span>
@@ -208,9 +210,9 @@ export function ProductionOverview({ tenantName, role, data }: ProductionOvervie
             </div>
           </div>
           <div className="production-readiness-list">
-            <Link href="/rooms"><span><Check size={16} /></span><div><strong>Property structure</strong><small>{data.rooms.floors} floors · {data.rooms.rooms} rooms · {data.rooms.beds} beds</small></div><ArrowRight size={15} /></Link>
-            <Link href="/residents"><span><Check size={16} /></span><div><strong>Resident register</strong><small>{data.residents.residentLimit >= 100000 ? `${data.residents.activeResidents} active residents` : `${data.residents.activeResidents} of ${data.residents.residentLimit} resident slots active`}</small></div><ArrowRight size={15} /></Link>
-            <Link href="/settings"><span className={data.collections.upiConfigured ? "" : "not-ready"}>{data.collections.upiConfigured ? <Check size={16} /> : <CircleAlert size={16} />}</span><div><strong>Direct UPI settings</strong><small>{data.collections.upiConfigured ? "Configured for payment links" : "Complete UPI setup before sharing payment links"}</small></div><ArrowRight size={15} /></Link>
+            <Link href={canOpen("/rooms") ? "/rooms" : "/"}><span className={data.rooms.beds > 0 ? "" : "not-ready"}>{data.rooms.beds > 0 ? <Check size={16} /> : <CircleAlert size={16} />}</span><div><strong>Property structure</strong><small>{data.rooms.floors} floors · {data.rooms.rooms} rooms · {data.rooms.beds} beds</small></div><ArrowRight size={15} /></Link>
+            <Link href={canOpen("/residents") ? "/residents" : "/"}><span className={data.residents.activeResidents > 0 ? "" : "not-ready"}>{data.residents.activeResidents > 0 ? <Check size={16} /> : <CircleAlert size={16} />}</span><div><strong>Resident register</strong><small>{data.residents.residentLimit >= 100000 ? `${data.residents.activeResidents} active residents` : `${data.residents.activeResidents} of ${data.residents.residentLimit} resident slots active`}</small></div><ArrowRight size={15} /></Link>
+            <Link href={canOpen("/settings") ? "/settings" : "/"}><span className={data.collections.upiConfigured ? "" : "not-ready"}>{data.collections.upiConfigured ? <Check size={16} /> : <CircleAlert size={16} />}</span><div><strong>Direct UPI settings</strong><small>{data.collections.upiConfigured ? "Configured for payment links" : "Complete UPI setup before sharing payment links"}</small></div><ArrowRight size={15} /></Link>
           </div>
         </article>
       </section>
