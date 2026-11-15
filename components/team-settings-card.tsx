@@ -19,19 +19,20 @@ function errorFrom(value: unknown, fallback: string) {
 
 export function TeamSettingsCard({ demoMode, pgName }: { demoMode: boolean; pgName: string }) {
   const [managers, setManagers] = useState<Manager[]>([]);
-  const [loading, setLoading] = useState(!demoMode);
+  // The demo has no real accounts, so the password confirmation is pre-filled there.
+  const blankPassword = demoMode ? "demo-password" : "";
+  const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
+  const [password, setPassword] = useState(demoMode ? "demo-password" : "");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [credential, setCredential] = useState<Credential | null>(null);
   const [copied, setCopied] = useState(false);
   const [confirmFor, setConfirmFor] = useState<{ manager: Manager; action: "enable" | "reset_password" } | null>(null);
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState(demoMode ? "demo-password" : "");
 
   const load = useCallback(async () => {
-    if (demoMode) return;
     try {
       const response = await fetch("/api/team", { credentials: "same-origin", cache: "no-store" });
       const result: unknown = await response.json().catch(() => null);
@@ -42,7 +43,7 @@ export function TeamSettingsCard({ demoMode, pgName }: { demoMode: boolean; pgNa
     } finally {
       setLoading(false);
     }
-  }, [demoMode]);
+  }, []);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => void load(), 0);
@@ -51,7 +52,7 @@ export function TeamSettingsCard({ demoMode, pgName }: { demoMode: boolean; pgNa
 
   async function addManager(event: FormEvent) {
     event.preventDefault();
-    if (busy || demoMode) return;
+    if (busy) return;
     setBusy("add");
     setError(null);
     try {
@@ -68,7 +69,7 @@ export function TeamSettingsCard({ demoMode, pgName }: { demoMode: boolean; pgNa
       setCopied(false);
       setName("");
       setPhone("");
-      setPassword("");
+      setPassword(blankPassword);
       await load();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "The manager could not be added.");
@@ -78,7 +79,7 @@ export function TeamSettingsCard({ demoMode, pgName }: { demoMode: boolean; pgNa
   }
 
   async function changeManager(manager: Manager, action: "disable" | "enable" | "reset_password", currentPassword?: string) {
-    if (busy || demoMode) return;
+    if (busy) return;
     setBusy(manager.id);
     setError(null);
     try {
@@ -96,7 +97,7 @@ export function TeamSettingsCard({ demoMode, pgName }: { demoMode: boolean; pgNa
         setCopied(false);
       }
       setConfirmFor(null);
-      setConfirmPassword("");
+      setConfirmPassword(blankPassword);
       await load();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "The manager could not be updated.");
@@ -165,7 +166,7 @@ export function TeamSettingsCard({ demoMode, pgName }: { demoMode: boolean; pgNa
                     <input type="password" required minLength={8} maxLength={128} autoComplete="current-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} />
                   </label>
                   <button className="button button-primary" type="submit" disabled={busy !== null}>Confirm</button>
-                  <button className="button button-quiet" type="button" onClick={() => { setConfirmFor(null); setConfirmPassword(""); }}>Cancel</button>
+                  <button className="button button-quiet" type="button" onClick={() => { setConfirmFor(null); setConfirmPassword(blankPassword); }}>Cancel</button>
                 </form>
               )}
             </li>
@@ -175,10 +176,10 @@ export function TeamSettingsCard({ demoMode, pgName }: { demoMode: boolean; pgNa
 
       <form className="modal-form team-add-form" onSubmit={addManager}>
         <h3><UserPlus size={16} /> Add a manager</h3>
-        <label>Manager name<input required minLength={2} maxLength={120} value={name} onChange={(event) => setName(event.target.value)} disabled={demoMode} /></label>
-        <label>Manager&apos;s mobile number<input required inputMode="tel" maxLength={20} placeholder="98765 43210" value={phone} onChange={(event) => setPhone(event.target.value)} disabled={demoMode} /></label>
-        <label>Your password<input type="password" required minLength={8} maxLength={128} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} disabled={demoMode} /></label>
-        <button className="button button-primary" type="submit" disabled={busy !== null || demoMode}>{busy === "add" ? "Adding…" : "Add manager"}</button>
+        <label>Manager name<input required minLength={2} maxLength={120} value={name} onChange={(event) => setName(event.target.value)} /></label>
+        <label>Manager&apos;s mobile number<input required inputMode="tel" maxLength={20} placeholder="98765 43210" value={phone} onChange={(event) => setPhone(event.target.value)} /></label>
+        <label>Your password<input type="password" required minLength={8} maxLength={128} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
+        <button className="button button-primary" type="submit" disabled={busy !== null}>{busy === "add" ? "Adding…" : "Add manager"}</button>
       </form>
     </section>
   );

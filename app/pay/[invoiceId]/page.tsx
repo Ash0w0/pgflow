@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PaymentRequest } from "@/components/payment-request";
 import { notFound } from "next/navigation";
+import { isDemoRuntime } from "@/lib/runtime";
 import { requirePgPage } from "@/lib/page-authorization";
 import { getPaymentRequestData, getPublicPaymentRequestData, invoiceBelongsToResident, residentIdForMembership } from "@/lib/payment-request-data";
 
@@ -14,6 +15,10 @@ export const metadata: Metadata = {
 export default async function PayPage({ params, searchParams }: { params: Promise<{ invoiceId: string }>; searchParams: Promise<{ token?: string }> }) {
   const { invoiceId } = await params;
   const { token } = await searchParams;
+  if (isDemoRuntime()) {
+    const { DemoPay } = await import("@/demo/live/screens");
+    return <DemoPay invoiceId={invoiceId} />;
+  }
   if (token) {
     const data = await getPublicPaymentRequestData(invoiceId, token);
     return <PaymentRequest data={data} accessToken={data ? token : null} invalidPublicLink={!data} />;

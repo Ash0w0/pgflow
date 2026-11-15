@@ -204,7 +204,7 @@ export function generateReceiptHtml(input: ReceiptData): string {
     <div class="header">
       <div>
         <div class="brand-title">${data.pgName}</div>
-        <div class="brand-subtitle">${data.pgAddress || "Verified Paying Guest Accommodation"}</div>
+        <div class="brand-subtitle">${data.pgAddress || "Paying guest accommodation"}</div>
         ${data.pgContact ? `<div class="brand-subtitle">Contact: ${data.pgContact}</div>` : ""}
       </div>
       <div class="receipt-badge">

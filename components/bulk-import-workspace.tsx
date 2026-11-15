@@ -38,7 +38,7 @@ export function BulkImportWorkspace({ demoMode }: { demoMode: boolean }) {
   }
 
   async function run(commit: boolean) {
-    if (busy || demoMode) return;
+    if (busy) return;
     setBusy(commit ? "commit" : "check");
     setError(null); setIssues([]);
     try {
@@ -92,15 +92,15 @@ export function BulkImportWorkspace({ demoMode }: { demoMode: boolean }) {
             <label className="import-drop">
               <Upload size={18} />
               <span><strong>Rooms file</strong>{roomsName || "Choose rooms.csv (optional)"}</span>
-              <input type="file" accept=".csv,text/csv" onChange={(event) => void choose(event.target.files?.[0], "rooms")} disabled={busy !== null || demoMode} />
+              <input type="file" accept=".csv,text/csv" onChange={(event) => void choose(event.target.files?.[0], "rooms")} disabled={busy !== null} />
             </label>
             <label className="import-drop">
               <Upload size={18} />
               <span><strong>Residents file</strong>{residentsName || "Choose residents.csv (optional)"}</span>
-              <input type="file" accept=".csv,text/csv" onChange={(event) => void choose(event.target.files?.[0], "residents")} disabled={busy !== null || demoMode} />
+              <input type="file" accept=".csv,text/csv" onChange={(event) => void choose(event.target.files?.[0], "residents")} disabled={busy !== null} />
             </label>
           </div>
-          <button className="button button-primary" type="button" disabled={!hasFiles || busy !== null || demoMode} onClick={() => void run(false)}>
+          <button className="button button-primary" type="button" disabled={!hasFiles || busy !== null} onClick={() => void run(false)}>
             {busy === "check" ? "Checking every row…" : "Check files"}
           </button>
         </section>

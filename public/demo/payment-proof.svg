@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="640" viewBox="0 0 360 640" role="img" aria-label="Sample UPI payment screenshot">
+  <rect width="360" height="640" fill="#f4f7f2"/>
+  <rect width="360" height="210" fill="#123d32"/>
+  <circle cx="180" cy="92" r="34" fill="#d7ff86"/>
+  <path d="M164 92l11 11 22-24" fill="none" stroke="#123d32" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="180" y="160" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#ffffff">Payment successful</text>
+  <text x="180" y="186" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#c9d8d1">Sample screenshot for the demo</text>
+  <text x="180" y="280" text-anchor="middle" font-family="Arial, sans-serif" font-size="44" font-weight="700" fill="#12261f">₹ Rent</text>
+  <text x="180" y="312" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#5d6f67">Paid to PGFlow Sample</text>
+  <rect x="28" y="350" width="304" height="170" rx="16" fill="#ffffff" stroke="#dbe4dd"/>
+  <text x="48" y="388" font-family="Arial, sans-serif" font-size="12" fill="#5d6f67">UPI ID</text>
+  <text x="312" y="388" text-anchor="end" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#12261f">sample@demopg</text>
+  <text x="48" y="428" font-family="Arial, sans-serif" font-size="12" fill="#5d6f67">UTR</text>
+  <text x="312" y="428" text-anchor="end" font-family="monospace" font-size="13" font-weight="700" fill="#12261f">4318 3355 0005</text>
+  <text x="48" y="468" font-family="Arial, sans-serif" font-size="12" fill="#5d6f67">Status</text>
+  <text x="312" y="468" text-anchor="end" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#1b6b45">Completed</text>
+  <text x="48" y="502" font-family="Arial, sans-serif" font-size="12" fill="#5d6f67">Note</text>
+  <text x="312" y="502" text-anchor="end" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#12261f">RENT</text>
+  <text x="180" y="590" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#5d6f67">Not a real payment. Nothing was charged.</text>
+</svg>

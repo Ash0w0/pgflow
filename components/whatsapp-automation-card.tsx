@@ -5,7 +5,7 @@ import { AlertCircle, BellRing, CheckCircle2 } from "lucide-react";
 
 export type WhatsAppAutomationSettings = { autoReminders: boolean; autoReceipts: boolean; language: "en" | "hi" };
 
-export function WhatsAppAutomationCard({ initial, demoMode }: { initial: WhatsAppAutomationSettings; demoMode: boolean }) {
+export function WhatsAppAutomationCard({ initial }: { initial: WhatsAppAutomationSettings; demoMode?: boolean }) {
   const [settings, setSettings] = useState(initial);
   const [consent, setConsent] = useState(initial.autoReminders || initial.autoReceipts);
   const [busy, setBusy] = useState(false);
@@ -14,7 +14,7 @@ export function WhatsAppAutomationCard({ initial, demoMode }: { initial: WhatsAp
   const enabling = settings.autoReminders || settings.autoReceipts;
 
   async function save() {
-    if (busy || demoMode) return;
+    if (busy) return;
     if (enabling && !consent) { setError("Confirm that your residents agreed to receive WhatsApp messages."); return; }
     setBusy(true); setError(null); setSaved(false);
     try {
@@ -45,28 +45,28 @@ export function WhatsAppAutomationCard({ initial, demoMode }: { initial: WhatsAp
       </div>
       <div className="modal-form">
         <label className="automation-toggle">
-          <input type="checkbox" checked={settings.autoReminders} disabled={demoMode} onChange={(event) => { setSettings({ ...settings, autoReminders: event.target.checked }); setSaved(false); }} />
+          <input type="checkbox" checked={settings.autoReminders} onChange={(event) => { setSettings({ ...settings, autoReminders: event.target.checked }); setSaved(false); }} />
           <span><strong>Rent reminders</strong>3 days before the due date, on the due date, and 3 days after if still unpaid. Each includes a fresh 7-day payment link.</span>
         </label>
         <label className="automation-toggle">
-          <input type="checkbox" checked={settings.autoReceipts} disabled={demoMode} onChange={(event) => { setSettings({ ...settings, autoReceipts: event.target.checked }); setSaved(false); }} />
+          <input type="checkbox" checked={settings.autoReceipts} onChange={(event) => { setSettings({ ...settings, autoReceipts: event.target.checked }); setSaved(false); }} />
           <span><strong>Receipts</strong>Sent automatically when a UPI or cash payment is approved, with a link to the official receipt.</span>
         </label>
         <label>Message language
-          <select value={settings.language} disabled={demoMode} onChange={(event) => { setSettings({ ...settings, language: event.target.value === "hi" ? "hi" : "en" }); setSaved(false); }}>
+          <select value={settings.language} onChange={(event) => { setSettings({ ...settings, language: event.target.value === "hi" ? "hi" : "en" }); setSaved(false); }}>
             <option value="en">English</option>
             <option value="hi">हिंदी (Hindi)</option>
           </select>
         </label>
         {enabling && (
           <label className="automation-toggle">
-            <input type="checkbox" checked={consent} disabled={demoMode} onChange={(event) => setConsent(event.target.checked)} />
+            <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} />
             <span>My residents have agreed to receive rent and receipt messages on WhatsApp.</span>
           </label>
         )}
         {error && <div className="live-operator-feedback feedback-error" role="alert"><AlertCircle size={14} /><span>{error}</span></div>}
         {saved && <div className="setup-feedback success" role="status"><CheckCircle2 size={15} /><span>Saved. Automatic messages follow these settings from now on.</span></div>}
-        <button className="button button-primary" type="button" disabled={busy || demoMode} onClick={() => void save()}>{busy ? "Saving…" : "Save WhatsApp settings"}</button>
+        <button className="button button-primary" type="button" disabled={busy} onClick={() => void save()}>{busy ? "Saving…" : "Save WhatsApp settings"}</button>
       </div>
     </section>
   );

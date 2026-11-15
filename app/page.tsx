@@ -48,8 +48,8 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function Home() {
   if (isDemoRuntime()) {
     await requireStaffPage(["owner", "manager", "accountant"]);
-    const { DemoDashboard } = await import("@/demo/components/demo-dashboard");
-    return <AppShell demoMode><DemoDashboard /></AppShell>;
+    const { DemoOverview } = await import("@/demo/live/screens");
+    return <DemoOverview />;
   }
 
   if (await isPublicPlatformHomepage()) return <BusinessHomepage />;
