@@ -1,3 +1,4 @@
+import { floorNameKey } from "@/lib/floor-presets";
 import { isTrustedMutationRequest, jsonError, requireActor } from "@/lib/http";
 import { isUuid } from "@/lib/owner-invitations";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
@@ -68,7 +69,9 @@ export async function POST(request: Request) {
   if (body.action === "create_room") {
     if (
       Object.keys(body).length !== 8
-      || typeof body.floorId !== "string"
+      // The room names its floor either by id (an existing floor) or by name
+      // (a level from the picker, created here if the PG does not have it yet).
+      || (typeof body.floorId !== "string") === (asRecord(body.floor) === null)
       || typeof body.code !== "string"
       || typeof body.roomType !== "string"
       || !Number.isInteger(body.capacity)
@@ -80,8 +83,9 @@ export async function POST(request: Request) {
     const code = body.code.trim();
     const capacity = Number(body.capacity);
     const defaultRent = Number(body.defaultRent);
+    const namedFloor = asRecord(body.floor);
     if (
-      !isUuid(body.floorId)
+      (namedFloor ? false : !isUuid(String(body.floorId)))
       || !ROOM_CODE.test(code)
       || !ROOM_TYPES.has(body.roomType)
       || capacity < 1
@@ -91,17 +95,52 @@ export async function POST(request: Request) {
       || !ROOM_STATES.has(body.state)
     ) return jsonError("One or more room details are invalid.");
 
+    let floorId = typeof body.floorId === "string" ? body.floorId : "";
+    if (namedFloor) {
+      const name = typeof namedFloor.name === "string" ? namedFloor.name.trim() : "";
+      const sortOrder = Number(namedFloor.sortOrder);
+      if (Object.keys(namedFloor).length !== 2 || name.length < 1 || name.length > 60 || !Number.isInteger(sortOrder) || sortOrder < 0 || sortOrder > 999) {
+        return jsonError("Choose a floor for this room.");
+      }
+      const findFloor = async () => {
+        const { data: floors, error: floorsError } = await admin.from("floors")
+          .select("id,name")
+          .eq("organization_id", actor.organizationId)
+          .eq("property_id", actor.propertyId!);
+        if (floorsError) return null;
+        return (floors ?? []).find((floor) => floorNameKey(floor.name) === floorNameKey(name))?.id ?? "";
+      };
+      const existing = await findFloor();
+      if (existing === null) return jsonError("The property setup could not be saved. Please try again.", 500);
+      floorId = existing;
+      if (!floorId) {
+        const created = await admin.rpc("create_property_floor", {
+          p_actor_user_id: actor.id,
+          p_organization_id: actor.organizationId,
+          p_property_id: actor.propertyId,
+          p_name: name,
+          p_sort_order: sortOrder,
+        });
+        // Two saves at once can both try to create the same floor: the loser reuses the winner's.
+        if (created.error?.code === "23505") floorId = (await findFloor()) ?? "";
+        else if (created.error) return rpcError(created.error);
+        else floorId = String(asRecord(created.data)?.id ?? "");
+        if (!isUuid(floorId)) return jsonError("The property setup could not be saved. Please try again.", 500);
+      }
+    }
+
     const { data, error } = await admin.rpc("create_room_with_beds", {
       p_actor_user_id: actor.id,
       p_organization_id: actor.organizationId,
       p_property_id: actor.propertyId,
-      p_floor_id: body.floorId,
+      p_floor_id: floorId,
       p_code: code,
       p_room_type: body.roomType,
       p_capacity: capacity,
       p_default_rent: defaultRent,
       p_state: body.state,
     });
+    if (error?.code === "23505") return jsonError("A room with this code already exists.", 409);
     if (error) return rpcError(error);
     return Response.json({ created: true, room: data }, { status: 201, headers: { "cache-control": "no-store" } });
   }

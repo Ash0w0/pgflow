@@ -8,16 +8,17 @@ import {
   CircleAlert,
   DoorOpen,
   IndianRupee,
-  Layers3,
   Plus,
   ShieldCheck,
   Sparkles,
   X, Upload } from "lucide-react";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { floorChoices } from "@/lib/floor-presets";
 import type { RoomSetupData } from "@/lib/room-setup-types";
 import { AppShell } from "./app-shell";
+import { WheelPicker } from "./wheel-picker";
 
-type Dialog = "floor" | "room" | null;
+type Dialog = "room" | null;
 
 const currency = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -39,9 +40,7 @@ export function RoomSetupWorkspace({ data, demoMode }: { data: RoomSetupData; de
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [floorName, setFloorName] = useState("");
-  const [floorOrder, setFloorOrder] = useState(String(data.floors.length));
-  const [floorId, setFloorId] = useState(data.floors[0]?.id ?? "");
+  const [floorKey, setFloorKey] = useState("");
   const [roomCode, setRoomCode] = useState("");
   const [roomType, setRoomType] = useState("shared");
   const [capacity, setCapacity] = useState("2");
@@ -49,9 +48,17 @@ export function RoomSetupWorkspace({ data, demoMode }: { data: RoomSetupData; de
   const [roomState, setRoomState] = useState("active");
 
   const occupiedBeds = data.totals.beds - data.totals.vacantBeds - data.totals.maintenanceBeds;
-  const selectedFloorId = data.floors.some((floor) => floor.id === floorId)
-    ? floorId
-    : data.floors[0]?.id ?? "";
+  // Every level from the basement to the terrace is on offer; one the PG does
+  // not have yet is created when its first room is saved.
+  const floors = useMemo(
+    () => floorChoices(data.floors.map((floor) => ({ id: floor.id, name: floor.name, sortOrder: floor.sortOrder, roomCount: floor.rooms.length }))),
+    [data.floors],
+  );
+  const selectedFloor = floors.find((floor) => floor.key === floorKey)
+    // Start on the highest floor that already has rooms, or the ground floor of a new PG.
+    ?? [...floors].reverse().find((floor) => floor.floorId)
+    ?? floors.find((floor) => floor.name === "Ground Floor")
+    ?? floors[0];
 
   useEffect(() => {
     if (!dialog) return;
@@ -102,26 +109,13 @@ export function RoomSetupWorkspace({ data, demoMode }: { data: RoomSetupData; de
     }
   }
 
-  async function createFloor(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const created = await submit({
-      action: "create_floor",
-      name: floorName,
-      sortOrder: Number(floorOrder),
-    });
-    if (!created) return;
-    setFloorName("");
-    setFloorOrder(String(data.floors.length + 1));
-    setDialog(null);
-    setSuccess("Floor created. You can add its first room now.");
-    router.refresh();
-  }
-
   async function createRoom(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const created = await submit({
       action: "create_room",
-      floorId: selectedFloorId,
+      ...(selectedFloor.floorId
+        ? { floorId: selectedFloor.floorId }
+        : { floor: { name: selectedFloor.name, sortOrder: selectedFloor.sortOrder } }),
       code: roomCode,
       roomType,
       capacity: Number(capacity),
@@ -134,7 +128,7 @@ export function RoomSetupWorkspace({ data, demoMode }: { data: RoomSetupData; de
     setRoomCode("");
     setDefaultRent("");
     setDialog(null);
-    setSuccess(`Room created with ${createdCapacity} ${Number(createdCapacity) === 1 ? "bed" : "beds"}.`);
+    setSuccess(`Room created on ${selectedFloor.name} with ${createdCapacity} ${Number(createdCapacity) === 1 ? "bed" : "beds"}.`);
     router.refresh();
   }
 
@@ -151,16 +145,7 @@ export function RoomSetupWorkspace({ data, demoMode }: { data: RoomSetupData; de
             <a className="button button-secondary" href="/import">
               <Upload size={17} /> Bulk import
             </a>
-            <button className="button button-secondary" type="button" onClick={() => openDialog("floor")}>
-              <Layers3 size={17} /> Add floor
-            </button>
-            <button
-              className="button button-primary"
-              type="button"
-              onClick={() => openDialog("room")}
-              disabled={data.floors.length === 0}
-              title={data.floors.length === 0 ? "Create a floor first" : undefined}
-            >
+            <button className="button button-primary" type="button" onClick={() => openDialog("room")}>
               <Plus size={17} /> Add room
             </button>
           </div>
@@ -184,10 +169,10 @@ export function RoomSetupWorkspace({ data, demoMode }: { data: RoomSetupData; de
           <section className="panel room-empty-state">
             <span className="room-empty-icon"><Building2 size={28} /></span>
             <span className="eyebrow">Start your property map</span>
-            <h2>Create the first floor</h2>
-            <p>Add a floor such as Ground Floor or First Floor. Rooms and beds will sit inside it.</p>
-            <button className="button button-primary" type="button" onClick={() => openDialog("floor")}>
-              <Layers3 size={17} /> Create first floor
+            <h2>Add your first room</h2>
+            <p>Pick its floor, give it a room number and say how many beds it has. The floor and the beds are created for you.</p>
+            <button className="button button-primary" type="button" onClick={() => openDialog("room")}>
+              <Plus size={17} /> Add first room
             </button>
           </section>
         ) : (
@@ -204,7 +189,7 @@ export function RoomSetupWorkspace({ data, demoMode }: { data: RoomSetupData; de
                     <div className="floor-summary">
                       <span><strong>{floor.rooms.length}</strong> rooms</span>
                       <span><strong>{floorBeds.length}</strong> beds</span>
-                      <button className="text-button" type="button" onClick={() => { setFloorId(floor.id); openDialog("room"); }}>
+                      <button className="text-button" type="button" onClick={() => { setFloorKey(floor.id); openDialog("room"); }}>
                         <Plus size={15} /> Add room
                       </button>
                     </div>
@@ -252,22 +237,28 @@ export function RoomSetupWorkspace({ data, demoMode }: { data: RoomSetupData; de
             <header>
               <div>
                 <span className="eyebrow">Property structure</span>
-                <h2 id="setup-dialog-title">{dialog === "floor" ? "Add a floor" : "Add a room and beds"}</h2>
+                <h2 id="setup-dialog-title">Add a room and beds</h2>
               </div>
               <button className="icon-button" type="button" onClick={closeDialog} aria-label="Close setup form" disabled={submitting}><X size={19} /></button>
             </header>
 
-            {dialog === "floor" ? (
-              <form className="setup-form" onSubmit={createFloor}>
-                <label>Floor name<input value={floorName} onChange={(event) => setFloorName(event.target.value)} maxLength={60} placeholder="e.g. Ground Floor" autoFocus required disabled={submitting} /></label>
-                <label>Display order<input type="number" min="0" max="999" value={floorOrder} onChange={(event) => setFloorOrder(event.target.value)} required disabled={submitting} /><small>Use 0 for the first level, 1 for the next, and so on.</small></label>
-                {error && <p className="setup-form-error" role="alert"><CircleAlert size={16} />{error}</p>}
-                <button className="button button-primary button-full" type="submit" disabled={submitting}>{submitting ? "Creating floor…" : "Create floor"}</button>
-              </form>
-            ) : (
               <form className="setup-form" onSubmit={createRoom}>
                 <div className="setup-form-grid">
-                  <label>Floor<select value={selectedFloorId} onChange={(event) => setFloorId(event.target.value)} required disabled={submitting}>{data.floors.map((floor) => <option value={floor.id} key={floor.id}>{floor.name}</option>)}</select></label>
+                  <div className="setup-floor-field">
+                    <span id="room-floor-label">Floor</span>
+                    <WheelPicker
+                      label="Floor"
+                      value={selectedFloor.key}
+                      onChange={setFloorKey}
+                      disabled={submitting}
+                      options={floors.map((floor) => ({
+                        key: floor.key,
+                        label: floor.name,
+                        hint: floor.floorId ? `${floor.roomCount} ${floor.roomCount === 1 ? "room" : "rooms"}` : undefined,
+                      }))}
+                    />
+                    <small>{selectedFloor.floorId ? `This room joins ${selectedFloor.name}.` : `${selectedFloor.name} will be added to your PG with this room.`}</small>
+                  </div>
                   <label>Room code<input value={roomCode} onChange={(event) => setRoomCode(event.target.value)} maxLength={20} placeholder="e.g. A-101" required disabled={submitting} /></label>
                   <label>Room type<select value={roomType} onChange={(event) => setRoomType(event.target.value)} disabled={submitting}><option value="single">Single</option><option value="double">Double</option><option value="triple">Triple</option><option value="shared">Shared</option></select></label>
                   <label>Number of beds<input type="number" min="1" max="20" value={capacity} onChange={(event) => setCapacity(event.target.value)} required disabled={submitting} /></label>
@@ -278,7 +269,6 @@ export function RoomSetupWorkspace({ data, demoMode }: { data: RoomSetupData; de
                 {error && <p className="setup-form-error" role="alert"><CircleAlert size={16} />{error}</p>}
                 <button className="button button-primary button-full" type="submit" disabled={submitting}>{submitting ? "Creating room and beds…" : "Create room and beds"}</button>
               </form>
-            )}
           </section>
         </div>
       )}

@@ -161,3 +161,30 @@ test("a demo resident can send payment proof, and the owner then sees it to revi
   const pending = demoCollectionsData().pendingPayments.find((payment) => payment.reference === "431812349999");
   assert.ok(pending?.evidenceUrl);
 });
+
+test("adding a room creates its floor when the PG does not have that level yet", async () => {
+  resetDemo();
+  const { floorChoices, floorNameKey, PRESET_FLOORS } = await import("../../lib/floor-presets.ts");
+  assert.equal(floorNameKey("First"), floorNameKey("1st Floor"));
+  assert.equal(floorNameKey("Ground"), floorNameKey("Ground Floor"));
+  assert.notEqual(floorNameKey("1st Floor"), floorNameKey("11th Floor"));
+
+  const floorsBefore = getDemoState().floors.length;
+  const choices = floorChoices(demoRoomsData().floors.map((floor) => ({ id: floor.id, name: floor.name, sortOrder: floor.sortOrder, roomCount: floor.rooms.length })));
+  assert.equal(choices.length, PRESET_FLOORS.length, "the sample's floors map onto preset levels, with no duplicates");
+  assert.equal(choices.filter((choice) => choice.floorId).length, floorsBefore);
+  const renamed = floorChoices([{ id: "a", name: "First Floor", sortOrder: 5, roomCount: 2 }, { id: "b", name: "Annex", sortOrder: 9, roomCount: 1 }]);
+  assert.equal(renamed.length, PRESET_FLOORS.length + 1);
+  assert.equal(renamed.find((choice) => choice.floorId === "a").name, "First Floor", "an owner's own floor name is kept and fills the 1st-floor slot");
+  assert.equal(renamed.at(-1).name, "Annex", "a custom floor stays available at the end");
+
+  const room = (code, floor) => call("POST", "/api/rooms/setup", { action: "create_room", ...floor, code, roomType: "double", capacity: 2, defaultRent: 9000, state: "active", confirmBedCreation: true });
+  assert.equal(room("T-1", { floor: { name: "Terrace", sortOrder: 12 } }).status, 201);
+  assert.equal(getDemoState().floors.length, floorsBefore + 1, "the new level is created with the room");
+  assert.equal(room("T-2", { floor: { name: "terrace", sortOrder: 12 } }).status, 201);
+  assert.equal(getDemoState().floors.length, floorsBefore + 1, "the same level is never created twice");
+  assert.equal(room("G-9", { floor: { name: "Ground", sortOrder: 1 } }).status, 201);
+  assert.equal(getDemoState().floors.length, floorsBefore + 1, "'Ground' reuses the existing Ground Floor");
+  assert.equal(room("X-1", {}).status, 400, "a room needs a floor");
+  assert.equal(room("X-2", { floor: { name: "", sortOrder: 1 } }).status, 400);
+});

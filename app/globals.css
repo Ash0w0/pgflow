@@ -1692,3 +1692,23 @@ a { color: inherit; text-decoration: none; }
    whole page on phones. Constrain them so tables scroll inside their own card. */
 .page-stack > * { min-width: 0; }
 .page-stack .table-wrap { max-width: 100%; -webkit-overflow-scrolling: touch; }
+
+/* iOS-style scroll wheel (components/wheel-picker.tsx) */
+.wheel-picker { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: #f8faf8; user-select: none; }
+.wheel-picker::before, .wheel-picker::after { content: ""; position: absolute; left: 0; right: 0; z-index: 2; height: 38%; pointer-events: none; }
+.wheel-picker::before { top: 0; background: linear-gradient(180deg, #f8faf8 10%, rgba(248,250,248,0)); }
+.wheel-picker::after { bottom: 0; background: linear-gradient(0deg, #f8faf8 10%, rgba(248,250,248,0)); }
+.wheel-picker-band { position: absolute; left: 10px; right: 10px; z-index: 0; border-radius: 12px; background: #e6efe9; box-shadow: inset 0 0 0 1px rgba(18,61,50,.14); }
+.wheel-picker-scroll { position: relative; z-index: 1; height: 100%; overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.wheel-picker-scroll::-webkit-scrollbar { display: none; }
+.wheel-picker-scroll:focus-visible { outline: none; }
+.wheel-picker:has(.wheel-picker-scroll:focus-visible) { outline: 3px solid #83a81f; outline-offset: 2px; }
+.wheel-picker-option { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 0 22px; color: var(--ink-faint); font-size: 15px; font-weight: 550; scroll-snap-align: center; cursor: pointer; transition: color .15s, transform .15s; transform: scale(.94); }
+.wheel-picker-option small { font-size: 11px; font-weight: 600; color: inherit; opacity: .8; }
+.wheel-picker-option.is-selected { color: var(--ink); font-weight: 720; transform: scale(1); }
+.wheel-picker-option.is-selected small { padding: 2px 8px; border-radius: 999px; color: var(--brand); background: #fff; opacity: 1; }
+.wheel-picker.is-disabled { opacity: .6; pointer-events: none; }
+.setup-floor-field { grid-column: 1 / -1; display: grid; gap: 7px; }
+.setup-floor-field > span { color: var(--ink-soft); font-size: 12px; font-weight: 650; }
+.setup-floor-field > small { color: var(--ink-faint); font-size: 11px; }
+@media (prefers-reduced-motion: reduce) { .wheel-picker-option { transition: none; } }
