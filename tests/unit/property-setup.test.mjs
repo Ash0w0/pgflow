@@ -75,7 +75,10 @@ test("rooms page is an owner-authorized live setup surface", async () => {
     assert.match(dataService, new RegExp(`from\\("${table}"\\)[\\s\\S]*?eq\\("organization_id", organizationId\\)[\\s\\S]*?eq\\("property_id", propertyId\\)`));
   }
   assert.match(workspace, /fetch\("\/api\/rooms\/setup"/);
-  assert.match(workspace, /action: "create_floor"/);
+  // Floors are no longer a separate step: the room names its level and the server creates it if needed.
+  assert.doesNotMatch(workspace, /action: "create_floor"/);
+  assert.match(workspace, /floor: \{ name: selectedFloor\.name, sortOrder: selectedFloor\.sortOrder \}/);
+  assert.match(workspace, /<WheelPicker/);
   assert.match(workspace, /action: "create_room"/);
   assert.match(workspace, /confirmBedCreation: true/);
   assert.match(workspace, /router\.refresh\(\)/);

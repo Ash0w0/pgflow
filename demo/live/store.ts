@@ -163,8 +163,8 @@ function buildSeed(): DemoState {
 
   const floorPlan: Array<[string, Array<[string, DemoRoom["roomType"], number, number, DemoRoom["state"]]>]> = [
     ["Ground Floor", [["G-101", "triple", 3, 7500, "active"], ["G-102", "double", 2, 8500, "active"]]],
-    ["First Floor", [["F-201", "single", 1, 12000, "active"], ["F-202", "double", 2, 9000, "active"], ["F-203", "triple", 3, 7800, "active"]]],
-    ["Second Floor", [["S-301", "double", 2, 9200, "active"], ["S-302", "single", 1, 11500, "maintenance"]]],
+    ["1st Floor", [["F-201", "single", 1, 12000, "active"], ["F-202", "double", 2, 9000, "active"], ["F-203", "triple", 3, 7800, "active"]]],
+    ["2nd Floor", [["S-301", "double", 2, 9200, "active"], ["S-302", "single", 1, 11500, "maintenance"]]],
   ];
   floorPlan.forEach(([name, rooms], floorIndex) => {
     const floor = { id: nextDemoId(), name, sortOrder: floorIndex };

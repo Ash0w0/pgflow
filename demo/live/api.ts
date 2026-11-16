@@ -6,6 +6,7 @@
  */
 import { billingPeriodEnd, currentIndiaBillingPeriod } from "../../lib/billing-period.ts";
 import { parseResidentsCsv, parseRoomsCsv } from "../../lib/bulk-import.ts";
+import { floorNameKey } from "../../lib/floor-presets.ts";
 import { validateResidentEditInput, validateResidentOnboardingInput } from "../../lib/resident-onboarding-validation.ts";
 import {
   DEMO_PG_NAME,
@@ -82,8 +83,16 @@ function roomsSetup(body: Body): DemoResponse {
     const code = text(body.code).toUpperCase();
     const capacity = Number(body.capacity);
     const defaultRent = Number(body.defaultRent);
-    const floor = state.floors.find((entry) => entry.id === body.floorId);
-    if (!floor) return fail("Choose a floor for this room.");
+    // A level picked from the wheel that the PG does not have yet is created with the room.
+    const named = body.floor && typeof body.floor === "object" ? body.floor as Body : null;
+    const namedName = text(named?.name);
+    const namedOrder = Number(named?.sortOrder);
+    const existingFloor = named
+      ? state.floors.find((entry) => floorNameKey(entry.name) === floorNameKey(namedName))
+      : state.floors.find((entry) => entry.id === body.floorId);
+    if (!existingFloor && (!named || namedName.length < 1 || namedName.length > 60 || !Number.isInteger(namedOrder) || namedOrder < 0 || namedOrder > 999)) {
+      return fail("Choose a floor for this room.");
+    }
     if (!/^[A-Z0-9][A-Z0-9 -]{0,19}$/.test(code)) return fail("Enter a room code such as A-101.");
     if (!ROOM_TYPES.has(String(body.roomType))) return fail("Choose a room type.");
     if (!Number.isInteger(capacity) || capacity < 1 || capacity > 20) return fail("A room can have 1 to 20 beds.");
@@ -91,6 +100,8 @@ function roomsSetup(body: Body): DemoResponse {
     if (state.rooms.some((room) => room.code === code)) return fail("A room with this code already exists.", 409);
     const roomState = body.state === "maintenance" ? "maintenance" : "active";
     updateDemo((draft) => {
+      const floor = existingFloor ?? { id: nextDemoId(), name: namedName, sortOrder: namedOrder };
+      if (!existingFloor) draft.floors.push(floor);
       const room = { id: nextDemoId(), floorId: floor.id, code, roomType: body.roomType as "single", capacity, defaultRent, state: roomState } as const;
       draft.rooms.push({ ...room });
       for (let index = 1; index <= capacity; index += 1) {
